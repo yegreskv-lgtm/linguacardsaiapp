@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>LinguaCards AI — Тренажер английских слов</title>
+  <title>LinguaCards AI — Тренажер</title>
 
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -28,8 +28,6 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <style>
@@ -40,8 +38,6 @@
       overflow-x: hidden;
       touch-action: manipulation;
     }
-    .safe-top { padding-top: max(12px, env(safe-area-inset-top)); }
-    .safe-bottom { padding-bottom: max(20px, env(safe-area-inset-bottom)); }
     .card-flip { perspective: 1000px; }
     .card-inner {
       transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
@@ -50,9 +46,22 @@
     .card-flipped { transform: rotateY(180deg); }
     .card-front, .card-back { backface-visibility: hidden; }
     .card-back { transform: rotateY(180deg); }
+    
+    /* Улучшенная адаптация для iOS / iPhone */
+    .app-container {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+    .safe-header {
+      padding-top: max(1rem, env(safe-area-inset-top));
+    }
+    .safe-bottom {
+      padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
   </style>
 </head>
-<body class="min-h-screen flex flex-col antialiased">
+<body class="antialiased">
   <div id="root"></div>
 
   <script type="text/babel">
@@ -62,54 +71,37 @@
     
     const INITIAL_COLLECTIONS = [
       {
-        id: 'travel',
-        title: '✈️ Путешествия & Аэропорт',
-        description: 'Перелеты, отели, таможня и ориентация',
+        id: 'everyday',
+        title: '☕️ Повседневная жизнь',
+        description: 'Базовые слова и легкие примеры на каждый день',
         levels: {
           beginner: [
-            { id: 't1', english: 'Passport', russian: 'Паспорт', phonetic: 'ˈpæspɔːrt', example: 'Show your passport at check-in.' },
-            { id: 't2', english: 'Ticket', russian: 'Билет', phonetic: 'ˈtɪkɪt', example: 'I booked a round-trip ticket.' }
+            { id: 'b1', english: 'Water', russian: 'Вода', phonetic: 'ˈwɔːtər', example: 'I drink water every morning.' },
+            { id: 'b2', english: 'House', russian: 'Дом', phonetic: 'haʊs', example: 'This is my new house.' },
+            { id: 'b3', english: 'Friend', russian: 'Друг', phonetic: 'frend', example: 'He is my best friend.' }
           ],
           intermediate: [
-            { id: 't3', english: 'Accommodation', russian: 'Жилье', phonetic: 'əˌkɑːməˈdeɪʃn', example: 'We found affordable accommodation.' }
+            { id: 'b4', english: 'Journey', russian: 'Путешествие', phonetic: 'ˈdʒɜːrni', example: 'We are planning a long journey.' }
           ],
           advanced: [
-            { id: 't4', english: 'Layover', russian: 'Пересадка', phonetic: 'ˈleɪoʊvər', example: 'We had a layover in Istanbul.' }
+            { id: 'b5', english: 'Routine', russian: 'Рутина', phonetic: 'ruːˈtiːn', example: 'My morning routine is very simple.' }
           ]
         }
       },
       {
         id: 'expeditions',
-        title: '🏕 Оффроуд и Экспедиции',
-        description: 'Слова для автопутешествий, кемпинга и треккинга',
+        title: '🏕 Оффроуд и Природа',
+        description: 'Слова для кемпинга, авто и гор',
         levels: {
           beginner: [
-            { id: 'e1', english: 'Tent', russian: 'Палатка', phonetic: 'tent', example: 'We pitched the roof tent.' },
-            { id: 'e2', english: 'Tire', russian: 'Шина', phonetic: 'ˈtaɪər', example: 'I need to deflate the tires.' }
+            { id: 'e1', english: 'Tent', russian: 'Палатка', phonetic: 'tent', example: 'We sleep in a big tent.' },
+            { id: 'e2', english: 'Car', russian: 'Машина', phonetic: 'kɑːr', example: 'I love driving my car.' }
           ],
           intermediate: [
-            { id: 'e3', english: 'Suspension', russian: 'Подвеска', phonetic: 'səˈspenʃn', example: 'We upgraded the shock absorbers.' },
-            { id: 'e4', english: 'Navigation', russian: 'Навигация', phonetic: 'ˌnævɪˈɡeɪʃn', example: 'Satellite internet helps with navigation.' }
+            { id: 'e3', english: 'Mountain', russian: 'Гора', phonetic: 'ˈmaʊntn', example: 'We walked up the high mountain.' }
           ],
           advanced: [
-            { id: 'e5', english: 'Overlanding', russian: 'Автопутешествие', phonetic: 'ˈoʊvərlændɪŋ', example: 'Overlanding across Central Asia requires preparation.' }
-          ]
-        }
-      },
-      {
-        id: 'dining',
-        title: '🍕 Рестораны & Еда',
-        description: 'Заказ блюд, кафе и меню',
-        levels: {
-          beginner: [
-            { id: 'd1', english: 'Menu', russian: 'Меню', phonetic: 'ˈmenjuː', example: 'Could we have the menu please?' },
-            { id: 'd2', english: 'Bill', russian: 'Счет', phonetic: 'bɪl', example: 'Can I pay the bill by card?' }
-          ],
-          intermediate: [
-            { id: 'd3', english: 'Appetizer', russian: 'Закуска', phonetic: 'ˈæpɪtaɪzər', example: 'We ordered soup as an appetizer.' }
-          ],
-          advanced: [
-            { id: 'd4', english: 'Cuisine', russian: 'Кухня', phonetic: 'kwɪˈziːn', example: 'This restaurant offers authentic cuisine.' }
+            { id: 'e4', english: 'Equipment', russian: 'Снаряжение', phonetic: 'ɪˈkwɪpmənt', example: 'Check your equipment before the trip.' }
           ]
         }
       }
@@ -118,20 +110,22 @@
     function App() {
       const [activeTab, setActiveTab] = useState('cards'); 
       const [cards, setCards] = useState([
-        { id: '1', english: 'Serendipity', russian: 'Счастливая случайность', phonetic: 'ˌserənˈdɪpəti', example: 'Finding this peaceful place was pure serendipity.' }
+        { id: 'start1', english: 'Morning', russian: 'Утро', phonetic: 'ˈmɔːrnɪŋ', example: 'I wake up early in the morning.' },
+        { id: 'start2', english: 'Road', russian: 'Дорога', phonetic: 'roʊd', example: 'The road is very long and beautiful.' }
       ]);
       const [learnedIds, setLearnedIds] = useState([]);
       const [currentIndex, setCurrentIndex] = useState(0);
       const [isFlipped, setIsFlipped] = useState(false);
-      const [apiKey, setApiKey] = useState(DEFAULT_API_KEY);
+      const [apiKey] = useState(DEFAULT_API_KEY);
       
       const [userId, setUserId] = useState(() => localStorage.getItem('lc_uid') || 'user_' + Math.random().toString(36).substr(2, 6));
       const [userName, setUserName] = useState(() => localStorage.getItem('lc_uname') || '');
-      const [following, setFollowing] = useState(() => JSON.parse(localStorage.getItem('lc_following') || '[]'));
       
       const [showOnboarding, setShowOnboarding] = useState(!localStorage.getItem('lc_registered'));
       const [showSettings, setShowSettings] = useState(false);
       const [previewTopic, setPreviewTopic] = useState(null);
+      
+      // Modal for word click
       const [activeWordModal, setActiveWordModal] = useState(null);
       const [isGenerating, setIsGenerating] = useState(false);
       
@@ -142,47 +136,83 @@
       // Speech
       const [voices, setVoices] = useState([]);
       const [selectedVoice, setSelectedVoice] = useState('');
-      const [speechStatus, setSpeechStatus] = useState('Нажмите для проверки');
+      const [speechStatus, setSpeechStatus] = useState('Нажмите кнопку, чтобы услышать');
+
+      // 1. Синхронизация по URL (если перешли по QR коду)
+      useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const syncId = params.get('sync');
+        if (syncId && syncId !== userId) {
+          setUserId(syncId);
+          localStorage.setItem('lc_uid', syncId);
+          alert('✅ Устройства успешно синхронизированы!');
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      }, [userId]);
 
       useEffect(() => {
         localStorage.setItem('lc_uid', userId);
         localStorage.setItem('lc_uname', userName);
-        localStorage.setItem('lc_following', JSON.stringify(following));
-      }, [userId, userName, following]);
+      }, [userId, userName]);
 
+      // 2. Инициализация QR-кода при открытии настроек
+      useEffect(() => {
+        if (showSettings) {
+          const timer = setTimeout(() => {
+            const qrContainer = document.getElementById('qrcode-container');
+            if (qrContainer) {
+              qrContainer.innerHTML = '';
+              new QRCode(qrContainer, {
+                text: `${window.location.origin}${window.location.pathname}?sync=${userId}`,
+                width: 160,
+                height: 160,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+              });
+            }
+          }, 200);
+          return () => clearTimeout(timer);
+        }
+      }, [showSettings, userId]);
+
+      // Загрузка голосов
       useEffect(() => {
         const loadVoices = () => {
           const vList = window.speechSynthesis.getVoices();
           setVoices(vList);
           if (vList.length && !selectedVoice) {
-            const def = vList.find(v => v.lang.includes('en')) || vList[0];
-            setSelectedVoice(def.name);
+            const def = vList.find(v => v.lang.includes('en-US')) || vList[0];
+            if(def) setSelectedVoice(def.name);
           }
         };
         loadVoices();
         window.speechSynthesis.onvoiceschanged = loadVoices;
       }, []);
 
-      const handleTokenClick = (word) => {
-        const cleanWord = word.replace(/[^a-zA-Z]/g, '');
+      // 3. Обработка клика по любому слову в предложении
+      const handleTokenClick = (rawWord) => {
+        const cleanWord = rawWord.replace(/[^a-zA-Z]/g, '');
         if (!cleanWord) return;
+        
         setActiveWordModal({ word: cleanWord, loading: true, translation: '' });
         
         fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: `Translate English word "${cleanWord}" to Russian briefly (1-2 words only).` }] }]
+            contents: [{ parts: [{ text: `Translate this simple English word "${cleanWord}" to Russian in 1-2 words.` }] }]
           })
         })
         .then(r => r.json())
         .then(data => {
-          const trans = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Перевод';
+          const trans = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Перевод не найден';
           setActiveWordModal({ word: cleanWord, loading: false, translation: trans.trim() });
         })
-        .catch(() => setActiveWordModal({ word: cleanWord, loading: false, translation: 'Ошибка' }));
+        .catch(() => setActiveWordModal({ word: cleanWord, loading: false, translation: 'Ошибка сети' }));
       };
 
+      // 4. Добавление слова из модалки в колоду
       const addModalWordToDeck = () => {
         if (!activeWordModal) return;
         setCards(prev => [{
@@ -190,65 +220,22 @@
           english: activeWordModal.word,
           russian: activeWordModal.translation,
           phonetic: '',
-          example: `Context: ${activeWordModal.word}`
+          example: `I am learning the word ${activeWordModal.word}.`
         }, ...prev]);
         setActiveWordModal(null);
-      };
-
-      const generateMoreWords = (col, lvl) => {
-        setIsGenerating(true);
-        fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: `Generate 20 English vocabulary words for topic "${col.title}" with level "${lvl}". Return ONLY valid JSON array format like [{"english":"word","russian":"перевод","phonetic":"transcription","example":"sentence"}].` }] }]
-          })
-        })
-        .then(r => r.json())
-        .then(data => {
-          setIsGenerating(false);
-          const txt = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
-          const cleanJson = txt.replace(/```json/g, '').replace(/```/g, '').trim();
-          const newWords = JSON.parse(cleanJson);
-          setCards(prev => [...newWords.map((w, i) => ({ ...w, id: Date.now() + i })), ...prev]);
-          alert(`Успешно добавлено 20 новых слов!`);
-          setPreviewTopic(null);
-        })
-        .catch(() => { setIsGenerating(false); alert('Ошибка генерации.'); });
-      };
-
-      const handleSmartImport = () => {
-        if (!importText.trim()) return;
-        setIsImporting(true);
-        fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: `Extract all words or phrases from this mixed Russian/English text, translate them appropriately to build English flashcards. Return ONLY valid JSON array format like [{"english":"word","russian":"перевод","phonetic":"transcription","example":"context sentence"}]. Text: ${importText}` }] }]
-          })
-        })
-        .then(r => r.json())
-        .then(data => {
-          setIsImporting(false);
-          const txt = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
-          const cleanJson = txt.replace(/```json/g, '').replace(/```/g, '').trim();
-          const newWords = JSON.parse(cleanJson);
-          setCards(prev => [...newWords.map((w, i) => ({ ...w, id: 'imp_'+Date.now() + i })), ...prev]);
-          alert(`Импортировано ${newWords.length} слов!`);
-          setImportText('');
-        })
-        .catch(() => { setIsImporting(false); alert('Ошибка импорта.'); });
+        alert(`Слово "${activeWordModal.word}" добавлено в ваши карточки!`);
       };
 
       const currentCard = cards[currentIndex] || cards[0];
 
+      // Экран первого входа
       if (showOnboarding && !userName) {
         return (
           <div className="fixed inset-0 bg-[#090d16] z-50 flex flex-col items-center justify-center p-6 text-center">
             <div className="max-w-md w-full bg-gray-900 border border-gray-800 p-6 rounded-3xl space-y-4 shadow-2xl">
               <div className="w-14 h-14 bg-brand-600 rounded-2xl mx-auto flex items-center justify-center text-white text-2xl font-bold">✨</div>
               <h1 className="text-2xl font-bold text-white">Добро пожаловать в LinguaCards!</h1>
-              <p className="text-sm text-gray-400">Введите ваше имя, чтобы начать обучение и соревноваться с друзьями.</p>
+              <p className="text-sm text-gray-400">Введите ваше имя, чтобы начать обучение.</p>
               <input 
                 type="text" 
                 placeholder="Ваше имя (например, Сергей)" 
@@ -274,73 +261,86 @@
       }
 
       return (
-        <div className="flex-1 flex flex-col max-w-md mx-auto w-full pb-24 h-screen">
-          <header className="sticky top-0 z-40 bg-[#090d16]/95 backdrop-blur-md border-b border-gray-800/80 safe-top px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center space-x-2">
+        <div className="app-container max-w-md mx-auto w-full bg-[#090d16]">
+          
+          {/* Обновленная шапка - всегда видна, не перекрывается челкой */}
+          <header className="sticky top-0 z-40 bg-[#090d16]/95 backdrop-blur-xl border-b border-gray-800/80 safe-header px-4 pb-3 flex items-center justify-between">
+            <div className="flex items-center space-x-2 shrink-0">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center text-white font-bold text-sm">L</div>
-              <span className="font-bold text-sm text-gray-100 truncate">LinguaCards</span>
+              <span className="font-bold text-sm text-gray-100 truncate hidden sm:block">LinguaCards</span>
             </div>
 
-            <nav className="flex items-center space-x-1 bg-gray-900/90 p-1 rounded-xl border border-gray-800 text-xs shrink-0">
+            <nav className="flex items-center space-x-1 bg-gray-900/90 p-1 rounded-xl border border-gray-800 text-xs flex-1 justify-center mx-2">
               <button onClick={() => setActiveTab('cards')} className={`px-2 py-1.5 rounded-lg transition ${activeTab === 'cards' ? 'bg-brand-600 text-white' : 'text-gray-400'}`}>🎴</button>
               <button onClick={() => setActiveTab('topics')} className={`px-2 py-1.5 rounded-lg transition ${activeTab === 'topics' ? 'bg-brand-600 text-white' : 'text-gray-400'}`}>📚</button>
               <button onClick={() => setActiveTab('import')} className={`px-2 py-1.5 rounded-lg transition ${activeTab === 'import' ? 'bg-brand-600 text-white' : 'text-gray-400'}`}>➕</button>
               <button onClick={() => setActiveTab('speech')} className={`px-2 py-1.5 rounded-lg transition ${activeTab === 'speech' ? 'bg-brand-600 text-white' : 'text-gray-400'}`}>🎤</button>
-              <button onClick={() => setActiveTab('leaderboard')} className={`px-2 py-1.5 rounded-lg transition ${activeTab === 'leaderboard' ? 'bg-brand-600 text-white' : 'text-gray-400'}`}>🏆</button>
             </nav>
 
-            <button onClick={() => setShowSettings(true)} className="p-2 text-gray-400 hover:text-white rounded-lg shrink-0">⚙️</button>
+            <button onClick={() => setShowSettings(true)} className="p-2 bg-gray-800 rounded-lg text-gray-300 hover:text-white shrink-0">
+              ⚙️
+            </button>
           </header>
 
-          <main className="p-4 flex-1 flex flex-col overflow-y-auto">
+          <main className="p-4 flex-1 flex flex-col overflow-y-auto safe-bottom">
+            
+            {/* ТАБ 1: КАРТОЧКИ */}
             {activeTab === 'cards' && currentCard && (
               <div className="flex-1 flex flex-col justify-center my-auto">
-                <div onClick={() => setIsFlipped(!isFlipped)} className="card-flip w-full cursor-pointer min-h-[320px]">
-                  <div className={`card-inner relative w-full h-full rounded-2xl bg-gradient-to-b from-gray-800/90 to-gray-900 border border-gray-700/60 p-6 flex flex-col justify-between shadow-2xl ${isFlipped ? 'card-flipped' : ''}`}>
-                    <div className="card-front absolute inset-0 p-6 flex flex-col justify-between">
-                      <div className="text-xs text-gray-400 font-semibold tracking-wider">НАЖМИТЕ ДЛЯ ПЕРЕВОДА 🔄</div>
-                      <div className="text-center my-auto">
-                        <h2 className="text-3xl font-extrabold text-white">{currentCard.english}</h2>
-                        {currentCard.phonetic && <p className="text-sm text-brand-400 mt-2">[{currentCard.phonetic}]</p>}
+                <div onClick={() => setIsFlipped(!isFlipped)} className="card-flip w-full cursor-pointer min-h-[350px]">
+                  <div className={`card-inner relative w-full h-full rounded-3xl bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700/60 p-6 flex flex-col justify-between shadow-2xl ${isFlipped ? 'card-flipped' : ''}`}>
+                    
+                    <div className="card-front absolute inset-0 p-6 flex flex-col justify-between items-center text-center">
+                      <div className="text-xs text-gray-400 font-semibold tracking-wider bg-gray-800 px-3 py-1 rounded-full">НАЖМИТЕ ДЛЯ ПЕРЕВОДА 🔄</div>
+                      <div className="my-auto">
+                        <h2 className="text-4xl font-extrabold text-white mb-2">{currentCard.english}</h2>
+                        {currentCard.phonetic && <p className="text-base text-brand-400 bg-brand-900/20 px-3 py-1 rounded-lg inline-block">[{currentCard.phonetic}]</p>}
                       </div>
-                      <div className="text-xs text-gray-500 text-center">Карточка {currentIndex + 1} из {cards.length}</div>
+                      <div className="text-xs text-gray-500 font-medium">Карточка {currentIndex + 1} из {cards.length}</div>
                     </div>
-                    <div className="card-back absolute inset-0 p-6 flex flex-col justify-between">
-                      <div className="text-xs text-brand-400 font-bold">ПЕРЕВОД & ПРИМЕР</div>
-                      <div className="text-center my-auto">
-                        <h3 className="text-2xl font-bold text-emerald-400">{currentCard.russian}</h3>
+                    
+                    <div className="card-back absolute inset-0 p-6 flex flex-col justify-between items-center text-center">
+                      <div className="text-xs text-emerald-400 font-bold tracking-wider bg-emerald-900/20 px-3 py-1 rounded-full">ПЕРЕВОД & ПРИМЕР</div>
+                      <div className="my-auto w-full">
+                        <h3 className="text-3xl font-bold text-white mb-6">{currentCard.russian}</h3>
+                        
+                        {/* Кликабельные примеры */}
                         {currentCard.example && (
-                          <div className="mt-4 p-3 bg-gray-950/60 rounded-xl border border-gray-800 text-sm text-gray-300">
-                            {currentCard.example.split(' ').map((w, idx) => (
-                              <span key={idx} onClick={(e) => { e.stopPropagation(); handleTokenClick(w); }} className="inline-block hover:text-brand-400 hover:underline cursor-pointer px-0.5">
-                                {w}{' '}
-                              </span>
-                            ))}
+                          <div className="mt-4 p-4 bg-gray-950/80 rounded-2xl border border-gray-700/50 shadow-inner">
+                            <p className="text-sm text-gray-400 mb-2">Нажмите на любое слово в примере:</p>
+                            <div className="text-lg text-gray-200 leading-relaxed font-medium">
+                              {currentCard.example.split(/\s+/).map((word, idx) => (
+                                <span key={idx} onClick={(e) => { e.stopPropagation(); handleTokenClick(word); }} className="inline-block hover:text-brand-400 hover:bg-brand-900/30 px-1 py-0.5 rounded cursor-pointer transition-colors">
+                                  {word}{' '}
+                                </span>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
-                      <div className="text-xs text-gray-500 text-center">Нажмите слово для перевода</div>
                     </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3 mt-6">
-                  <button onClick={() => setCurrentIndex((currentIndex + 1) % cards.length)} className="py-3 bg-gray-800 hover:bg-gray-700 text-gray-200 font-semibold rounded-xl border border-gray-700">Пропустить</button>
-                  <button onClick={() => { setLearnedIds([...learnedIds, currentCard.id]); setCurrentIndex((currentIndex + 1) % cards.length); }} className="py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg">✓ Выучил</button>
+                
+                <div className="grid grid-cols-2 gap-4 mt-8">
+                  <button onClick={() => setCurrentIndex((currentIndex + 1) % cards.length)} className="py-4 bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold rounded-2xl border border-gray-700 transition-colors">Пропустить</button>
+                  <button onClick={() => { setLearnedIds([...learnedIds, currentCard.id]); setCurrentIndex((currentIndex + 1) % cards.length); }} className="py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl shadow-lg transition-transform active:scale-95">✓ Выучил</button>
                 </div>
               </div>
             )}
 
+            {/* ТАБ 2: ТЕМЫ */}
             {activeTab === 'topics' && (
               <div className="space-y-4">
-                <h2 className="text-lg font-bold text-white">📚 Подборки по темам и уровням</h2>
+                <h2 className="text-xl font-bold text-white mb-4">📚 Подборки слов</h2>
                 {INITIAL_COLLECTIONS.map(col => (
-                  <div key={col.id} className="p-4 bg-gray-900 border border-gray-800 rounded-2xl space-y-3">
-                    <h3 className="font-bold text-brand-400">{col.title}</h3>
-                    <p className="text-xs text-gray-400">{col.description}</p>
-                    <div className="grid grid-cols-3 gap-2 pt-1">
+                  <div key={col.id} className="p-5 bg-gray-900 border border-gray-800 rounded-3xl space-y-3 shadow-lg">
+                    <h3 className="text-lg font-bold text-brand-400">{col.title}</h3>
+                    <p className="text-sm text-gray-400 leading-snug">{col.description}</p>
+                    <div className="grid grid-cols-3 gap-2 pt-2">
                       {['beginner', 'intermediate', 'advanced'].map(lvl => (
-                        <button key={lvl} onClick={() => setPreviewTopic({ col, lvl })} className="py-2 px-1 bg-gray-800 hover:bg-brand-600 rounded-lg text-xs font-semibold text-center border border-gray-700">
-                          {lvl === 'beginner' ? '🟢 A1-A2' : lvl === 'intermediate' ? '🟡 B1-B2' : '🔴 C1-C2'}
+                        <button key={lvl} onClick={() => setPreviewTopic({ col, lvl })} className="py-2 px-1 bg-gray-800 hover:bg-brand-600 rounded-xl text-xs font-semibold text-center border border-gray-700 transition-colors">
+                          {lvl === 'beginner' ? '🟢 Легко' : lvl === 'intermediate' ? '🟡 Средне' : '🔴 Сложно'}
                         </button>
                       ))}
                     </div>
@@ -349,31 +349,58 @@
               </div>
             )}
 
+            {/* ТАБ 3: ИМПОРТ */}
             {activeTab === 'import' && (
               <div className="space-y-4 flex-1 flex flex-col">
-                <h2 className="text-lg font-bold text-white">➕ Умный импорт слов</h2>
-                <p className="text-xs text-gray-400">Вставьте текст или список слов на русском/английском. AI автоматически переведет их и создаст карточки с примерами.</p>
+                <h2 className="text-xl font-bold text-white">➕ Умное добавление</h2>
+                <p className="text-sm text-gray-400 leading-snug">Вставьте любой текст или список слов. AI автоматически переведет их и создаст простые карточки для изучения.</p>
                 <textarea 
-                  className="flex-1 w-full bg-gray-900 border border-gray-800 rounded-2xl p-4 text-white resize-none outline-none focus:border-brand-500 text-sm"
-                  placeholder="Например: &#10;dog&#10;кошка&#10;I want to learn words about off-road driving..."
+                  className="flex-1 w-full bg-gray-900 border border-gray-800 rounded-3xl p-5 text-white resize-none outline-none focus:border-brand-500 text-base shadow-inner"
+                  placeholder="Например: &#10;apple&#10;машина&#10;I like to travel..."
                   value={importText}
                   onChange={(e) => setImportText(e.target.value)}
                 ></textarea>
                 <button 
-                  onClick={handleSmartImport} 
+                  onClick={() => {
+                    if(!importText.trim()) return;
+                    setIsImporting(true);
+                    fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        contents: [{ parts: [{ text: `Extract words from text, translate them. Generate flashcards with VERY SHORT, simple everyday sentences. Return JSON array format: [{"english":"word","russian":"перевод","phonetic":"transcription","example":"very simple everyday sentence"}]. Text: ${importText}` }] }]
+                      })
+                    })
+                    .then(r => r.json())
+                    .then(data => {
+                      setIsImporting(false);
+                      const txt = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+                      const cleanJson = txt.replace(/```json/g, '').replace(/```/g, '').trim();
+                      const newWords = JSON.parse(cleanJson);
+                      setCards(prev => [...newWords.map((w, i) => ({ ...w, id: 'imp_'+Date.now() + i })), ...prev]);
+                      alert(`✅ Добавлено ${newWords.length} слов!`);
+                      setImportText('');
+                      setActiveTab('cards');
+                    })
+                    .catch(() => { setIsImporting(false); alert('Ошибка импорта.'); });
+                  }} 
                   disabled={isImporting}
-                  className="w-full py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl shadow-lg disabled:opacity-50"
+                  className="w-full py-4 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-2xl shadow-lg disabled:opacity-50 transition-transform active:scale-95"
                 >
-                  {isImporting ? 'Распознавание AI...' : 'Импортировать карточки ✨'}
+                  {isImporting ? 'Распознавание AI...' : 'Создать карточки ✨'}
                 </button>
               </div>
             )}
 
+            {/* ТАБ 4: РЕЧЬ */}
             {activeTab === 'speech' && (
-              <div className="space-y-4 my-auto text-center">
-                <h2 className="text-lg font-bold text-white">🎤 Тренажер произношения</h2>
-                <div className="p-6 bg-gray-900 border border-gray-800 rounded-2xl space-y-4">
-                  <div className="text-xl font-bold text-brand-400">{currentCard.russian}</div>
+              <div className="space-y-6 my-auto text-center px-2">
+                <div className="w-20 h-20 bg-brand-600/20 rounded-full mx-auto flex items-center justify-center text-4xl">🎤</div>
+                <h2 className="text-2xl font-bold text-white">Тренажер произношения</h2>
+                <p className="text-sm text-gray-400">Слушайте правильное произношение и запоминайте слова на слух.</p>
+                <div className="p-8 bg-gray-900 border border-gray-800 rounded-3xl space-y-6 shadow-xl">
+                  <div className="text-3xl font-bold text-white">{currentCard.english}</div>
+                  <div className="text-lg text-brand-400 font-medium">{currentCard.russian}</div>
                   <button onClick={() => {
                     const utter = new SpeechSynthesisUtterance(currentCard.english);
                     if(selectedVoice) {
@@ -381,83 +408,89 @@
                         if(v) utter.voice = v;
                     }
                     window.speechSynthesis.speak(utter);
-                  }} className="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs rounded-xl font-bold">🔊 Послушать оригинал</button>
-                  <p className="text-xs text-gray-300">{speechStatus}</p>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'leaderboard' && (
-              <div className="space-y-4">
-                <h2 className="text-lg font-bold text-white">🏆 Рейтинг друзей</h2>
-                <div className="p-4 bg-gray-900 border border-gray-800 rounded-2xl space-y-3">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-300 font-semibold">Ваш ID: <code className="text-brand-400">{userId}</code></span>
-                    <span className="text-emerald-400 font-bold">{learnedIds.length} выучено</span>
-                  </div>
-                  <button onClick={() => {
-                    const link = `${window.location.origin}?follow=${userId}`;
-                    navigator.clipboard.writeText(link);
-                    alert('Ссылка для друга скопирована!');
-                  }} className="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded-xl">🔗 Скопировать ссылку приглашения</button>
+                  }} className="w-full py-4 bg-brand-600 hover:bg-brand-500 text-white text-base rounded-2xl font-bold shadow-lg transition-transform active:scale-95">🔊 Послушать</button>
                 </div>
               </div>
             )}
           </main>
 
+          {/* Модалка Предпросмотра Тем */}
           {previewTopic && (
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-gray-900 border border-gray-700 p-5 rounded-2xl max-w-sm w-full space-y-4">
-                <h3 className="font-bold text-white">{previewTopic.col.title} ({previewTopic.lvl})</h3>
-                <div className="max-h-48 overflow-y-auto space-y-2">
+            <div className="fixed inset-0 bg-[#090d16]/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+              <div className="bg-gray-900 border border-gray-700 p-6 rounded-3xl max-w-sm w-full space-y-4 shadow-2xl">
+                <h3 className="text-xl font-bold text-white mb-2">{previewTopic.col.title}</h3>
+                <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
                   {(previewTopic.col.levels[previewTopic.lvl] || []).map((w, i) => (
-                    <div key={i} className="flex justify-between text-xs p-2 bg-gray-800 rounded-lg">
+                    <div key={i} className="flex justify-between items-center text-sm p-3 bg-gray-800 rounded-xl">
                       <span className="font-bold text-white">{w.english}</span>
                       <span className="text-gray-400">{w.russian}</span>
                     </div>
                   ))}
                 </div>
-                <div className="flex space-x-2 pt-2">
-                  <button onClick={() => setPreviewTopic(null)} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-xs text-gray-300 rounded-xl">Закрыть</button>
-                  <button onClick={() => generateMoreWords(previewTopic.col, previewTopic.lvl)} disabled={isGenerating} className="flex-1 py-2 bg-brand-600 hover:bg-brand-500 text-xs text-white font-bold rounded-xl">
-                    {isGenerating ? 'Генерация...' : '+20 слов AI ✨'}
+                <div className="flex space-x-3 pt-4">
+                  <button onClick={() => setPreviewTopic(null)} className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-sm text-gray-300 rounded-2xl font-medium transition-colors">Закрыть</button>
+                  <button onClick={() => {
+                      const newCards = previewTopic.col.levels[previewTopic.lvl].map(w => ({...w, id: Date.now() + Math.random()}));
+                      setCards(prev => [...newCards, ...prev]);
+                      alert('Слова добавлены в колоду!');
+                      setPreviewTopic(null);
+                      setActiveTab('cards');
+                  }} className="flex-1 py-3 bg-brand-600 hover:bg-brand-500 text-sm text-white font-bold rounded-2xl shadow-lg transition-colors">
+                    Добавить
                   </button>
                 </div>
               </div>
             </div>
           )}
 
+          {/* ⚙️ НАСТРОЙКИ & QR-КОД */}
           {showSettings && (
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-gray-900 border border-gray-700 p-5 rounded-2xl max-w-sm w-full space-y-4 max-h-[90vh] overflow-y-auto">
-                <div className="flex justify-between items-center"><h3 className="font-bold text-white">⚙️ Настройки</h3><button onClick={() => setShowSettings(false)} className="text-gray-400 hover:text-white">✕</button></div>
-                <div className="space-y-2">
-                  <label className="text-xs text-gray-400">Ваше имя:</label>
-                  <input type="text" value={userName} onChange={e => setUserName(e.target.value)} className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white text-sm" />
+            <div className="fixed inset-0 bg-[#090d16]/95 backdrop-blur-xl z-50 flex items-center justify-center p-4">
+              <div className="bg-gray-900 border border-gray-700 p-6 rounded-3xl max-w-sm w-full space-y-6 max-h-[90vh] overflow-y-auto shadow-2xl">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xl font-bold text-white">⚙️ Настройки</h3>
+                  <button onClick={() => setShowSettings(false)} className="w-8 h-8 flex items-center justify-center bg-gray-800 rounded-full text-gray-400 hover:text-white transition-colors">✕</button>
                 </div>
+                
                 <div className="space-y-2">
-                  <label className="text-xs text-gray-400">Голос озвучки:</label>
-                  <select value={selectedVoice} onChange={e => setSelectedVoice(e.target.value)} className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white text-sm">
+                  <label className="text-sm font-medium text-gray-400">Ваше имя:</label>
+                  <input type="text" value={userName} onChange={e => setUserName(e.target.value)} className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-2xl text-white text-base outline-none focus:border-brand-500" />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-400">Голос озвучки:</label>
+                  <select value={selectedVoice} onChange={e => setSelectedVoice(e.target.value)} className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-2xl text-white text-base outline-none focus:border-brand-500">
                     {voices.map((v, i) => <option key={i} value={v.name}>{v.name} ({v.lang})</option>)}
                   </select>
                 </div>
-                <div className="pt-2 text-center">
-                  <label className="text-xs text-gray-400 block mb-2">QR-код для синхронизации (телефон):</label>
-                  <div id="qrcode" className="bg-white p-2 rounded-xl inline-block mx-auto border-4 border-white"></div>
+                
+                <div className="pt-4 text-center border-t border-gray-800">
+                  <label className="text-sm font-bold text-white block mb-4">Синхронизация устройств</label>
+                  <p className="text-xs text-gray-400 mb-4 leading-relaxed">Отсканируйте этот QR-код камерой смартфона, чтобы открыть приложение с вашими сохраненными словами.</p>
+                  <div className="bg-white p-3 rounded-2xl inline-block shadow-lg mx-auto">
+                    {/* Контейнер для QR-кода */}
+                    <div id="qrcode-container"></div>
+                  </div>
                 </div>
-                <button onClick={() => setShowSettings(false)} className="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-sm mt-2">Сохранить</button>
+                
+                <button onClick={() => setShowSettings(false)} className="w-full py-4 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-2xl text-base shadow-lg transition-transform active:scale-95 mt-4">Готово</button>
               </div>
             </div>
           )}
 
+          {/* Модалка для клика по отдельному слову */}
           {activeWordModal && (
-            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-gray-900 border border-gray-700 p-5 rounded-2xl max-w-xs w-full text-center space-y-3">
-                <h4 className="text-xl font-bold text-white">{activeWordModal.word}</h4>
-                {activeWordModal.loading ? <div className="text-xs text-brand-400 animate-pulse">Перевод AI...</div> : <p className="text-lg text-emerald-400 font-semibold">{activeWordModal.translation}</p>}
-                <div className="flex space-x-2 pt-2">
-                  <button onClick={() => setActiveWordModal(null)} className="flex-1 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs rounded-xl">Закрыть</button>
-                  <button onClick={addModalWordToDeck} className="flex-1 py-2 bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs rounded-xl">+ В колоду</button>
+            <div className="fixed inset-0 bg-[#090d16]/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+              <div className="bg-gray-900 border border-brand-500/50 p-6 rounded-3xl max-w-xs w-full text-center space-y-4 shadow-[0_0_40px_rgba(99,102,241,0.2)]">
+                <h4 className="text-3xl font-extrabold text-white">{activeWordModal.word}</h4>
+                {activeWordModal.loading ? (
+                  <div className="text-sm text-brand-400 animate-pulse font-medium">Перевожу...</div>
+                ) : (
+                  <p className="text-xl text-emerald-400 font-bold">{activeWordModal.translation}</p>
+                )}
+                <div className="flex space-x-3 pt-4">
+                  <button onClick={() => setActiveWordModal(null)} className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium rounded-2xl transition-colors">Закрыть</button>
+                  <button onClick={addModalWordToDeck} className="flex-1 py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold text-sm rounded-2xl shadow-lg transition-transform active:scale-95">Добавить</button>
                 </div>
               </div>
             </div>
