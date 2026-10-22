@@ -52,13 +52,9 @@
       display: flex;
       flex-direction: column;
     }
-    .safe-header {
-      padding-top: max(1rem, env(safe-area-inset-top));
-    }
-    .safe-bottom {
-      padding-bottom: max(1rem, env(safe-area-inset-bottom));
-    }
-    /* Скрытие скроллбара для красоты */
+    .safe-header { padding-top: max(1rem, env(safe-area-inset-top)); }
+    .safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+    
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
@@ -72,7 +68,6 @@
 
     const DEFAULT_API_KEY = "AQ.Ab8RN6ISBSPyMyTiUgv4LC9ZFNYBQu82KgCPHX2w6gH9KSKpow";
 
-    // 100 слов для каждой из 4 тем
     const travelStr = "flight|полет,plane|самолет,ticket|билет,airport|аэропорт,passport|паспорт,luggage|багаж,bag|сумка,suitcase|чемодан,gate|выход на посадку,seat|место,passenger|пассажир,customs|таможня,visa|виза,map|карта,hotel|отель,reservation|бронь,reception|ресепшн,key|ключ,room|комната,bed|кровать,breakfast|завтрак,tour|тур,guide|гид,museum|музей,monument|памятник,camera|камера,photo|фото,souvenir|сувенир,train|поезд,station|станция,bus|автобус,taxi|такси,subway|метро,tram|трамвай,stop|остановка,platform|платформа,departure|отправление,arrival|прибытие,delay|задержка,cancel|отмена,board|посадка,ride|поездка,drive|вести машину,rent|аренда,car|машина,bike|велосипед,boat|лодка,ship|корабль,cruise|круиз,port|порт,ocean|океан,sea|море,beach|пляж,sand|песок,sun|солнце,island|остров,mountain|гора,lake|озеро,river|река,forest|лес,nature|природа,city|город,town|городок,village|деревня,street|улица,square|площадь,bridge|мост,building|здание,tower|башня,church|церковь,temple|храм,market|рынок,shop|магазин,buy|покупать,pay|платить,cash|наличные,card|карта,price|цена,expensive|дорогой,cheap|дешевый,free|бесплатно,safe|безопасный,dangerous|опасный,help|помощь,police|полиция,doctor|врач,hospital|больница,pharmacy|аптека,medicine|лекарство,sick|больной,tired|уставший,happy|счастливый,enjoy|наслаждаться,trip|поездка,holiday|праздник,vacation|отпуск,travel|путешествовать,explore|исследовать,discover|открывать,pack|собирать вещи,leave|покидать";
     const restaurantStr = "restaurant|ресторан,cafe|кафе,bar|бар,table|стол,chair|стул,menu|меню,waiter|официант,waitress|официантка,chef|шеф-повар,cook|повар,order|заказ,dish|блюдо,plate|тарелка,bowl|миска,glass|стакан,cup|чашка,fork|вилка,knife|нож,spoon|ложка,napkin|салфетка,breakfast|завтрак,lunch|обед,dinner|ужин,snack|перекус,appetizer|закуска,soup|суп,salad|салат,main|основное блюдо,meat|мясо,steak|стейк,chicken|курица,fish|рыба,seafood|морепродукты,pasta|паста,pizza|пицца,rice|рис,bread|хлеб,butter|масло,cheese|сыр,vegetable|овощ,potato|картофель,tomato|помидор,onion|лук,garlic|чеснок,sauce|соус,pepper|перец,salt|соль,sugar|сахар,dessert|десерт,cake|торт,ice cream|мороженое,chocolate|шоколад,fruit|фрукт,apple|яблоко,banana|банан,orange|апельсин,berry|ягода,drink|напиток,water|вода,tea|чай,coffee|кофе,juice|сок,milk|молоко,beer|пиво,wine|вино,alcohol|алкоголь,bottle|бутылка,ice|лед,hot|горячий,cold|холодный,sweet|сладкий,sour|кислый,spicy|острый,bitter|горький,salty|соленый,fresh|свежий,tasty|вкусный,delicious|очень вкусный,bad|плохой,hungry|голодный,thirsty|испытывающий жажду,full|сытый,diet|диета,vegetarian|вегетарианец,vegan|веган,allergy|аллергия,bill|счет,tip|чаевые,pay|платить,receipt|чек,cash|наличные,card|карта,reserve|бронировать,seat|место,ready|готовый,serve|подавать,eat|есть,drink|пить,taste|пробовать";
     const foodOrderStr = "food|еда,order|заказ,delivery|доставка,menu|меню,cart|корзина,checkout|касса,address|адрес,location|локация,time|время,fast|быстрый,slow|медленный,hot|горячий,warm|теплый,cold|холодный,fresh|свежий,package|посылка,box|коробка,bag|пакет,app|приложение,rating|рейтинг,review|отзыв,star|звезда,tasty|вкусный,delicious|очень вкусный,awful|ужасный,spice|специя,sauce|соус,ketchup|кетчуп,mayo|майонез,mustard|горчица,burger|бургер,fries|картошка фри,pizza|пицца,sushi|суши,roll|ролл,wok|вок,noodle|лапша,soup|суп,salad|салат,meat|мясо,beef|говядина,pork|свинина,chicken|курица,fish|рыба,vegan|веганский,healthy|полезный,diet|диетический,raw|сырой,baked|запеченный,fried|жареный,boiled|вареный,grilled|на гриле,sweet|сладкий,cake|торт,pie|пирог,donut|пончик,cookie|печенье,drink|напиток,soda|газировка,cola|кола,water|вода,juice|сок,ice|лед,size|размер,small|маленький,medium|средний,large|большой,extra|дополнительный,add|добавить,remove|убрать,total|итог,price|цена,cost|стоимость,discount|скидка,promo|промо,code|код,coupon|купон,pay|платить,card|карта,cash|наличные,change|сдача,courier|курьер,tip|чаевые,contact|контакт,call|звонок,text|сообщение,wait|ждать,arrive|прибывать,eat|есть,share|делиться,enjoy|наслаждаться,taste|вкус,flavor|аромат,portion|порция,piece|кусок,slice|ломтик,bite|укус,hungry|голодный,meal|прием пищи,snack|перекус";
@@ -91,42 +86,39 @@
     ];
 
     function App() {
-      // Инициализация глобальной библиотеки слов (пользовательская БД)
       const [allWords, setAllWords] = useState(() => {
         const saved = localStorage.getItem('lc_all_words');
         if (saved) return JSON.parse(saved);
-        // Базовые слова для новичка
         return [
           { id: 'start1', english: 'Morning', russian: 'Утро', phonetic: 'ˈmɔːrnɪŋ', example: 'I wake up early in the morning.', status: 'learning' },
           { id: 'start2', english: 'Road', russian: 'Дорога', phonetic: 'roʊd', example: 'The road is very long.', status: 'learning' }
         ];
       });
 
-      // Сессия карточек для изучения
       const [sessionQueue, setSessionQueue] = useState([]);
       const [isFlipped, setIsFlipped] = useState(false);
       
-      const [activeTab, setActiveTab] = useState('cards'); // cards, library, topics, friends
-      const [libraryTab, setLibraryTab] = useState('learning'); // learning, learned
+      const [activeTab, setActiveTab] = useState('cards'); 
+      const [libraryTab, setLibraryTab] = useState('learning'); 
 
       const [userId, setUserId] = useState(() => localStorage.getItem('lc_uid') || 'user_' + Math.random().toString(36).substr(2, 6));
       const [userName, setUserName] = useState(() => localStorage.getItem('lc_uname') || '');
       const [showOnboarding, setShowOnboarding] = useState(!localStorage.getItem('lc_registered'));
+      
+      // Друзья и инвайты
+      const [friends, setFriends] = useState(() => JSON.parse(localStorage.getItem('lc_friends') || '[]'));
+      const [pendingInvite, setPendingInvite] = useState(null);
+      const [viewFriend, setViewFriend] = useState(null); 
+      
       const [showSettings, setShowSettings] = useState(false);
-      const [showQuickAdd, setShowQuickAdd] = useState(false);
       const [previewTopic, setPreviewTopic] = useState(null);
       const [activeWordModal, setActiveWordModal] = useState(null);
       
       const [importText, setImportText] = useState('');
       const [isImporting, setIsImporting] = useState(false);
-      
-      // Друзья
-      const [following, setFollowing] = useState(() => JSON.parse(localStorage.getItem('lc_following') || '[]'));
-      const [viewFriend, setViewFriend] = useState(null); // ID друга для просмотра его библиотеки
 
       const apiKey = DEFAULT_API_KEY;
 
-      // Синхронизация с LocalStorage
       useEffect(() => {
         localStorage.setItem('lc_all_words', JSON.stringify(allWords));
       }, [allWords]);
@@ -134,84 +126,116 @@
       useEffect(() => {
         localStorage.setItem('lc_uid', userId);
         localStorage.setItem('lc_uname', userName);
-        localStorage.setItem('lc_following', JSON.stringify(following));
-      }, [userId, userName, following]);
+        localStorage.setItem('lc_friends', JSON.stringify(friends));
+      }, [userId, userName, friends]);
 
-      // Подготовка сессии карточек
       useEffect(() => {
         if (sessionQueue.length === 0) {
           const learningWords = allWords.filter(w => w.status === 'learning').map(w => w.id);
-          // Перемешиваем при загрузке
           setSessionQueue(learningWords.sort(() => Math.random() - 0.5));
         }
       }, [allWords, activeTab]);
 
-      // QR-код и URL синхронизация
+      // Обработка инвайтов из URL
       useEffect(() => {
         const params = new URLSearchParams(window.location.search);
-        const syncId = params.get('sync');
-        if (syncId && syncId !== userId) {
-          setUserId(syncId);
-          alert('✅ Устройства успешно синхронизированы!');
+        const inviteId = params.get('invite');
+        const inviteName = params.get('name');
+        
+        if (inviteId && inviteId !== userId) {
+          // Проверяем, нет ли уже в друзьях
+          if (!friends.find(f => f.id === inviteId)) {
+            setPendingInvite({ id: inviteId, name: inviteName || 'Новый друг' });
+          }
           window.history.replaceState({}, document.title, window.location.pathname);
         }
-      }, [userId]);
+      }, [userId, friends]);
 
-      useEffect(() => {
-        if (showSettings) {
-          setTimeout(() => {
-            const qrContainer = document.getElementById('qrcode-container');
-            if (qrContainer) {
-              qrContainer.innerHTML = '';
-              new QRCode(qrContainer, {
-                text: `${window.location.origin}${window.location.pathname}?sync=${userId}`,
-                width: 140, height: 140, colorDark: "#000", colorLight: "#fff", correctLevel: QRCode.CorrectLevel.H
-              });
+      // Умное добавление (Дедубликация)
+      const addWordsUnique = (incomingWords) => {
+        setAllWords(prev => {
+          const existingEn = new Set(prev.map(w => w.english.toLowerCase()));
+          const existingRu = new Set(prev.map(w => w.russian.toLowerCase()));
+          const added = [];
+          
+          incomingWords.forEach(w => {
+            if (!existingEn.has(w.english.toLowerCase()) && !existingRu.has(w.russian.toLowerCase())) {
+              added.push({ ...w, id: 'w_' + Date.now() + Math.random(), status: 'learning' });
+              existingEn.add(w.english.toLowerCase());
+              existingRu.add(w.russian.toLowerCase());
             }
-          }, 200);
-        }
-      }, [showSettings, userId]);
-
-      // --- ЛОГИКА КАРТОЧЕК (4 кнопки) ---
-      const handleSkip = () => {
-        // Пропустить: переносим в конец очереди
-        setIsFlipped(false);
-        setTimeout(() => {
-          setSessionQueue(prev => {
-            const newQ = [...prev];
-            newQ.push(newQ.shift());
-            return newQ;
           });
-        }, 150);
+          
+          if (added.length === 0) {
+            alert("Все эти слова уже есть в вашей библиотеке!");
+            return prev;
+          }
+          
+          setSessionQueue(q => [...added.map(w => w.id), ...q]);
+          alert(`Добавлено новых слов: ${added.length}`);
+          return [...added, ...prev];
+        });
+      };
+
+      const handleSmartImport = () => {
+        if (!importText.trim()) return;
+        setIsImporting(true);
+        fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: `Extract words from this text and translate them. Generate flashcards with simple everyday sentences. Format strictly as a JSON array (even if it's 1 word): [{"english":"word","russian":"перевод","phonetic":"transcription","example":"simple sentence"}]. Text: ${importText}` }] }]
+          })
+        })
+        .then(r => r.json())
+        .then(data => {
+          setIsImporting(false);
+          let txt = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+          let cleanJson = txt.replace(/```json/g, '').replace(/```/g, '').trim();
+          if (!cleanJson.startsWith('[')) cleanJson = `[${cleanJson}]`;
+          
+          try {
+            const parsed = JSON.parse(cleanJson);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              addWordsUnique(parsed);
+              setImportText('');
+              setActiveTab('cards');
+            } else {
+              alert('AI не смог распознать слова. Попробуйте еще раз.');
+            }
+          } catch(e) {
+            alert('Ошибка обработки ответа AI. Попробуйте ввести иначе.');
+          }
+        })
+        .catch(() => { setIsImporting(false); alert('Ошибка импорта. Проверьте интернет.'); });
+      };
+
+      const handleSkip = () => {
+        setIsFlipped(false);
+        setTimeout(() => setSessionQueue(prev => {
+          const newQ = [...prev];
+          newQ.push(newQ.shift());
+          return newQ;
+        }), 150);
       };
 
       const handleDoneSession = () => {
-        // Готово (в этой сессии): убираем из очереди, но статус остается learning
         setIsFlipped(false);
-        setTimeout(() => {
-          setSessionQueue(prev => prev.slice(1));
-        }, 150);
+        setTimeout(() => setSessionQueue(prev => prev.slice(1)), 150);
       };
 
       const handleLearned = () => {
-        // Выучил насовсем: меняем статус, убираем из очереди
         const wordId = sessionQueue[0];
         setIsFlipped(false);
         setAllWords(prev => prev.map(w => w.id === wordId ? { ...w, status: 'learned' } : w));
-        setTimeout(() => {
-          setSessionQueue(prev => prev.slice(1));
-        }, 150);
+        setTimeout(() => setSessionQueue(prev => prev.slice(1)), 150);
       };
 
       const handleShuffle = () => {
-        // Перемешать текущую колоду
         setIsFlipped(false);
-        setTimeout(() => {
-          setSessionQueue(prev => [...prev].sort(() => Math.random() - 0.5));
-        }, 150);
+        setTimeout(() => setSessionQueue(prev => [...prev].sort(() => Math.random() - 0.5)), 150);
       };
 
-      // --- ПРОИЗНОШЕНИЕ (Text-To-Speech & Speech Recognition) ---
       const playAudio = (text) => {
         const utter = new SpeechSynthesisUtterance(text);
         utter.lang = 'en-US';
@@ -221,14 +245,13 @@
       const checkMic = (expectedWord) => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
-          alert("Ваш браузер не поддерживает микрофон для проверки речи.");
+          alert("Ваш браузер не поддерживает проверку речи.");
           return;
         }
         const recognition = new SpeechRecognition();
         recognition.lang = 'en-US';
         recognition.start();
         
-        // Визуальная обратная связь для пользователя
         const btn = document.getElementById('mic-btn');
         if(btn) btn.classList.add('animate-pulse', 'bg-red-500');
 
@@ -238,18 +261,17 @@
           const target = expectedWord.toLowerCase().replace(/[^a-z\s]/g, '').trim();
           
           if (spoken === target || spoken.includes(target) || target.includes(spoken)) {
-            alert(`✅ Отлично! Вы сказали правильно: "${spoken}"`);
+            alert(`✅ Отлично! Вы сказали: "${spoken}"`);
+            setIsFlipped(true); // Автоматически переворачиваем при правильном ответе
           } else {
-            alert(`❌ Вы сказали: "${spoken}". Ожидалось: "${target}". Попробуйте еще раз!`);
+            alert(`❌ Вы сказали: "${spoken}".\nПопробуйте еще раз!`);
           }
         };
         recognition.onerror = () => {
           if(btn) btn.classList.remove('animate-pulse', 'bg-red-500');
-          alert("Не удалось распознать речь. Попробуйте сказать громче.");
         };
       };
 
-      // --- КЛИКАБЕЛЬНЫЕ СЛОВА & ДОБАВЛЕНИЕ ---
       const handleTokenClick = (rawWord) => {
         const cleanWord = rawWord.replace(/[^a-zA-Z]/g, '');
         if (!cleanWord) return;
@@ -271,18 +293,13 @@
 
       const addModalWordToLibrary = () => {
         if (!activeWordModal) return;
-        const newWord = {
-          id: 'w_' + Date.now(),
+        addWordsUnique([{
           english: activeWordModal.word,
           russian: activeWordModal.translation,
           phonetic: '',
-          example: `I am learning the word ${activeWordModal.word}.`,
-          status: 'learning'
-        };
-        setAllWords(prev => [newWord, ...prev]);
-        setSessionQueue(prev => [newWord.id, ...prev]);
+          example: `Learning the word ${activeWordModal.word}.`
+        }]);
         setActiveWordModal(null);
-        alert(`Слово "${activeWordModal.word}" добавлено в изучаемые!`);
       };
 
       const toggleWordStatus = (wordId, newStatus) => {
@@ -294,38 +311,25 @@
         }
       };
 
-      // --- УМНЫЙ ИМПОРТ ---
-      const handleSmartImport = () => {
-        if (!importText.trim()) return;
-        setIsImporting(true);
-        fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: `Extract words from text, translate them. Generate flashcards with simple everyday sentences. Return JSON array format: [{"english":"word","russian":"перевод","phonetic":"transcription","example":"simple sentence"}]. Text: ${importText}` }] }]
-          })
-        })
-        .then(r => r.json())
-        .then(data => {
-          setIsImporting(false);
-          const txt = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
-          const cleanJson = txt.replace(/```json/g, '').replace(/```/g, '').trim();
-          const newWords = JSON.parse(cleanJson).map((w, i) => ({ ...w, id: 'imp_'+Date.now()+i, status: 'learning' }));
-          setAllWords(prev => [...newWords, ...prev]);
-          setSessionQueue(prev => [...newWords.map(w => w.id), ...prev]);
-          alert(`✅ Добавлено ${newWords.length} слов!`);
-          setImportText('');
-          setShowQuickAdd(false);
-          setActiveTab('cards');
-        })
-        .catch(() => { setIsImporting(false); alert('Ошибка импорта.'); });
+      const acceptInvite = () => {
+        // Добавляем друга. Генерируем моковые слова для демонстрации (так как нет бэкенда)
+        const mockFriend = {
+          id: pendingInvite.id,
+          name: pendingInvite.name,
+          words: [
+            { id: 'f1', english: 'Welcome', russian: 'Добро пожаловать', status: 'learning' },
+            { id: 'f2', english: 'Friendship', russian: 'Дружба', status: 'learned' },
+            { id: 'f3', english: 'Success', russian: 'Успех', status: 'learning' }
+          ]
+        };
+        setFriends(prev => [...prev, mockFriend]);
+        setPendingInvite(null);
+        setActiveTab('friends');
+        alert(`Вы добавили ${pendingInvite.name} в друзья! Вы теперь в рейтинге друг друга.`);
       };
 
-
-      // Активная карточка
       const currentCard = sessionQueue.length > 0 ? allWords.find(w => w.id === sessionQueue[0]) : null;
 
-      // Экран входа
       if (showOnboarding && !userName) {
         return (
           <div className="fixed inset-0 bg-[#090d16] z-50 flex flex-col items-center justify-center p-6 text-center">
@@ -345,48 +349,66 @@
       return (
         <div className="app-container max-w-md mx-auto w-full bg-[#090d16]">
           
-          {/* ПРОСТАЯ ШАПКА НАВЕРХУ */}
-          <header className="sticky top-0 z-40 bg-[#090d16]/95 backdrop-blur-xl border-b border-gray-800/80 safe-header px-4 pb-3 flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center text-white font-bold text-sm">L</div>
-              <span className="font-bold text-lg text-gray-100">LinguaCards</span>
+          {/* МОДАЛКА ИНВАЙТА В ДРУЗЬЯ */}
+          {pendingInvite && (
+            <div className="fixed inset-0 bg-[#090d16]/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
+              <div className="bg-gray-900 border border-brand-500/50 p-6 rounded-3xl max-w-sm w-full text-center space-y-4 shadow-2xl">
+                <div className="text-4xl">👋</div>
+                <h3 className="text-xl font-bold text-white">Запрос в друзья</h3>
+                <p className="text-gray-400">Пользователь <strong>{pendingInvite.name}</strong> прислал вам ссылку и хочет добавить вас в свой рейтинг.</p>
+                <div className="flex space-x-3 pt-4">
+                  <button onClick={() => setPendingInvite(null)} className="flex-1 py-3 bg-gray-800 text-gray-300 rounded-2xl">Отклонить</button>
+                  <button onClick={acceptInvite} className="flex-1 py-3 bg-brand-600 text-white font-bold rounded-2xl shadow-lg">Подтвердить</button>
+                </div>
+              </div>
             </div>
-            <button onClick={() => setShowSettings(true)} className="p-2 bg-gray-800 rounded-xl text-gray-300 hover:text-white">⚙️</button>
+          )}
+
+          <header className="sticky top-0 z-40 bg-[#090d16]/95 backdrop-blur-xl border-b border-gray-800/80 safe-header px-4 pb-3 pt-4 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center text-white font-bold text-base shadow-lg">L</div>
+              <span className="font-extrabold text-xl text-white tracking-tight">LinguaCards</span>
+            </div>
           </header>
 
-          <main className="p-4 flex-1 flex flex-col overflow-y-auto pb-24">
+          <main className="p-4 flex-1 flex flex-col overflow-y-auto pb-28">
             
             {/* ТАБ 1: КАРТОЧКИ */}
             {activeTab === 'cards' && (
               <div className="flex-1 flex flex-col justify-center">
                 {currentCard ? (
                   <>
-                    <div onClick={() => setIsFlipped(!isFlipped)} className="card-flip w-full cursor-pointer min-h-[360px]">
+                    <div onClick={() => setIsFlipped(!isFlipped)} className="card-flip w-full cursor-pointer min-h-[380px]">
                       <div className={`card-inner relative w-full h-full rounded-3xl bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700/60 p-6 flex flex-col justify-between shadow-2xl ${isFlipped ? 'card-flipped' : ''}`}>
                         
+                        {/* ПЕРЕДНЯЯ ЧАСТЬ - РУССКИЙ */}
                         <div className="card-front absolute inset-0 p-6 flex flex-col justify-between items-center text-center">
                           <div className="w-full flex justify-between items-center">
-                             <span className="text-xs text-gray-400 font-semibold bg-gray-800 px-3 py-1 rounded-full">Осталось: {sessionQueue.length}</span>
-                             <span className="text-xs text-brand-400 font-semibold bg-brand-900/20 px-3 py-1 rounded-full">НАЖМИТЕ ДЛЯ ПЕРЕВОДА 🔄</span>
+                             <span className="text-xs text-gray-400 font-semibold bg-gray-800 px-3 py-1 rounded-full shadow-inner">Осталось: {sessionQueue.length}</span>
+                             <span className="text-xs text-brand-400 font-semibold bg-brand-900/20 px-3 py-1 rounded-full">НАЖМИТЕ 🔄</span>
                           </div>
                           <div className="my-auto w-full">
-                            <h2 className="text-4xl font-extrabold text-white mb-2">{currentCard.english}</h2>
-                            {currentCard.phonetic && <p className="text-base text-gray-400">[{currentCard.phonetic}]</p>}
+                            {/* ПО УМОЛЧАНИЮ РУССКОЕ СЛОВО */}
+                            <h2 className="text-4xl font-extrabold text-white mb-6 leading-tight">{currentCard.russian}</h2>
                             
-                            {/* Кнопки аудио и микрофона на карточке */}
-                            <div className="flex space-x-4 mt-6 justify-center">
-                              <button onClick={(e) => { e.stopPropagation(); playAudio(currentCard.english); }} className="w-12 h-12 flex items-center justify-center bg-gray-700 hover:bg-gray-600 rounded-full text-xl shadow-lg transition-transform active:scale-95">🔊</button>
-                              <button id="mic-btn" onClick={(e) => { e.stopPropagation(); checkMic(currentCard.english); }} className="w-12 h-12 flex items-center justify-center bg-brand-600 hover:bg-brand-500 rounded-full text-xl shadow-lg transition-transform active:scale-95">🎤</button>
+                            {/* Аудио и микрофон на передней панели, чтобы тестировать до переворота! */}
+                            <div className="flex space-x-5 mt-6 justify-center">
+                              <button onClick={(e) => { e.stopPropagation(); playAudio(currentCard.english); }} className="w-14 h-14 flex items-center justify-center bg-gray-700 hover:bg-gray-600 rounded-full text-2xl shadow-lg transition-transform active:scale-95" title="Послушать английский вариант">🔊</button>
+                              <button id="mic-btn" onClick={(e) => { e.stopPropagation(); checkMic(currentCard.english); }} className="w-14 h-14 flex items-center justify-center bg-brand-600 hover:bg-brand-500 rounded-full text-2xl shadow-[0_0_20px_rgba(99,102,241,0.4)] transition-transform active:scale-95" title="Проверить произношение">🎤</button>
                             </div>
+                            <p className="text-xs text-gray-500 mt-4">Удерживайте микрофон и скажите перевод</p>
                           </div>
                         </div>
                         
+                        {/* ЗАДНЯЯ ЧАСТЬ - АНГЛИЙСКИЙ И ПРИМЕР */}
                         <div className="card-back absolute inset-0 p-6 flex flex-col justify-between items-center text-center">
-                          <div className="text-xs text-emerald-400 font-bold bg-emerald-900/20 px-3 py-1 rounded-full mb-4">ПЕРЕВОД & ПРИМЕР</div>
+                          <div className="text-xs text-emerald-400 font-bold bg-emerald-900/20 px-3 py-1 rounded-full mb-2">ПЕРЕВОД & ПРИМЕР</div>
                           <div className="my-auto w-full">
-                            <h3 className="text-3xl font-bold text-white mb-4">{currentCard.russian}</h3>
+                            <h3 className="text-4xl font-bold text-brand-400 mb-2">{currentCard.english}</h3>
+                            {currentCard.phonetic && <p className="text-lg text-gray-400 mb-6 font-medium">[{currentCard.phonetic}]</p>}
+                            
                             {currentCard.example && (
-                              <div className="p-4 bg-gray-950/80 rounded-2xl border border-gray-700/50 shadow-inner">
+                              <div className="p-5 bg-gray-950/80 rounded-2xl border border-gray-700/50 shadow-inner">
                                 <div className="text-lg text-gray-200 leading-relaxed font-medium">
                                   {currentCard.example.split(/\s+/).map((word, idx) => (
                                     <span key={idx} onClick={(e) => { e.stopPropagation(); handleTokenClick(word); }} className="inline-block hover:text-brand-400 hover:bg-brand-900/30 px-1 py-0.5 rounded cursor-pointer transition-colors">
@@ -401,12 +423,12 @@
                       </div>
                     </div>
                     
-                    {/* Четыре кнопки управления сессией */}
+                    {/* ЧЕТЫРЕ КНОПКИ */}
                     <div className="grid grid-cols-2 gap-3 mt-6">
-                      <button onClick={handleSkip} className="py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold rounded-2xl border border-gray-700 text-sm">Пропустить</button>
-                      <button onClick={handleShuffle} className="py-3 bg-gray-800 hover:bg-gray-700 text-brand-300 font-bold rounded-2xl border border-gray-700 text-sm">Перемешать 🔀</button>
-                      <button onClick={handleDoneSession} className="py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl shadow-lg text-sm">Готово (сессия) ✓</button>
-                      <button onClick={handleLearned} className="py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl shadow-lg text-sm">Выучил (насовсем) 🌟</button>
+                      <button onClick={handleSkip} className="py-4 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold rounded-2xl border border-gray-700 text-sm transition-colors shadow-sm">Пропустить</button>
+                      <button onClick={handleShuffle} className="py-4 bg-gray-800 hover:bg-gray-700 text-brand-300 font-bold rounded-2xl border border-gray-700 text-sm transition-colors shadow-sm">Перемешать 🔀</button>
+                      <button onClick={handleDoneSession} className="py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-2xl shadow-lg text-sm transition-transform active:scale-95">Готово (сессия)</button>
+                      <button onClick={handleLearned} className="py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl shadow-lg text-sm transition-transform active:scale-95">Выучил 🌟</button>
                     </div>
                   </>
                 ) : (
@@ -417,70 +439,67 @@
                     <button onClick={() => {
                       const learningWords = allWords.filter(w => w.status === 'learning').map(w => w.id);
                       setSessionQueue(learningWords.sort(() => Math.random() - 0.5));
-                    }} className="px-6 py-3 bg-brand-600 text-white font-bold rounded-2xl">Начать заново 🔄</button>
+                    }} className="px-6 py-4 bg-brand-600 text-white font-bold rounded-2xl shadow-lg">Начать заново 🔄</button>
                   </div>
                 )}
               </div>
             )}
 
-            {/* ТАБ 2: БИБЛИОТЕКА СЛОВ (Импорт + Списки) */}
+            {/* ТАБ 2: БИБЛИОТЕКА СЛОВ */}
             {activeTab === 'library' && (
               <div className="space-y-4">
                 <h2 className="text-2xl font-bold text-white">Моя библиотека</h2>
                 
-                {/* Строка быстрого импорта */}
-                <div className="p-4 bg-gray-900 border border-gray-800 rounded-3xl">
-                  <p className="text-xs text-gray-400 mb-2">Добавить слова (по одному или пачкой):</p>
+                <div className="p-5 bg-gray-900 border border-gray-800 rounded-3xl shadow-lg">
+                  <p className="text-xs text-gray-400 mb-3">Умное добавление (по одному или пачкой):</p>
                   <div className="flex space-x-2">
-                    <input type="text" value={importText} onChange={e=>setImportText(e.target.value)} placeholder="Например: apple, book..." className="flex-1 bg-gray-800 text-white px-4 py-3 rounded-2xl outline-none text-sm border border-gray-700 focus:border-brand-500" />
-                    <button onClick={handleSmartImport} disabled={isImporting} className="px-4 bg-brand-600 text-white rounded-2xl font-bold text-sm shadow-lg shrink-0">
+                    <input type="text" value={importText} onChange={e=>setImportText(e.target.value)} placeholder="Например: apple, яблоко..." className="flex-1 bg-gray-800 text-white px-4 py-3 rounded-2xl outline-none text-sm border border-gray-700 focus:border-brand-500 shadow-inner" />
+                    <button onClick={handleSmartImport} disabled={isImporting} className="px-5 bg-brand-600 hover:bg-brand-500 text-white rounded-2xl font-bold text-sm shadow-lg shrink-0 transition-transform active:scale-95">
                       {isImporting ? '⏳' : '➕ AI'}
                     </button>
                   </div>
                 </div>
 
-                {/* Вкладки библиотеки */}
-                <div className="flex space-x-2 bg-gray-900 p-1 rounded-2xl border border-gray-800">
-                  <button onClick={() => setLibraryTab('learning')} className={`flex-1 py-2 text-sm font-bold rounded-xl transition-colors ${libraryTab === 'learning' ? 'bg-brand-600 text-white' : 'text-gray-400'}`}>Изучаю ({allWords.filter(w=>w.status==='learning').length})</button>
-                  <button onClick={() => setLibraryTab('learned')} className={`flex-1 py-2 text-sm font-bold rounded-xl transition-colors ${libraryTab === 'learned' ? 'bg-emerald-600 text-white' : 'text-gray-400'}`}>Выучил ({allWords.filter(w=>w.status==='learned').length})</button>
+                <div className="flex space-x-2 bg-gray-900 p-1.5 rounded-2xl border border-gray-800 shadow-sm">
+                  <button onClick={() => setLibraryTab('learning')} className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${libraryTab === 'learning' ? 'bg-brand-600 text-white shadow-md' : 'text-gray-400 hover:text-white'}`}>Изучаю ({allWords.filter(w=>w.status==='learning').length})</button>
+                  <button onClick={() => setLibraryTab('learned')} className={`flex-1 py-2.5 text-sm font-bold rounded-xl transition-all ${libraryTab === 'learned' ? 'bg-emerald-600 text-white shadow-md' : 'text-gray-400 hover:text-white'}`}>Выучил ({allWords.filter(w=>w.status==='learned').length})</button>
                 </div>
 
-                {/* Список слов */}
-                <div className="space-y-2 max-h-[50vh] overflow-y-auto pr-1">
+                <div className="space-y-2.5">
                   {allWords.filter(w => w.status === libraryTab).map(w => (
-                    <div key={w.id} className="flex justify-between items-center bg-gray-900 p-3 rounded-2xl border border-gray-800">
+                    <div key={w.id} className="flex justify-between items-center bg-gray-900 p-4 rounded-2xl border border-gray-800 shadow-sm">
                       <div>
-                        <div className="text-white font-bold">{w.english} <span className="text-xs text-gray-500 font-normal">[{w.phonetic}]</span></div>
-                        <div className="text-brand-400 text-xs">{w.russian}</div>
+                        <div className="text-white font-bold text-lg">{w.english} <span className="text-xs text-gray-500 font-normal ml-1">[{w.phonetic}]</span></div>
+                        <div className="text-brand-400 text-sm mt-0.5">{w.russian}</div>
                       </div>
-                      <div className="flex space-x-2">
+                      <div className="flex space-x-2 shrink-0">
                         {libraryTab === 'learned' ? (
-                          <button onClick={()=>toggleWordStatus(w.id, 'learning')} className="w-8 h-8 flex items-center justify-center bg-gray-800 rounded-lg text-gray-300 hover:text-white" title="Вернуть в изучение">🔙</button>
+                          <button onClick={()=>toggleWordStatus(w.id, 'learning')} className="w-10 h-10 flex items-center justify-center bg-gray-800 rounded-xl text-gray-300 hover:text-white hover:bg-gray-700 transition-colors" title="Вернуть в изучение">🔙</button>
                         ) : (
-                          <button onClick={()=>toggleWordStatus(w.id, 'learned')} className="w-8 h-8 flex items-center justify-center bg-emerald-900/30 text-emerald-400 rounded-lg hover:bg-emerald-600 hover:text-white" title="Отметить как выученное">✓</button>
+                          <button onClick={()=>toggleWordStatus(w.id, 'learned')} className="w-10 h-10 flex items-center justify-center bg-emerald-900/30 text-emerald-400 rounded-xl hover:bg-emerald-600 hover:text-white transition-colors" title="Отметить как выученное">✓</button>
                         )}
                         <button onClick={()=>{
                           if(confirm('Удалить слово навсегда?')) setAllWords(prev => prev.filter(x => x.id !== w.id));
-                        }} className="w-8 h-8 flex items-center justify-center bg-gray-800 rounded-lg text-red-400 hover:bg-red-500 hover:text-white" title="Удалить">✕</button>
+                        }} className="w-10 h-10 flex items-center justify-center bg-gray-800 rounded-xl text-red-400 hover:bg-red-500 hover:text-white transition-colors" title="Удалить">✕</button>
                       </div>
                     </div>
                   ))}
                   {allWords.filter(w => w.status === libraryTab).length === 0 && (
-                    <p className="text-center text-gray-500 py-4 text-sm">Список пуст</p>
+                    <p className="text-center text-gray-500 py-8 text-sm">Список пуст</p>
                   )}
                 </div>
               </div>
             )}
 
-            {/* ТАБ 3: ТЕМЫ (4 темы по 100 слов) */}
+            {/* ТАБ 3: ТЕМЫ */}
             {activeTab === 'topics' && (
               <div className="space-y-4">
                 <h2 className="text-2xl font-bold text-white mb-4">📂 Подборки (по 100 слов)</h2>
                 {TOPICS.map(col => (
                   <div key={col.id} className="p-5 bg-gray-900 border border-gray-800 rounded-3xl space-y-3 shadow-lg">
-                    <h3 className="text-lg font-bold text-brand-400">{col.title}</h3>
-                    <p className="text-sm text-gray-400 leading-snug">{col.description}</p>
-                    <button onClick={() => setPreviewTopic(col)} className="w-full py-3 bg-gray-800 hover:bg-gray-700 rounded-2xl text-sm font-semibold text-white border border-gray-700 transition-colors">
+                    <h3 className="text-xl font-bold text-brand-400">{col.title}</h3>
+                    <p className="text-sm text-gray-400 leading-relaxed">{col.description}</p>
+                    <button onClick={() => setPreviewTopic(col)} className="w-full py-3.5 bg-gray-800 hover:bg-gray-700 rounded-2xl text-sm font-semibold text-white border border-gray-700 transition-colors shadow-sm">
                       Посмотреть слова ({col.words.length})
                     </button>
                   </div>
@@ -488,76 +507,98 @@
               </div>
             )}
 
-            {/* ТАБ 4: ДРУЗЬЯ (Рейтинг и просмотр библиотек) */}
+            {/* ТАБ 4: ДРУЗЬЯ */}
             {activeTab === 'friends' && (
               <div className="space-y-4 flex-1 flex flex-col">
-                <h2 className="text-2xl font-bold text-white">👥 Друзья</h2>
-                <div className="p-4 bg-gray-900 border border-gray-800 rounded-3xl space-y-3 shadow-lg">
-                  <div className="flex justify-between items-center text-sm mb-2">
-                    <span className="text-gray-300 font-semibold">Ваш ID: <code className="text-brand-400 text-xs bg-gray-800 px-2 py-1 rounded">{userId}</code></span>
+                <h2 className="text-2xl font-bold text-white">👥 Друзья и Рейтинг</h2>
+                
+                <div className="p-5 bg-gradient-to-br from-gray-900 to-gray-800 border border-gray-700 rounded-3xl space-y-4 shadow-xl">
+                  <div className="text-center">
+                    <h3 className="text-white font-bold text-lg mb-1">{userName} (Вы)</h3>
+                    <div className="flex justify-center space-x-6 text-sm mt-3">
+                      <div className="text-center">
+                        <div className="text-gray-400">Всего слов</div>
+                        <div className="text-2xl font-bold text-white">{allWords.length}</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-gray-400">Выучено</div>
+                        <div className="text-2xl font-bold text-emerald-400">{allWords.filter(w=>w.status==='learned').length}</div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-sm text-gray-400">
-                    <span>Всего слов: <strong className="text-white">{allWords.length}</strong></span>
-                    <span>Выучено: <strong className="text-emerald-400">{allWords.filter(w=>w.status==='learned').length}</strong></span>
+                  
+                  <div className="pt-2">
+                    <button onClick={() => {
+                      const link = `${window.location.origin}${window.location.pathname}?invite=${userId}&name=${encodeURIComponent(userName)}`;
+                      navigator.clipboard.writeText(link);
+                      alert('Персональная ссылка скопирована! Отправьте её другу.');
+                    }} className="w-full py-3.5 bg-brand-600 hover:bg-brand-500 text-white text-sm font-bold rounded-2xl shadow-[0_4px_15px_rgba(99,102,241,0.4)] transition-transform active:scale-95">
+                      🔗 Пригласить в друзья
+                    </button>
+                    <p className="text-xs text-gray-500 text-center mt-3 leading-relaxed">
+                      Отправьте ссылку. Когда друг перейдет по ней и подтвердит, вы взаимно появитесь в рейтинге.
+                    </p>
                   </div>
-                  <button onClick={() => {
-                    const link = `${window.location.origin}${window.location.pathname}?sync=${userId}`;
-                    navigator.clipboard.writeText(link);
-                    alert('Ссылка для друга скопирована!');
-                  }} className="w-full py-3 bg-brand-600 hover:bg-brand-500 text-white text-sm font-bold rounded-2xl shadow-lg mt-2">🔗 Поделиться прогрессом</button>
                 </div>
 
-                <h3 className="text-lg font-bold text-white mt-4">Рейтинг</h3>
-                {/* Имитация друзей для демонстрации */}
-                <div className="space-y-2">
-                  <div onClick={() => setViewFriend({name: 'Алексей', total: 120, learned: 45})} className="bg-gray-900 p-4 rounded-2xl border border-gray-800 flex justify-between items-center cursor-pointer hover:bg-gray-800">
-                    <div>
-                      <div className="font-bold text-white">Алексей 🥇</div>
-                      <div className="text-xs text-gray-400">Всего: 120 | Выучил: 45</div>
-                    </div>
-                    <div className="text-brand-400 text-sm">Смотреть ➔</div>
-                  </div>
-                  <div onClick={() => setViewFriend({name: 'Маруся', total: 85, learned: 20})} className="bg-gray-900 p-4 rounded-2xl border border-gray-800 flex justify-between items-center cursor-pointer hover:bg-gray-800">
-                    <div>
-                      <div className="font-bold text-white">Маруся 🥈</div>
-                      <div className="text-xs text-gray-400">Всего: 85 | Выучил: 20</div>
-                    </div>
-                    <div className="text-brand-400 text-sm">Смотреть ➔</div>
-                  </div>
+                <h3 className="text-xl font-bold text-white mt-6 mb-2">Рейтинг друзей</h3>
+                <div className="space-y-3">
+                  {friends.length === 0 ? (
+                    <p className="text-center text-gray-500 py-6 text-sm border border-dashed border-gray-700 rounded-2xl">
+                      У вас пока нет друзей. Отправьте приглашение!
+                    </p>
+                  ) : (
+                    friends.map((f, i) => (
+                      <div key={i} className="bg-gray-900 p-4 rounded-2xl border border-gray-800 flex justify-between items-center shadow-sm">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-gray-800 rounded-full flex items-center justify-center text-xl">
+                            {i === 0 ? '🥇' : i === 1 ? '🥈' : '👤'}
+                          </div>
+                          <div>
+                            <div className="font-bold text-white text-base">{f.name}</div>
+                            <div className="text-xs text-gray-400 mt-0.5">Всего: {f.words?.length || 0} | Выучил: {f.words?.filter(w=>w.status==='learned').length || 0}</div>
+                          </div>
+                        </div>
+                        <button onClick={() => setViewFriend(f)} className="text-brand-400 text-sm font-bold px-3 py-2 bg-brand-900/20 rounded-xl hover:bg-brand-600 hover:text-white transition-colors">
+                          Слова ➔
+                        </button>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             )}
           </main>
 
           {/* НИЖНЕЕ МЕНЮ (Bottom Tab Bar) */}
-          <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#090d16]/95 backdrop-blur-xl border-t border-gray-800/80 safe-bottom px-2 py-2 flex items-center justify-around">
-            <button onClick={() => setActiveTab('cards')} className={`flex flex-col items-center p-2 rounded-xl w-16 transition-colors ${activeTab === 'cards' ? 'text-brand-500' : 'text-gray-500 hover:text-gray-300'}`}>
+          <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#090d16]/95 backdrop-blur-xl border-t border-gray-800/80 safe-bottom px-2 flex items-center justify-around pb-2 pt-2 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
+            <button onClick={() => setActiveTab('cards')} className={`flex flex-col items-center p-2 rounded-xl w-16 transition-colors ${activeTab === 'cards' ? 'text-brand-400' : 'text-gray-500 hover:text-gray-300'}`}>
               <span className="text-2xl mb-1">🎴</span><span className="text-[10px] font-bold">Тренажер</span>
             </button>
-            <button onClick={() => setActiveTab('library')} className={`flex flex-col items-center p-2 rounded-xl w-16 transition-colors ${activeTab === 'library' ? 'text-brand-500' : 'text-gray-500 hover:text-gray-300'}`}>
+            <button onClick={() => setActiveTab('library')} className={`flex flex-col items-center p-2 rounded-xl w-16 transition-colors ${activeTab === 'library' ? 'text-brand-400' : 'text-gray-500 hover:text-gray-300'}`}>
               <span className="text-2xl mb-1">📚</span><span className="text-[10px] font-bold">Слова</span>
             </button>
-            <button onClick={() => setActiveTab('topics')} className={`flex flex-col items-center p-2 rounded-xl w-16 transition-colors ${activeTab === 'topics' ? 'text-brand-500' : 'text-gray-500 hover:text-gray-300'}`}>
+            <button onClick={() => setActiveTab('topics')} className={`flex flex-col items-center p-2 rounded-xl w-16 transition-colors ${activeTab === 'topics' ? 'text-brand-400' : 'text-gray-500 hover:text-gray-300'}`}>
               <span className="text-2xl mb-1">📂</span><span className="text-[10px] font-bold">Темы</span>
             </button>
-            <button onClick={() => setActiveTab('friends')} className={`flex flex-col items-center p-2 rounded-xl w-16 transition-colors ${activeTab === 'friends' ? 'text-brand-500' : 'text-gray-500 hover:text-gray-300'}`}>
+            <button onClick={() => setActiveTab('friends')} className={`flex flex-col items-center p-2 rounded-xl w-16 transition-colors ${activeTab === 'friends' ? 'text-brand-400' : 'text-gray-500 hover:text-gray-300'}`}>
               <span className="text-2xl mb-1">👥</span><span className="text-[10px] font-bold">Друзья</span>
             </button>
           </nav>
 
           {/* КНОПКА ПЛЮС НА ГЛАВНОМ ЭКРАНЕ (+) */}
           {activeTab === 'cards' && (
-            <button onClick={() => { setActiveTab('library'); document.querySelector('input').focus(); }} className="fixed bottom-24 right-6 w-16 h-16 bg-brand-600 hover:bg-brand-500 rounded-full shadow-[0_4px_20px_rgba(99,102,241,0.5)] flex items-center justify-center text-4xl text-white z-30 pb-1 transition-transform active:scale-95">
+            <button onClick={() => { setActiveTab('library'); setTimeout(()=>document.querySelector('input').focus(), 100); }} className="fixed bottom-24 right-6 w-14 h-14 bg-brand-600 hover:bg-brand-500 rounded-full shadow-[0_4px_20px_rgba(99,102,241,0.6)] flex items-center justify-center text-4xl text-white z-30 pb-1.5 transition-transform active:scale-95">
               +
             </button>
           )}
 
           {/* Модалка Предпросмотра Тем */}
           {previewTopic && (
-            <div className="fixed inset-0 bg-[#090d16]/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 bg-[#090d16]/95 backdrop-blur-md z-50 flex items-center justify-center p-4">
               <div className="bg-gray-900 border border-gray-700 p-6 rounded-3xl max-w-sm w-full space-y-4 shadow-2xl">
                 <h3 className="text-xl font-bold text-white mb-2">{previewTopic.title}</h3>
-                <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
+                <div className="max-h-72 overflow-y-auto space-y-2 pr-2">
                   {previewTopic.words.map((w, i) => (
                     <div key={i} className="flex justify-between items-center text-sm p-3 bg-gray-800 rounded-xl">
                       <span className="font-bold text-white">{w.english}</span>
@@ -566,15 +607,12 @@
                   ))}
                 </div>
                 <div className="flex space-x-3 pt-4">
-                  <button onClick={() => setPreviewTopic(null)} className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-sm text-gray-300 rounded-2xl font-medium transition-colors">Закрыть</button>
+                  <button onClick={() => setPreviewTopic(null)} className="flex-1 py-3.5 bg-gray-800 hover:bg-gray-700 text-sm text-gray-300 rounded-2xl font-medium transition-colors">Закрыть</button>
                   <button onClick={() => {
-                      const newWords = previewTopic.words.map(w => ({...w, id: Date.now() + Math.random(), status: 'learning'}));
-                      setAllWords(prev => [...newWords, ...prev]);
-                      setSessionQueue(prev => [...newWords.map(w=>w.id), ...prev]);
-                      alert('100 слов добавлены в вашу библиотеку для изучения!');
+                      addWordsUnique(previewTopic.words);
                       setPreviewTopic(null);
                       setActiveTab('cards');
-                  }} className="flex-1 py-3 bg-brand-600 hover:bg-brand-500 text-sm text-white font-bold rounded-2xl shadow-lg transition-colors">
+                  }} className="flex-1 py-3.5 bg-brand-600 hover:bg-brand-500 text-sm text-white font-bold rounded-2xl shadow-lg transition-colors">
                     Добавить все
                   </button>
                 </div>
@@ -582,42 +620,43 @@
             </div>
           )}
 
-          {/* Модалка просмотра друга */}
+          {/* Модалка просмотра слов ДРУГА */}
           {viewFriend && (
-            <div className="fixed inset-0 bg-[#090d16]/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-              <div className="bg-gray-900 border border-gray-700 p-6 rounded-3xl max-w-sm w-full space-y-4 shadow-2xl">
-                <h3 className="text-xl font-bold text-white mb-2">Библиотека: {viewFriend.name}</h3>
-                <p className="text-xs text-gray-400">Демонстрация. В реальном приложении здесь подгружаются карточки друга из облака.</p>
-                <div className="max-h-40 overflow-y-auto space-y-2 pr-2 bg-gray-950/50 p-2 rounded-xl">
-                  <div className="text-sm p-2 bg-gray-800 rounded-lg text-white">Apple - Яблоко</div>
-                  <div className="text-sm p-2 bg-gray-800 rounded-lg text-white">Car - Машина</div>
-                  <div className="text-sm p-2 bg-gray-800 rounded-lg text-white">Travel - Путешествие</div>
+            <div className="fixed inset-0 bg-[#090d16]/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-4">
+              <div className="bg-gray-900 border border-gray-700 p-6 rounded-3xl max-w-sm w-full shadow-2xl flex flex-col max-h-[80vh]">
+                <h3 className="text-xl font-bold text-white mb-1">Слова: {viewFriend.name}</h3>
+                <p className="text-xs text-gray-400 mb-4">Вы можете добавить слова друга в свою библиотеку.</p>
+                
+                <div className="flex-1 overflow-y-auto space-y-2 pr-2 mb-4">
+                  {(viewFriend.words || []).map((w, i) => (
+                    <div key={i} className="flex justify-between items-center text-sm p-3 bg-gray-800 rounded-xl">
+                      <div>
+                        <div className="font-bold text-white">{w.english}</div>
+                        <div className="text-gray-400 text-xs">{w.russian}</div>
+                      </div>
+                      <button onClick={() => {
+                        addWordsUnique([w]);
+                      }} className="bg-brand-600 hover:bg-brand-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors">
+                        + Себе
+                      </button>
+                    </div>
+                  ))}
+                  {(!viewFriend.words || viewFriend.words.length === 0) && (
+                    <p className="text-center text-gray-500 py-4 text-sm">У друга пока нет слов.</p>
+                  )}
                 </div>
-                <button onClick={() => setViewFriend(null)} className="w-full py-3 bg-gray-800 hover:bg-gray-700 text-sm text-white font-bold rounded-2xl transition-colors">Закрыть</button>
-              </div>
-            </div>
-          )}
-
-          {/* ⚙️ НАСТРОЙКИ & QR-КОД */}
-          {showSettings && (
-            <div className="fixed inset-0 bg-[#090d16]/95 backdrop-blur-xl z-50 flex items-center justify-center p-4">
-              <div className="bg-gray-900 border border-gray-700 p-6 rounded-3xl max-w-sm w-full space-y-6 max-h-[90vh] overflow-y-auto shadow-2xl">
-                <div className="flex justify-between items-center">
-                  <h3 className="text-xl font-bold text-white">⚙️ Настройки</h3>
-                  <button onClick={() => setShowSettings(false)} className="w-8 h-8 flex items-center justify-center bg-gray-800 rounded-full text-gray-400 hover:text-white transition-colors">✕</button>
+                
+                <div className="flex space-x-3 mt-auto shrink-0">
+                  <button onClick={() => setViewFriend(null)} className="flex-1 py-3.5 bg-gray-800 hover:bg-gray-700 text-sm text-white font-bold rounded-2xl transition-colors">Закрыть</button>
+                  <button onClick={() => {
+                      if(viewFriend.words && viewFriend.words.length > 0) {
+                        addWordsUnique(viewFriend.words);
+                        setViewFriend(null);
+                      }
+                  }} className="flex-1 py-3.5 bg-brand-600 hover:bg-brand-500 text-sm text-white font-bold rounded-2xl shadow-lg transition-colors">
+                    Добавить ВСЕ
+                  </button>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-400">Ваше имя:</label>
-                  <input type="text" value={userName} onChange={e => setUserName(e.target.value)} className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-2xl text-white text-base outline-none focus:border-brand-500" />
-                </div>
-                <div className="pt-4 text-center border-t border-gray-800">
-                  <label className="text-sm font-bold text-white block mb-4">Синхронизация устройств</label>
-                  <p className="text-xs text-gray-400 mb-4 leading-relaxed">Отсканируйте QR-код смартфоном, чтобы подтянуть карточки.</p>
-                  <div className="bg-white p-3 rounded-2xl inline-block shadow-lg mx-auto">
-                    <div id="qrcode-container"></div>
-                  </div>
-                </div>
-                <button onClick={() => setShowSettings(false)} className="w-full py-4 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-2xl text-base shadow-lg transition-transform active:scale-95 mt-4">Готово</button>
               </div>
             </div>
           )}
@@ -634,7 +673,7 @@
                 )}
                 <div className="flex space-x-3 pt-4">
                   <button onClick={() => setActiveWordModal(null)} className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium rounded-2xl transition-colors">Закрыть</button>
-                  <button onClick={addModalWordToLibrary} className="flex-1 py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold text-sm rounded-2xl shadow-lg transition-transform active:scale-95">Добавить</button>
+                  <button onClick={addModalWordToLibrary} className="flex-1 py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold text-sm rounded-2xl shadow-lg transition-transform active:scale-95">В библиотеку</button>
                 </div>
               </div>
             </div>
