@@ -120,7 +120,7 @@
   <script type="text/babel" data-type="module">
     const { useState, useEffect, useRef, useMemo } = React;
 
-    // Custom Icon renderer avoiding DOM mutation bugs
+    // Custom SVG Icon component preventing DOM mutation bugs
     const Icon = ({ name, className = "w-4 h-4" }) => {
       const iconProps = {
         xmlns: "http://www.w3.org/2000/svg",
@@ -479,7 +479,6 @@
         );
       };
 
-      // Initialize PWA manifest
       useEffect(() => {
         const manifest = {
           name: "LinguaCards AI — Тренажер слов",
@@ -517,7 +516,7 @@
 
       const handleInstallApp = async () => {
         if (!deferredPrompt) {
-          showToast('Чтобы установить на iOS: нажмите "Поделиться" -> "На экран Назад/Домой"', 'info');
+          showToast('Чтобы установить на iOS: нажмите "Поделиться" -> "На экран Домой"', 'info');
           return;
         }
         deferredPrompt.prompt();
@@ -558,7 +557,6 @@
         return `${baseUrl}?syncId=${encodeURIComponent(syncId)}`;
       }, [syncId]);
 
-      // Firebase Authentication Setup
       useEffect(() => {
         if (!firebaseConfig || !window.FirebaseSDK) return;
 
@@ -687,7 +685,6 @@
         }
       }, [userName]);
 
-      // Keep study session queue aligned with available deck
       useEffect(() => {
         if (deck.length > 0 && sessionQueue.length === 0) {
           setSessionQueue(deck.map(c => c.id));
@@ -856,7 +853,7 @@ JSON structure:
         let successCount = 0;
         const newCards = [];
 
-        for (const word of lines.slice(0, 10)) { // limit to 10 batch to prevent timeout
+        for (const word of lines.slice(0, 10)) {
           try {
             const card = await generateCardWithAI(word);
             newCards.push(card);
@@ -1229,6 +1226,7 @@ JSON structure:
               </div>
             )}
 
+            {}
             {activeTab === 'leaderboard' && (
               <div className="space-y-6 max-w-3xl mx-auto w-full">
                 <div className="bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 p-5 rounded-2xl border border-indigo-500/30 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -1540,6 +1538,7 @@ JSON structure:
 
           </main>
 
+          {}
           {isSettingsOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
@@ -1738,7 +1737,7 @@ JSON structure:
             </div>
           )}
 
-          {/* Modal: Manual Card Creation */}
+          {}
           {isManualAddOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
@@ -1850,7 +1849,7 @@ JSON structure:
             </div>
           )}
 
-          {/* Modal: Bulk Upload Words */}
+          {}
           {isBulkAddOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl relative max-h-[90vh] flex flex-col justify-between">
