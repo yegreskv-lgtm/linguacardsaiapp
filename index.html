@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="LinguaCards" />
   <title>LinguaCards AI — Изучение английских слов</title>
 
-  <!-- Apple Touch Icon for iOS Home Screen -->
+  <!-- Apple Touch Icon & Favicon -->
   <link rel="apple-touch-icon" sizes="180x180" href="https://cdn-icons-png.flaticon.com/512/3898/3898082.png" />
   <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3898/3898082.png" />
 
@@ -105,7 +105,7 @@
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-    import { getFirestore, doc, setDoc, onSnapshot, collection } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+    import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
     window.FirebaseSDK = {
       initializeApp,
@@ -116,6 +116,7 @@
       getFirestore,
       doc,
       setDoc,
+      getDoc,
       onSnapshot,
       collection
     };
@@ -315,6 +316,23 @@
               <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
           );
+        case 'user-plus':
+          return (
+            <svg {...iconProps}>
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="8.5" cy="7" r="4"/>
+              <line x1="20" x2="20" y1="8" y2="14"/>
+              <line x1="17" x2="23" y1="11" y2="11"/>
+            </svg>
+          );
+        case 'user-minus':
+          return (
+            <svg {...iconProps}>
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="8.5" cy="7" r="4"/>
+              <line x1="17" x2="23" y1="11" y2="11"/>
+            </svg>
+          );
         case 'user':
           return (
             <svg {...iconProps}>
@@ -366,10 +384,165 @@
               <polyline points="12 5 19 12 12 19"/>
             </svg>
           );
+        case 'folder-plus':
+          return (
+            <svg {...iconProps}>
+              <path d="M12 10v6"/><path d="M9 13h6"/>
+              <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L8.6 3.3A2 2 0 0 0 6.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>
+            </svg>
+          );
         default:
           return null;
       }
     };
+
+    // Pre-built Word Collections (По уровням и ситуациям)
+    const COLLECTIONS_DATA = [
+      {
+        id: 'level-a1-a2',
+        category: 'levels',
+        badge: '🟢 A1-A2',
+        title: 'Начинающий уровень',
+        description: 'Базовый словарный запас для повседневного общения (15 слов)',
+        words: [
+          { english: 'Hello', russian: 'Здравствуйте / Привет', transcription: '[/həˈləʊ/]', exampleEn: 'Hello, how are you today?', exampleRu: 'Здравствуйте, как у вас сегодня дела?' },
+          { english: 'Thank you', russian: 'Спасибо', transcription: '[/θæŋk juː/]', exampleEn: 'Thank you for your help.', exampleRu: 'Спасибо за вашу помощь.' },
+          { english: 'Family', russian: 'Семья', transcription: '[/ˈfæm.əl.i/]', exampleEn: 'I love spending time with my family.', exampleRu: 'Я люблю проводить время со своей семьей.' },
+          { english: 'Water', russian: 'Вода', transcription: '[/ˈwɔː.tər/]', exampleEn: 'Can I have a glass of water, please?', exampleRu: 'Можно мне стакан воды, пожалуйста?' },
+          { english: 'Food', russian: 'Еда, пища', transcription: '[/fuːd/]', exampleEn: 'Good food gives us energy.', exampleRu: 'Хорошая еда дает нам энергию.' },
+          { english: 'Help', russian: 'Помощь / Помогать', transcription: '[/help/]', exampleEn: 'Can you help me with this box?', exampleRu: 'Можете помочь мне с этой коробкой?' },
+          { english: 'Where', russian: 'Где, куда', transcription: '[/weər/]', exampleEn: 'Where is the nearest bus station?', exampleRu: 'Где ближайшая автобусная остановка?' },
+          { english: 'How much', russian: 'Сколько стоит', transcription: '[/haʊ mʌtʃ/]', exampleEn: 'How much does this coffee cost?', exampleRu: 'Сколько стоит этот кофе?' },
+          { english: 'Friend', russian: 'Друг', transcription: '[/frend/]', exampleEn: 'She is my best friend.', exampleRu: 'Она моя лучшая подруга.' },
+          { english: 'House', russian: 'Дом', transcription: '[/haʊs/]', exampleEn: 'They live in a beautiful house.', exampleRu: 'Они живут в красивом доме.' },
+          { english: 'Work', russian: 'Работа / Работать', transcription: '[/wɜːk/]', exampleEn: 'I start work at nine in the morning.', exampleRu: 'Я начинаю работу в девять утра.' },
+          { english: 'Happy', russian: 'Счастливый', transcription: '[/ˈhæp.i/]', exampleEn: 'We are very happy to see you.', exampleRu: 'Мы очень счастливы видеть вас.' },
+          { english: 'Learn', russian: 'Учить, изучать', transcription: '[/lɜːn/]', exampleEn: 'I want to learn English quickly.', exampleRu: 'Я хочу быстро выучить английский.' },
+          { english: 'Time', russian: 'Время', transcription: '[/taɪm/]', exampleEn: 'What time is it right now?', exampleRu: 'Который час прямо сейчас?' },
+          { english: 'Day', russian: 'День', transcription: '[/deɪ/]', exampleEn: 'Have a wonderful day!', exampleRu: 'Хорошего дня!' }
+        ]
+      },
+      {
+        id: 'level-b1-b2',
+        category: 'levels',
+        badge: '🟡 B1-B2',
+        title: 'Средний уровень',
+        description: 'Уверенная лексика для дискуссий, работы и путешествий (15 слов)',
+        words: [
+          { english: 'Opportunity', russian: 'Возможность', transcription: '[/ˌɒp.əˈtʃuː.nə.ti/]', exampleEn: 'Don’t miss this great opportunity.', exampleRu: 'Не упусти эту отличную возможность.' },
+          { english: 'Opinion', russian: 'Мнение', transcription: '[/əˈpɪn.jən/]', exampleEn: 'In my opinion, this plan works best.', exampleRu: 'По моему мнению, этот план подходит лучше всего.' },
+          { english: 'Environment', russian: 'Окружающая среда / Обстановка', transcription: '[/ɪnˈvaɪ.rən.mənt/]', exampleEn: 'We need to protect our environment.', exampleRu: 'Нам нужно защищать окружающую среду.' },
+          { english: 'Experience', russian: 'Опыт / Опыт работы', transcription: '[/ɪkˈspɪə.ri.əns/]', exampleEn: 'She has ten years of experience.', exampleRu: 'У нее десятилетний опыт работы.' },
+          { english: 'Recommend', russian: 'Рекомендовать', transcription: '[/ˌrek.əˈmend/]', exampleEn: 'Which dish would you recommend?', exampleRu: 'Какое блюдо вы посоветуете?' },
+          { english: 'Negotiate', russian: 'Вести переговоры, договариваться', transcription: '[/nəˈɡəʊ.ʃi.eɪt/]', exampleEn: 'We negotiated a lower price for the contract.', exampleRu: 'Мы договорились о более низкой цене контракта.' },
+          { english: 'Decision', russian: 'Решение', transcription: '[/dɪˈsɪʒ.ən/]', exampleEn: 'Making a wise decision takes time.', exampleRu: 'Принятие мудрого решения требует времени.' },
+          { english: 'Challenge', russian: 'Сложная задача, вызов', transcription: '[/ˈtʃæl.ɪndʒ/]', exampleEn: 'Learning a language is a fun challenge.', exampleRu: 'Изучение языка — это интересный вызов.' },
+          { english: 'Improve', russian: 'Улучшать, совершенствовать', transcription: '[/ɪmˈpruːv/]', exampleEn: 'Daily practice helps to improve fluency.', exampleRu: 'Ежедневная практика помогает улучшить беглость.' },
+          { english: 'Achieve', russian: 'Достигать, добиваться', transcription: '[/əˈtʃiːv/]', exampleEn: 'Set clear goals to achieve success.', exampleRu: 'Ставьте четкие цели, чтобы добиться успеха.' },
+          { english: 'Advantage', russian: 'Преимущество, плюс', transcription: '[/ədˈvɑːn.tɪdʒ/]', exampleEn: 'Speaking two languages is a huge advantage.', exampleRu: 'Владение двумя языками — огромное преимущество.' },
+          { english: 'Solution', russian: 'Решение (проблемы)', transcription: '[/səˈluː.ʃən/]', exampleEn: 'We found a creative solution to the issue.', exampleRu: 'Мы нашли креативное решение этой проблемы.' },
+          { english: 'Influence', russian: 'Влияние / Влиять', transcription: '[/ˈɪn.flu.əns/]', exampleEn: 'Books can have a strong influence on people.', exampleRu: 'Книги могут оказывать сильное влияние на людей.' },
+          { english: 'Confidence', russian: 'Уверенность', transcription: '[/ˈkɒn.fɪ.dəns/]', exampleEn: 'Speaking aloud boosts your confidence.', exampleRu: 'Разговор вслух повышает твою уверенность.' },
+          { english: 'Develop', russian: 'Развивать, разрабатывать', transcription: '[/dɪˈvel.əp/]', exampleEn: 'We are developing new learning techniques.', exampleRu: 'Мы разрабатываем новые методики обучения.' }
+        ]
+      },
+      {
+        id: 'level-c1-c2',
+        category: 'levels',
+        badge: '🔴 C1-C2',
+        title: 'Продвинутый уровень',
+        description: 'Богатый словарный запас для академической и деловой речи (15 слов)',
+        words: [
+          { english: 'Inevitable', russian: 'Неизбежный', transcription: '[/ɪnˈev.ɪ.tə.bəl/]', exampleEn: 'Change is an inevitable part of growth.', exampleRu: 'Перемены — неизбежная часть роста.' },
+          { english: 'Meticulous', russian: 'Тщательный, дотошный', transcription: '[/məˈtɪk.jə.ləs/]', exampleEn: 'He paid meticulous attention to every detail.', exampleRu: 'Он уделял тщательное внимание каждой детали.' },
+          { english: 'Ambiguous', russian: 'Двусмысленный, неоднозначный', transcription: '[/æmˈbɪɡ.ju.əs/]', exampleEn: 'The instructions were confusing and ambiguous.', exampleRu: 'Инструкции были запутанными и неоднозначными.' },
+          { english: 'Subtle', russian: 'Утонченный, едва уловимый', transcription: '[/ˈsʌt.əl/]', exampleEn: 'There is a subtle difference between the two terms.', exampleRu: 'Между этими двумя терминами есть едва уловимая разница.' },
+          { english: 'Resilient', russian: 'Стойкий, жизнеспособный', transcription: '[/rɪˈzɪl.i.ənt/]', exampleEn: 'Resilient people adapt quickly to difficulties.', exampleRu: 'Стойкие люди быстро адаптируются к трудностям.' },
+          { english: 'Scrutinize', russian: 'Тщательно исследовать, изучать', transcription: '[/ˈskruː.tɪ.naɪz/]', exampleEn: 'The auditor will scrutinize all financial documents.', exampleRu: 'Аудитор тщательно изучит все финансовые документы.' },
+          { english: 'Ubiquitous', russian: 'Вездесущий, повсеместный', transcription: '[/juːˈbɪk.wɪ.təs/]', exampleEn: 'Smartphones have become ubiquitous in modern life.', exampleRu: 'Смартфоны стали повсеместными в современной жизни.' },
+          { english: 'Pragmatic', russian: 'Прагматичный, практичный', transcription: '[/præɡˈmæt.ɪk/]', exampleEn: 'We need a pragmatic approach to solve this problem.', exampleRu: 'Нам нужен прагматичный подход для решения этой проблемы.' },
+          { english: 'Eloquent', russian: 'Красноречивый', transcription: '[/ˈel.ə.kwənt/]', exampleEn: 'She gave an eloquent speech at the conference.', exampleRu: 'Она произнесла красноречивую речь на конференции.' },
+          { english: 'Comprehensive', russian: 'Всесторонний, исчерпывающий', transcription: '[/ˌkɒm.prɪˈhen.sɪv/]', exampleEn: 'The report offers a comprehensive analysis.', exampleRu: 'Отчет предлагает всесторонний анализ.' },
+          { english: 'Ephemeral', russian: 'Мимолетный, недолговечный', transcription: '[/ɪˈfem.ər.əl/]', exampleEn: 'Fame in modern times can be ephemeral.', exampleRu: 'Слава в современное время может быть мимолетной.' },
+          { english: 'Redundant', russian: 'Избыточный, лишний', transcription: '[/rɪˈdʌn.dənt/]', exampleEn: 'Extra words made the sentence redundant.', exampleRu: 'Лишние слова сделали предложение избыточным.' },
+          { english: 'Volatile', russian: 'Изменчивый, непостоянный', transcription: '[/ˈvɒl.ə.taɪl/]', exampleEn: 'Stock markets can be highly volatile.', exampleRu: 'Фондовые рынки могут быть крайне изменчивыми.' },
+          { english: 'Cognitive', russian: 'Когнитивный, познавательный', transcription: '[/ˈkɒɡ.nə.tɪv/]', exampleEn: 'Puzzles help maintain cognitive function.', exampleRu: 'Головоломки помогают поддерживать когнитивные функции.' },
+          { english: 'Profound', russian: 'Глубокий, мудрый', transcription: '[/prəˈfaʊnd/]', exampleEn: 'His book made a profound impression on readers.', exampleRu: 'Его книга произвела глубокое впечатление на читателей.' }
+        ]
+      },
+      {
+        id: 'situation-travel',
+        category: 'situations',
+        badge: '✈️ Путешествия',
+        title: 'В аэропорту и в поездке',
+        description: 'Все слова для посадки, багажа, отеля и таможни (15 слов)',
+        words: [
+          { english: 'Boarding pass', russian: 'Посадочный талон', transcription: '[/ˈbɔː.dɪŋ ˌpɑːs/]', exampleEn: 'Please show your boarding pass at gate 4.', exampleRu: 'Пожалуйста, покажите ваш посадочный талон у выхода 4.' },
+          { english: 'Luggage', russian: 'Багаж', transcription: '[/ˈlʌɡ.ɪdʒ/]', exampleEn: 'Where can I collect my luggage?', exampleRu: 'Где я могу получить свой багаж?' },
+          { english: 'Customs', russian: 'Таможня', transcription: '[/ˈkʌs.təmz/]', exampleEn: 'We passed through customs without any problems.', exampleRu: 'Мы прошли таможню без каких-либо проблем.' },
+          { english: 'Delay', russian: 'Задержка (рейса)', transcription: '[/dɪˈleɪ/]', exampleEn: 'Our flight suffered a two-hour delay.', exampleRu: 'Наш рейс задержали на два часа.' },
+          { english: 'Departure', russian: 'Вылет / Отправление', transcription: '[/dɪˈpɑː.tʃər/]', exampleEn: 'Check the departure board for gate changes.', exampleRu: 'Проверьте табло вылетов на предмет изменения выходов.' },
+          { english: 'Reservation', russian: 'Бронирование, бронь', transcription: '[/ˌrez.əˈveɪ.ʃən/]', exampleEn: 'I made a reservation for a double room.', exampleRu: 'Я забронировал двухместный номер.' },
+          { english: 'Itinerary', russian: 'Маршрут, план поездки', transcription: '[/aɪˈtɪn.ər.ər.i/]', exampleEn: 'Here is our travel itinerary for the week.', exampleRu: 'Вот наш маршрут путешествия на неделю.' },
+          { english: 'Currency', russian: 'Валюта', transcription: '[/ˈkʌr.ən.si/]', exampleEn: 'Where is the nearest currency exchange office?', exampleRu: 'Где ближайший пункт обмена валют?' },
+          { english: 'Destination', russian: 'Пункт назначения', transcription: '[/ˌdes.tɪˈneɪ.ʃən/]', exampleEn: 'Rome was our final destination.', exampleRu: 'Рим был нашим конечным пунктом назначения.' },
+          { english: 'Insurance', russian: 'Страховка', transcription: '[/ɪnˈʃɔː.rəns/]', exampleEn: 'Travel insurance is essential for foreign trips.', exampleRu: 'Туристическая страховка необходима для зарубежных поездок.' },
+          { english: 'Passport', russian: 'Паспорт', transcription: '[/ˈpɑːs.pɔːt/]', exampleEn: 'Keep your passport in a safe place.', exampleRu: 'Держите паспорт в надежном месте.' },
+          { english: 'Flight', russian: 'Рейс, полет', transcription: '[/flaɪt/]', exampleEn: 'Have a pleasant flight!', exampleRu: 'Приятного полета!' },
+          { english: 'Ticket', russian: 'Билет', transcription: '[/ˈtɪk.ɪt/]', exampleEn: 'I bought a round-trip ticket online.', exampleRu: 'Я купил билет туда и обратно онлайн.' },
+          { english: 'Hotel', russian: 'Отель, гостиница', transcription: '[/həʊˈtel/]', exampleEn: 'The hotel is located in the city center.', exampleRu: 'Отель расположен в центре города.' },
+          { english: 'Guide', russian: 'Гид, экскурсовод', transcription: '[/ɡaɪd/]', exampleEn: 'Our tour guide showed us historical sights.', exampleRu: 'Наш гид показал нам исторические достопримечательности.' }
+        ]
+      },
+      {
+        id: 'situation-home',
+        category: 'situations',
+        badge: '🏠 Дом и Жилье',
+        title: 'Описание дома и аренда',
+        description: 'Интерьер, ремонт, мебель и быт (15 слов)',
+        words: [
+          { english: 'Furniture', russian: 'Мебель', transcription: '[/ˈfɜː.nɪ.tʃər/]', exampleEn: 'They bought new furniture for the living room.', exampleRu: 'Они купили новую мебель для гостиной.' },
+          { english: 'Cozy', russian: 'Уютный', transcription: '[/ˈkəʊ.zi/]', exampleEn: 'This cottage is very warm and cozy.', exampleRu: 'Этот коттедж очень теплый и уютный.' },
+          { english: 'Neighborhood', russian: 'Район, окрестности', transcription: '[/ˈneɪ.bə.hʊd/]', exampleEn: 'It is a quiet and friendly neighborhood.', exampleRu: 'Это тихий и дружелюбный район.' },
+          { english: 'Rent', russian: 'Аренда / Снимать жилье', transcription: '[/rent/]', exampleEn: 'How much is the monthly rent?', exampleRu: 'Сколько составляет ежемесячная аренда?' },
+          { english: 'Appliances', russian: 'Бытовая техника', transcription: '[/əˈplaɪ.ənsɪz/]', exampleEn: 'The kitchen comes with modern appliances.', exampleRu: 'Кухня оснащена современной бытовой техникой.' },
+          { english: 'Renovation', russian: 'Ремонт, обновление', transcription: '[/ˌren.əˈveɪ.ʃən/]', exampleEn: 'The apartment is under renovation right now.', exampleRu: 'В квартире сейчас идет ремонт.' },
+          { english: 'Spacious', russian: 'Просторный', transcription: '[/ˈspeɪ.ʃəs/]', exampleEn: 'The master bedroom is bright and spacious.', exampleRu: 'Главная спальня светлая и просторная.' },
+          { english: 'Balcony', russian: 'Балкон', transcription: '[/ˈbæl.kə.ni/]', exampleEn: 'We enjoy drinking morning tea on the balcony.', exampleRu: 'Нам нравится пить утренний чай на балконе.' },
+          { english: 'Kitchen', russian: 'Кухня', transcription: '[/ˈkɪtʃ.ən/]', exampleEn: 'The kitchen is fully equipped with stove and oven.', exampleRu: 'Кухня полностью оборудована плитой и духовкой.' },
+          { english: 'Lease', russian: 'Договор аренды', transcription: '[/liːs/]', exampleEn: 'We signed a one-year lease agreement.', exampleRu: 'Мы подписали договор аренды на один год.' },
+          { english: 'Bedroom', russian: 'Спальня', transcription: '[/ˈbed.ruːm/]', exampleEn: 'The flat has two quiet bedrooms.', exampleRu: 'В квартире две тихие спальни.' },
+          { english: 'Landlord', russian: 'Арендодатель, хозяин', transcription: '[/ˈlænd.lɔːd/]', exampleEn: 'The landlord agreed to fix the heating.', exampleRu: 'Хозяин согласился починить отопление.' },
+          { english: 'Location', russian: 'Расположение', transcription: '[/ləʊˈkeɪ.ʃən/]', exampleEn: 'The apartment has a convenient location near metro.', exampleRu: 'Квартира имеет удобное расположение рядом с метро.' },
+          { english: 'Maintenance', russian: 'Техобслуживание, содержание', transcription: '[/ˈmeɪn.tən.əns/]', exampleEn: 'Building maintenance is included in utilities.', exampleRu: 'Обслуживание дома включено в коммунальные услуги.' },
+          { english: 'Comfortable', russian: 'Удобный, комфортный', transcription: '[/ˈkʌm.fə.tə.bəl/]', exampleEn: 'This sofa is extremely comfortable.', exampleRu: 'Этот диван чрезвычайно удобный.' }
+        ]
+      },
+      {
+        id: 'situation-food',
+        category: 'situations',
+        badge: '🍽️ Ресторан и Еда',
+        title: 'Заказ еды и кулинария',
+        description: 'Фразы для кафе, ресторана и вкусовых предпочтений (15 слов)',
+        words: [
+          { english: 'Menu', russian: 'Меню', transcription: '[/ˈmen.juː/]', exampleEn: 'Could we see the dessert menu, please?', exampleRu: 'Можно нам посмотреть десертное меню, пожалуйста?' },
+          { english: 'Order', russian: 'Заказ / Заказывать', transcription: '[/ˈɔː.dər/]', exampleEn: 'Are you ready to order your meal?', exampleRu: 'Вы готовы заказать блюдо?' },
+          { english: 'Bill', russian: 'Счет (в ресторане)', transcription: '[/bɪl/]', exampleEn: 'May we have the bill, please?', exampleRu: 'Можно нам счет, пожалуйста?' },
+          { english: 'Ingredients', russian: 'Ингредиенты, состав', transcription: '[/ɪnˈɡriː.di.ənts/]', exampleEn: 'All dishes are cooked with fresh ingredients.', exampleRu: 'Все блюда готовятся из свежих ингредиентов.' },
+          { english: 'Allergy', russian: 'Аллергия', transcription: '[/ˈæl.ə.dʒi/]', exampleEn: 'I have a severe nut allergy.', exampleRu: 'У меня сильная аллергия на орехи.' },
+          { english: 'Waiter', russian: 'Официант', transcription: '[/ˈweɪ.tər/]', exampleEn: 'The waiter brought us cold bottled water.', exampleRu: 'Официант принес нам холодную бутылированную воду.' },
+          { english: 'Recommendation', russian: 'Рекомендация, совет', transcription: '[/ˌrek.ə.menˈdeɪ.ʃən/]', exampleEn: 'Thanks for the chef’s recommendation!', exampleRu: 'Спасибо за рекомендацию шеф-повара!' },
+          { english: 'Spicy', russian: 'Острый, пикантный', transcription: '[/ˈspaɪ.si/]', exampleEn: 'Is this curry very spicy?', exampleRu: 'Этот карри очень острый?' },
+          { english: 'Dessert', russian: 'Десерт', transcription: '[/dɪˈzɜːt/]', exampleEn: 'We ordered chocolate cake for dessert.', exampleRu: 'Мы заказали шоколадный торт на десерт.' },
+          { english: 'Appetizer', russian: 'Закуска', transcription: '[/ˈæp.ə.taɪ.zər/]', exampleEn: 'We started with garlic bread as an appetizer.', exampleRu: 'Мы начали с чесночного хлеба в качестве закуски.' },
+          { english: 'Delicious', russian: 'Вкусный, восхитительный', transcription: '[/dɪˈlɪʃ.əs/]', exampleEn: 'The seafood pasta was absolutely delicious.', exampleRu: 'Паста с морепродуктами была невероятно вкусной.' },
+          { english: 'Beverage', russian: 'Напиток', transcription: '[/ˈbev.ər.ɪdʒ/]', exampleEn: 'Hot and cold beverages are available at the bar.', exampleRu: 'Горячие и холодные напитки доступны в баре.' },
+          { english: 'Tip', russian: 'Чаевые', transcription: '[/tɪp/]', exampleEn: 'In many countries, leaving a 10% tip is standard.', exampleRu: 'Во многих странах стандартно оставлять 10% чаевых.' },
+          { english: 'Chef', russian: 'Шеф-повар', transcription: '[/ʃef/]', exampleEn: 'The chef prepared a special daily soup.', exampleRu: 'Шеф-повар приготовил специальный суп дня.' },
+          { english: 'Reservation', russian: 'Столик по брони', transcription: '[/ˌrez.əˈveɪ.ʃən/]', exampleEn: 'We have a table reservation under the name Alex.', exampleRu: 'У нас забронирован столик на имя Алекс.' }
+        ]
+      }
+    ];
 
     const INITIAL_CARDS = [
       {
@@ -398,24 +571,6 @@
         exampleEn: "Perseverance is key to mastering a new language.",
         exampleRu: "Упорство — ключ к освоению нового языка.",
         createdAt: Date.now() - 300000
-      },
-      {
-        id: "card-4",
-        english: "Eloquence",
-        russian: "Красноречие",
-        transcription: "[/ˈeləkwəns/]",
-        exampleEn: "The speaker fascinated everyone with his eloquence.",
-        exampleRu: "Спикер очаровал всех своим красноречием.",
-        createdAt: Date.now() - 200000
-      },
-      {
-        id: "card-5",
-        english: "Procrastinate",
-        russian: "Откладывать на потом",
-        transcription: "[/prəˈkræstɪneɪt/]",
-        exampleEn: "Don't procrastinate when learning new vocabulary.",
-        exampleRu: "Не откладывай на потом изучение новых слов.",
-        createdAt: Date.now() - 100000
       }
     ];
 
@@ -435,16 +590,26 @@
         ? JSON.parse(__firebase_config) 
         : DEFAULT_FIREBASE_CONFIG;
 
-      // Built-in Gemini API key provided directly
       const DEFAULT_API_KEY = "AQ.Ab8RN6ISBSPyMyTiUgv4LC9ZFNYBQu82KgCPHX2w6gH9KSKpow";
 
       const [authUser, setAuthUser] = useState(null);
       const [syncId, setSyncId] = useState(() => localStorage.getItem('lingua_sync_id') || '');
       const [userName, setUserName] = useState(() => localStorage.getItem('lingua_user_name') || '');
-      const [isEditingName, setIsEditingName] = useState(false);
+      
+      // Onboarding State
+      const [isOnboardingOpen, setIsOnboardingOpen] = useState(() => !localStorage.getItem('lingua_user_name'));
+      const [onboardingStep, setOnboardingStep] = useState(1);
       const [tempNameInput, setTempNameInput] = useState('');
-      const [leaderboard, setLeaderboard] = useState([]);
-      const [customSyncInput, setCustomSyncInput] = useState('');
+
+      // Friends & Following System
+      const [followingIds, setFollowingIds] = useState(() => {
+        const saved = localStorage.getItem('lingua_following_ids');
+        return saved ? JSON.parse(saved) : [];
+      });
+      const [friendsProfiles, setFriendsProfiles] = useState([]);
+      const [friendAddInput, setFriendAddInput] = useState('');
+
+      const [isEditingName, setIsEditingName] = useState(false);
       const [isCloudActive, setIsCloudActive] = useState(false);
 
       const [deck, setDeck] = useState(() => {
@@ -463,7 +628,7 @@
       const [currentCardIndex, setCurrentCardIndex] = useState(0);
       const [isFlipped, setIsFlipped] = useState(false);
 
-      const [activeTab, setActiveTab] = useState('study'); // 'study', 'speech', 'deck', 'mastered', 'leaderboard'
+      const [activeTab, setActiveTab] = useState('study'); // 'study', 'collections', 'speech', 'deck', 'mastered', 'leaderboard'
       const [newWordInput, setNewWordInput] = useState('');
       const [isGenerating, setIsGenerating] = useState(false);
       const [toast, setToast] = useState(null);
@@ -487,7 +652,7 @@
       // Pronunciation Trainer State
       const [speechCardIndex, setSpeechCardIndex] = useState(0);
       const [isListening, setIsListening] = useState(false);
-      const [speechFeedback, setSpeechFeedback] = useState(null); // { success: boolean, transcript: string, expected: string }
+      const [speechFeedback, setSpeechFeedback] = useState(null);
       const [speechScore, setSpeechScore] = useState(0);
 
       const [manualForm, setManualForm] = useState({
@@ -503,7 +668,7 @@
         setTimeout(() => setToast(null), 3000);
       };
 
-      // Load SpeechSynthesis Voices dynamically
+      // Load SpeechSynthesis Voices
       useEffect(() => {
         const updateVoices = () => {
           if ('speechSynthesis' in window) {
@@ -535,7 +700,7 @@
         }
       }, []);
 
-      // Text-to-Speech Handler with custom voice selection
+      // Text-to-Speech Handler
       const handleSpeak = (text, lang = 'en-US') => {
         if ('speechSynthesis' in window) {
           window.speechSynthesis.cancel();
@@ -553,7 +718,6 @@
         }
       };
 
-      // Helper for normalization
       const normalizeText = (str = '') => {
         return str.toLowerCase().replace(/[^\w\s]/gi, '').replace(/\s+/g, ' ').trim();
       };
@@ -564,7 +728,6 @@
         return deck[speechCardIndex % deck.length] || null;
       }, [deck, speechCardIndex]);
 
-      // Automatically speak Russian translation when entering Speech tab or changing card
       useEffect(() => {
         if (activeTab === 'speech' && currentSpeechCard) {
           setSpeechFeedback(null);
@@ -572,7 +735,6 @@
         }
       }, [activeTab, speechCardIndex, currentSpeechCard]);
 
-      // Start Speech Recognition
       const handleStartListening = () => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
@@ -597,7 +759,6 @@
               const cleanSpoken = normalizeText(transcript);
               const cleanExpected = normalizeText(currentSpeechCard.english);
 
-              // Check for exact or substring match
               const isMatch = cleanSpoken === cleanExpected || cleanSpoken.includes(cleanExpected) || cleanExpected.includes(cleanSpoken);
 
               if (isMatch) {
@@ -638,7 +799,6 @@
         }
       };
 
-      // Universal Reliable Copy to Clipboard Helper
       const copyToClipboard = (textToCopy, successMessage = 'Скопировано в буфер обмена!') => {
         if (!textToCopy) return;
 
@@ -665,11 +825,11 @@
             if (successful) {
               showToast(successMessage, 'success');
             } else {
-              showToast('Скопируйте вручную из поля ввода', 'info');
+              showToast('Скопируйте вручную', 'info');
             }
           } catch (err) {
             console.error('Fallback execCommand failed:', err);
-            showToast('Не удалось скопировать. Скопируйте ссылку вручную', 'error');
+            showToast('Не удалось скопировать', 'error');
           }
         };
 
@@ -682,7 +842,6 @@
         }
       };
 
-      // Toast Notification Component
       const renderToast = () => {
         if (!toast) return null;
         const bgColors = {
@@ -702,7 +861,7 @@
         const manifest = {
           name: "LinguaCards AI — Тренажер слов",
           short_name: "LinguaCards",
-          description: "Умный тренажер английских слов с AI и синхронизацией",
+          description: "Умный тренажер английских слов с AI и друзьями",
           start_url: "./",
           display: "standalone",
           background_color: "#020617",
@@ -735,28 +894,33 @@
 
       const handleInstallApp = async () => {
         if (!deferredPrompt) {
-          showToast('Чтобы установить на iOS: нажмите "Поделиться" -> "На экран Домой"', 'info');
+          showToast('Инструкции по установке показаны ниже', 'info');
           return;
         }
         deferredPrompt.prompt();
         const { outcome } = await deferredPrompt.userChoice;
         if (outcome === 'accepted') {
-          showToast('Приложение успешно установлено на ваш рабочий стол! 📱', 'success');
+          showToast('Приложение установлено на рабочий стол! 📱', 'success');
         }
         setDeferredPrompt(null);
         setIsInstallable(false);
       };
 
-      // Handle SyncId in URL params
+      // Handle URL Search Parameters (Sync & Friend Following)
       useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const urlSyncId = params.get('syncId') || params.get('sync');
+        const followId = params.get('follow');
         const urlApiKey = params.get('apiKey');
 
         if (urlSyncId) {
           setSyncId(urlSyncId);
           localStorage.setItem('lingua_sync_id', urlSyncId);
-          showToast('Облачная синхронизация успешно подключена по ссылке! 📱', 'success');
+          showToast('Облачный профиль подключен!', 'success');
+        }
+
+        if (followId && followId !== syncId) {
+          handleAddFriend(followId);
         }
 
         if (urlApiKey) {
@@ -764,11 +928,11 @@
           localStorage.setItem('lingua_gemini_api_key', urlApiKey);
         }
 
-        if (urlSyncId || urlApiKey) {
+        if (urlSyncId || urlApiKey || followId) {
           const cleanUrl = window.location.origin + window.location.pathname;
           window.history.replaceState({}, document.title, cleanUrl);
         }
-      }, []);
+      }, [syncId]);
 
       const shareableUrl = useMemo(() => {
         if (!syncId) return window.location.href;
@@ -776,6 +940,13 @@
         return `${baseUrl}?syncId=${encodeURIComponent(syncId)}`;
       }, [syncId]);
 
+      const friendInviteUrl = useMemo(() => {
+        if (!syncId) return window.location.href;
+        const baseUrl = window.location.origin + window.location.pathname;
+        return `${baseUrl}?follow=${encodeURIComponent(syncId)}`;
+      }, [syncId]);
+
+      // Firebase Auth & Cloud Sync
       useEffect(() => {
         if (!firebaseConfig || !window.FirebaseSDK) return;
 
@@ -809,13 +980,14 @@
         return () => unsubscribe();
       }, []);
 
+      // Realtime listener for User's Deck & Friends
       useEffect(() => {
         if (!authUser || !syncId || !firebaseConfig || !window.FirebaseSDK) {
           setIsCloudActive(false);
           return;
         }
 
-        const { initializeApp, getFirestore, doc, onSnapshot, collection } = window.FirebaseSDK;
+        const { initializeApp, getFirestore, doc, onSnapshot } = window.FirebaseSDK;
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
@@ -826,9 +998,10 @@
             const data = docSnap.data();
             if (Array.isArray(data.deck)) setDeck(data.deck);
             if (Array.isArray(data.mastered)) setMasteredCards(data.mastered);
+            if (Array.isArray(data.followingIds)) setFollowingIds(data.followingIds);
             setIsCloudActive(true);
           } else {
-            saveToCloud(syncId, deck, masteredCards);
+            saveToCloud(syncId, deck, masteredCards, followingIds);
             setIsCloudActive(true);
           }
         }, (err) => {
@@ -836,25 +1009,52 @@
           setIsCloudActive(false);
         });
 
-        const leaderboardRef = collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard');
-        const unsubscribeLeaderboard = onSnapshot(leaderboardRef, (snapshot) => {
-          const list = [];
-          snapshot.forEach((d) => {
-            list.push({ id: d.id, ...d.data() });
-          });
-          list.sort((a, b) => (b.masteredCount || 0) - (a.masteredCount || 0));
-          setLeaderboard(list);
-        }, (err) => {
-          console.error("Leaderboard fetch error:", err);
-        });
-
         return () => {
           unsubscribeDeck();
-          unsubscribeLeaderboard();
         };
       }, [authUser, syncId]);
 
-      const saveToCloud = async (targetSyncId, newDeck, newMastered, nameToSave = userName) => {
+      // Fetch Followed Friends Profiles for the Leaderboard
+      useEffect(() => {
+        if (!authUser || !firebaseConfig || !window.FirebaseSDK) return;
+
+        const { initializeApp, getFirestore, doc, onSnapshot } = window.FirebaseSDK;
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const idsToFetch = Array.from(new Set([syncId, ...followingIds])).filter(Boolean);
+        const unsubscribes = [];
+
+        const tempMap = {};
+
+        idsToFetch.forEach((id) => {
+          const leaderRef = doc(db, 'artifacts', appId, 'public', 'data', 'leaderboard', id);
+          const unsub = onSnapshot(leaderRef, (docSnap) => {
+            if (docSnap.exists()) {
+              tempMap[id] = { id, ...docSnap.data() };
+            } else if (id === syncId) {
+              tempMap[id] = {
+                id,
+                username: userName || `Ученик #${id.slice(-4)}`,
+                masteredCount: masteredCards.length,
+                activeCount: deck.length,
+                totalCards: deck.length + masteredCards.length,
+                updatedAt: Date.now()
+              };
+            }
+            const updatedList = Object.values(tempMap);
+            updatedList.sort((a, b) => (b.masteredCount || 0) - (a.masteredCount || 0));
+            setFriendsProfiles(updatedList);
+          });
+          unsubscribes.push(unsub);
+        });
+
+        return () => {
+          unsubscribes.forEach(u => u());
+        };
+      }, [authUser, syncId, followingIds, deck, masteredCards, userName]);
+
+      const saveToCloud = async (targetSyncId, newDeck, newMastered, newFollowing = followingIds, nameToSave = userName) => {
         if (!authUser || !targetSyncId || !firebaseConfig || !window.FirebaseSDK) return;
         try {
           const { initializeApp, getFirestore, doc, setDoc } = window.FirebaseSDK;
@@ -865,6 +1065,7 @@
           await setDoc(deckRef, {
             deck: newDeck,
             mastered: newMastered,
+            followingIds: newFollowing,
             updatedAt: Date.now()
           }, { merge: true });
 
@@ -886,21 +1087,28 @@
       useEffect(() => {
         localStorage.setItem('lingua_deck', JSON.stringify(deck));
         if (isCloudActive && syncId) {
-          saveToCloud(syncId, deck, masteredCards);
+          saveToCloud(syncId, deck, masteredCards, followingIds);
         }
       }, [deck]);
 
       useEffect(() => {
         localStorage.setItem('lingua_mastered', JSON.stringify(masteredCards));
         if (isCloudActive && syncId) {
-          saveToCloud(syncId, deck, masteredCards);
+          saveToCloud(syncId, deck, masteredCards, followingIds);
         }
       }, [masteredCards]);
 
       useEffect(() => {
+        localStorage.setItem('lingua_following_ids', JSON.stringify(followingIds));
+        if (isCloudActive && syncId) {
+          saveToCloud(syncId, deck, masteredCards, followingIds);
+        }
+      }, [followingIds]);
+
+      useEffect(() => {
         localStorage.setItem('lingua_user_name', userName);
         if (isCloudActive && syncId) {
-          saveToCloud(syncId, deck, masteredCards, userName);
+          saveToCloud(syncId, deck, masteredCards, followingIds, userName);
         }
       }, [userName]);
 
@@ -911,13 +1119,71 @@
         }
       }, [deck]);
 
+      // Friends & Following Handlers
+      const handleAddFriend = (friendIdToAdd) => {
+        const cleanId = friendIdToAdd.trim();
+        if (!cleanId) return;
+        if (cleanId === syncId) {
+          showToast('Вы не можете подписаться на самого себя', 'info');
+          return;
+        }
+        if (followingIds.includes(cleanId)) {
+          showToast('Вы уже подписаны на этого друга!', 'info');
+          return;
+        }
+
+        const updated = [...followingIds, cleanId];
+        setFollowingIds(updated);
+        setFriendAddInput('');
+        showToast('Друг добавлен в подписки! 🤝', 'success');
+      };
+
+      const handleRemoveFriend = (friendIdToRemove) => {
+        const updated = followingIds.filter(id => id !== friendIdToRemove);
+        setFollowingIds(updated);
+        showToast('Друг удален из ваших подписок', 'info');
+      };
+
+      // Import Pre-built Word Collection to Deck
+      const handleImportCollection = (collection) => {
+        const existingEnglishWords = new Set([
+          ...deck.map(c => c.english.toLowerCase()),
+          ...masteredCards.map(c => c.english.toLowerCase())
+        ]);
+
+        const newCardsToAdd = [];
+        let addedCount = 0;
+
+        collection.words.forEach(wordObj => {
+          if (!existingEnglishWords.has(wordObj.english.toLowerCase())) {
+            newCardsToAdd.push({
+              id: `card-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+              english: wordObj.english,
+              russian: wordObj.russian,
+              transcription: wordObj.transcription || '',
+              exampleEn: wordObj.exampleEn || '',
+              exampleRu: wordObj.exampleRu || '',
+              createdAt: Date.now()
+            });
+            addedCount++;
+          }
+        });
+
+        if (newCardsToAdd.length > 0) {
+          setDeck(prev => [...newCardsToAdd, ...prev]);
+          setSessionQueue(prev => [...newCardsToAdd.map(c => c.id), ...prev]);
+          showToast(`Добавлено ${addedCount} новых слов из подборки "${collection.title}"! 📚`, 'success');
+        } else {
+          showToast('Все слова из этой подборки уже есть в вашей колоде!', 'info');
+        }
+      };
+
       const currentCard = useMemo(() => {
         if (sessionQueue.length === 0) return null;
         const id = sessionQueue[currentCardIndex % sessionQueue.length];
         return deck.find(c => c.id === id) || null;
       }, [sessionQueue, currentCardIndex, deck]);
 
-      // Flashcard Session Navigation Handlers
       const handleFlip = () => setIsFlipped(prev => !prev);
 
       const handleNextCard = () => {
@@ -927,9 +1193,7 @@
         }
       };
 
-      const handleSkipCard = () => {
-        handleNextCard();
-      };
+      const handleSkipCard = () => handleNextCard();
 
       const handleMastered = (cardToMaster = currentCard) => {
         if (!cardToMaster) return;
@@ -964,7 +1228,6 @@ JSON structure:
   "exampleRu": "Russian translation of the example sentence"
 }`;
 
-        // Gemini API endpoint using gemini-3.8-flash
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${activeKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1008,7 +1271,7 @@ JSON structure:
         } catch (err) {
           if (err.message === 'API_KEY_REQUIRED') {
             setIsSettingsOpen(true);
-            showToast('Пожалуйста, укажите Gemini API ключ в настройках ⚙️', 'error');
+            showToast('Укажите Gemini API ключ в настройках ⚙️', 'error');
           } else {
             showToast(`Ошибка AI: ${err.message}`, 'error');
           }
@@ -1017,7 +1280,6 @@ JSON structure:
         }
       };
 
-      // Bulk Add Handlers
       const handleBulkAddFast = () => {
         if (!bulkInput.trim()) return;
         const lines = bulkInput.split('\n').map(l => l.trim()).filter(Boolean);
@@ -1107,7 +1369,7 @@ JSON structure:
       };
 
       const handleExportDeck = () => {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ deck, masteredCards }));
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ deck, masteredCards, followingIds }));
         const downloadAnchor = document.createElement('a');
         downloadAnchor.setAttribute("href", dataStr);
         downloadAnchor.setAttribute("download", `lingua_cards_backup_${new Date().toISOString().slice(0,10)}.json`);
@@ -1126,7 +1388,8 @@ JSON structure:
               const parsed = JSON.parse(event.target.result);
               if (Array.isArray(parsed.deck)) setDeck(parsed.deck);
               if (Array.isArray(parsed.masteredCards)) setMasteredCards(parsed.masteredCards);
-              showToast('Колода успешно импортирована!', 'success');
+              if (Array.isArray(parsed.followingIds)) setFollowingIds(parsed.followingIds);
+              showToast('Колода и подписки импортированы!', 'success');
             } catch (err) {
               showToast('Ошибка при чтении файла backup.json', 'error');
             }
@@ -1153,7 +1416,100 @@ JSON structure:
         <div className="flex-grow flex flex-col justify-between max-w-5xl mx-auto w-full p-3 sm:p-6 space-y-4 sm:space-y-6 overflow-x-hidden">
           {renderToast()}
 
-          {/* Top App Header — Compact & Safe Area Adapted */}
+          {/* FIRST VISIT ONBOARDING & PWA INSTALLATION MODAL */}
+          {isOnboardingOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-fadeIn">
+              <div className="bg-slate-900 border border-indigo-500/30 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl relative space-y-6 max-h-[90vh] overflow-y-auto">
+                
+                {/* Onboarding Header */}
+                <div className="text-center space-y-2">
+                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white font-black text-3xl shadow-xl shadow-blue-500/30 mx-auto">
+                    L
+                  </div>
+                  <h2 className="text-2xl font-black text-white tracking-tight">Добро пожаловать в LinguaCards AI! ✨</h2>
+                  <p className="text-xs text-slate-400">Персональный умный тренажер английских слов</p>
+                </div>
+
+                {onboardingStep === 1 ? (
+                  /* Step 1: User Registration Name */
+                  <div className="space-y-4 bg-slate-950 p-5 rounded-2xl border border-slate-800">
+                    <label className="block text-xs font-semibold text-indigo-300">
+                      Как к вам обращаться? (Ваше имя или никнейм)
+                    </label>
+                    <input
+                      type="text"
+                      value={tempNameInput}
+                      onChange={(e) => setTempNameInput(e.target.value)}
+                      placeholder="e.g. Алекс"
+                      className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      disabled={!tempNameInput.trim()}
+                      onClick={() => {
+                        const cleanName = tempNameInput.trim() || 'Ученик';
+                        setUserName(cleanName);
+                        localStorage.setItem('lingua_user_name', cleanName);
+                        setOnboardingStep(2);
+                      }}
+                      className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      <span>Продолжить</span>
+                      <Icon name="arrow-right" className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  /* Step 2: Interactive PWA Installation Instructions */
+                  <div className="space-y-4">
+                    <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                        <Icon name="smartphone" className="w-4 h-4 text-emerald-400" />
+                        <span>Установите приложение на экран вашего телефона:</span>
+                      </h3>
+
+                      {/* iOS Safari Guide */}
+                      <div className="p-3 bg-slate-900/90 rounded-xl border border-slate-800 space-y-2 text-xs">
+                        <div className="font-semibold text-indigo-300 flex items-center gap-1.5">
+                          <span>🍎 Для пользователей iPhone (iOS Safari):</span>
+                        </div>
+                        <ol className="list-decimal list-inside space-y-1 text-slate-300 text-[11px] leading-relaxed">
+                          <li>Нажмите кнопку <strong>«Поделиться»</strong> (квадрат со стрелкой вверх внизу)</li>
+                          <li>Выберите пункт <strong>«На экран "Домой"»</strong> 📲</li>
+                          <li>Запустите с иконки на рабочем столе как удобное нативное приложение!</li>
+                        </ol>
+                      </div>
+
+                      {/* Android Chrome Guide */}
+                      <div className="p-3 bg-slate-900/90 rounded-xl border border-slate-800 space-y-2 text-xs">
+                        <div className="font-semibold text-emerald-300 flex items-center gap-1.5">
+                          <span>🤖 Для пользователей Android (Google Chrome):</span>
+                        </div>
+                        <ol className="list-decimal list-inside space-y-1 text-slate-300 text-[11px] leading-relaxed">
+                          <li>Нажмите меню <strong>три точки ⋮</strong> в правом верхнем углу</li>
+                          <li>Выберите <strong>«Установить приложение»</strong> или <strong>«Добавить на гл. экран»</strong> 📱</li>
+                        </ol>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsOnboardingOpen(false);
+                        showToast(`Добро пожаловать, ${userName || 'Ученик'}! 🚀`, 'success');
+                      }}
+                      className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs rounded-xl shadow-xl shadow-emerald-600/30 transition-all active:scale-95 flex items-center justify-center gap-2"
+                    >
+                      <span>Начать учить слова! 🚀</span>
+                    </button>
+                  </div>
+                )}
+
+              </div>
+            </div>
+          )}
+
+          {/* Top App Header */}
           <header className="w-full max-w-full flex items-center justify-between gap-1.5 sm:gap-3 border-b border-slate-800/80 pb-3 pt-[env(safe-area-inset-top)] overflow-hidden">
             <div className="flex items-center gap-2 min-w-0 shrink">
               <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white font-extrabold text-lg sm:text-xl shadow-lg shadow-blue-500/20 shrink-0">
@@ -1165,7 +1521,7 @@ JSON structure:
                   <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 font-normal">AI</span>
                 </h1>
                 <p className="hidden sm:flex text-xs text-slate-400 items-center gap-1.5 truncate">
-                  <span>Тренажер английских слов</span>
+                  <span>Ученик: {userName || 'Гость'}</span>
                   {isCloudActive && (
                     <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-950/60 px-1.5 py-0.2 rounded border border-emerald-800/50">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Sync Active
@@ -1176,7 +1532,6 @@ JSON structure:
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
-              {/* Navigation Tabs */}
               <nav className="flex items-center bg-slate-900/90 p-1 rounded-xl border border-slate-800 shrink-0 overflow-x-auto">
                 <button
                   onClick={() => setActiveTab('study')}
@@ -1192,6 +1547,19 @@ JSON structure:
                 </button>
 
                 <button
+                  onClick={() => setActiveTab('collections')}
+                  className={`flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    activeTab === 'collections'
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                  }`}
+                  title="Готовые подборки"
+                >
+                  <Icon name="folder-plus" className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                  <span className="hidden md:inline">Подборки</span>
+                </button>
+
+                <button
                   onClick={() => setActiveTab('speech')}
                   className={`flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     activeTab === 'speech'
@@ -1201,7 +1569,7 @@ JSON structure:
                   title="Произношение"
                 >
                   <Icon name="mic" className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
-                  <span className="hidden md:inline">🎤 Произношение</span>
+                  <span className="hidden md:inline">🎤 Голос</span>
                 </button>
 
                 <button
@@ -1243,13 +1611,13 @@ JSON structure:
                       ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
                   }`}
-                  title="Рейтинг"
+                  title="Друзья"
                 >
-                  <Icon name="crown" className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span className="hidden md:inline">Рейтинг</span>
-                  {leaderboard.length > 0 && (
-                    <span className="px-1 py-0.2 text-[10px] bg-amber-500/20 text-amber-300 rounded-full border border-amber-500/30 font-semibold">
-                      {leaderboard.length}
+                  <Icon name="users" className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                  <span className="hidden md:inline">Друзья</span>
+                  {followingIds.length > 0 && (
+                    <span className="px-1 py-0.2 text-[10px] bg-indigo-500/20 text-indigo-300 rounded-full border border-indigo-500/30 font-semibold">
+                      {followingIds.length}
                     </span>
                   )}
                 </button>
@@ -1258,14 +1626,14 @@ JSON structure:
               <button
                 onClick={() => setIsSettingsOpen(true)}
                 className="p-2 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl border border-slate-800 transition-all shrink-0"
-                title="Настройки и синхронизация"
+                title="Настройки"
               >
                 <Icon name="settings" className="w-4 h-4 shrink-0" />
               </button>
             </div>
           </header>
 
-          {/* Word Addition Controls */}
+          {/* Word Addition Input Bar */}
           <section className="bg-slate-900/60 p-3 sm:p-3.5 rounded-2xl border border-slate-800 shadow-xl w-full max-w-full">
             <form onSubmit={handleAddSingleWord} className="flex flex-col sm:flex-row items-center gap-2 w-full">
               <div className="relative flex-1 w-full min-w-0">
@@ -1319,10 +1687,10 @@ JSON structure:
             </form>
           </section>
 
-          {/* Dynamic Content Views */}
+          {/* Dynamic App Views */}
           <main className="flex-grow flex flex-col justify-center w-full max-w-full">
             
-            {/* View 1: Study Mode (Flashcards) */}
+            {/* View 1: Study Flashcards */}
             {activeTab === 'study' && (
               <div className="flex flex-col items-center justify-center space-y-5 sm:space-y-6 w-full">
                 
@@ -1333,19 +1701,18 @@ JSON structure:
                     </div>
                     <h3 className="text-xl font-bold text-white mb-2">Колода пуста! 🎉</h3>
                     <p className="text-slate-400 text-xs leading-relaxed mb-6">
-                      Вы успешно выучили все карточки! Добавьте новые слова сверху или верните изученные из вкладки "Выучено".
+                      Вы выучили все карточки! Воспользуйтесь готовыми подборками по уровням и ситуациям.
                     </p>
                     <button
-                      onClick={() => setActiveTab('mastered')}
-                      className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs rounded-xl border border-slate-700 transition-all"
+                      onClick={() => setActiveTab('collections')}
+                      className="px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold text-xs rounded-xl shadow-lg transition-all"
                     >
-                      Посмотреть выученные слова ({masteredCards.length})
+                      📚 Выбрать готовые подборки слов
                     </button>
                   </div>
                 ) : currentCard ? (
                   <div className="w-full max-w-md flex flex-col items-center space-y-4 sm:space-y-5">
                     
-                    {/* Session Progress Header */}
                     <div className="w-full flex items-center justify-between text-xs text-slate-400 px-1">
                       <span>Карточка {currentCardIndex + 1} из {sessionQueue.length}</span>
                       <button
@@ -1353,23 +1720,22 @@ JSON structure:
                         className="text-rose-400 hover:text-rose-300 flex items-center gap-1 transition-colors"
                       >
                         <Icon name="trash-2" className="w-3.5 h-3.5" />
-                        <span>Убрать насовсем (Выучил)</span>
+                        <span>Выучил (Убрать)</span>
                       </button>
                     </div>
 
-                    {/* 3D Flip Card */}
                     <div
                       onClick={handleFlip}
                       className="w-full h-80 perspective-1000 cursor-pointer group select-none"
                     >
                       <div className={`relative w-full h-full duration-500 transform-style-3d transition-transform ${isFlipped ? 'rotate-y-180' : ''}`}>
                         
-                        {/* Front Side: Russian Meaning */}
+                        {/* Front: Russian */}
                         <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 border border-slate-800 hover:border-blue-500/50 rounded-3xl p-6 flex flex-col justify-between shadow-2xl backface-hidden transition-all">
                           <div className="flex justify-between items-center text-slate-500 text-xs">
-                            <span className="uppercase tracking-wider font-semibold text-[10px] bg-slate-800 px-2 py-0.5 rounded">Порусски</span>
-                            <span className="text-[11px] text-slate-500 flex items-center gap-1">
-                              Нажмите, чтобы перевернуть 🔄
+                            <span className="uppercase tracking-wider font-semibold text-[10px] bg-slate-800 px-2 py-0.5 rounded">По-русски</span>
+                            <span className="text-[11px] text-slate-500">
+                              Нажмите для переворота 🔄
                             </span>
                           </div>
 
@@ -1385,7 +1751,7 @@ JSON structure:
                           </div>
                         </div>
 
-                        {/* Back Side: English Word + IPA + Examples */}
+                        {/* Back: English */}
                         <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-indigo-950/80 via-slate-900 to-slate-950 border border-indigo-500/40 rounded-3xl p-6 flex flex-col justify-between shadow-2xl rotate-y-180 backface-hidden">
                           <div className="flex justify-between items-center text-indigo-300 text-xs">
                             <span className="uppercase tracking-wider font-semibold text-[10px] bg-indigo-900/40 px-2 py-0.5 rounded border border-indigo-800/40">English</span>
@@ -1431,14 +1797,13 @@ JSON structure:
                       </div>
                     </div>
 
-                    {/* Action Buttons */}
                     <div className="grid grid-cols-2 gap-3 w-full pt-2">
                       <button
                         onClick={handleSkipCard}
                         className="py-3 px-4 bg-slate-900 hover:bg-slate-800 text-slate-300 font-semibold text-xs rounded-2xl border border-slate-800 hover:border-slate-700 flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg"
                       >
                         <Icon name="rotate-cw" className="w-4 h-4" />
-                        <span>Пропустить (Оставить)</span>
+                        <span>Пропустить</span>
                       </button>
 
                       <button
@@ -1446,7 +1811,7 @@ JSON structure:
                         className="py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-2xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition-all active:scale-95"
                       >
                         <Icon name="check" className="w-4 h-4" />
-                        <span>Готово (Выучил)</span>
+                        <span>Выучил слово</span>
                       </button>
                     </div>
 
@@ -1456,7 +1821,57 @@ JSON structure:
               </div>
             )}
 
-            {/* View 2: Pronunciation Practice Mode (🎤 Тренажер произношения) */}
+            {/* View 2: Pre-built Thematic Word Collections */}
+            {activeTab === 'collections' && (
+              <div className="space-y-6 max-w-4xl mx-auto w-full">
+                <div className="bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 p-5 rounded-2xl border border-indigo-500/30 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                      <span>📚 Готовые подборки слов</span>
+                    </h2>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Выбирайте тематические сеты по вашему уровню владения языком и жизненным ситуациям
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {COLLECTIONS_DATA.map((item) => (
+                    <div 
+                      key={item.id}
+                      className="bg-slate-900/80 border border-slate-800 rounded-2xl p-5 hover:border-indigo-500/40 transition-all flex flex-col justify-between space-y-4"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-md bg-indigo-950/80 text-indigo-300 border border-indigo-800/40">
+                            {item.badge}
+                          </span>
+                          <span className="text-[11px] text-slate-500 font-mono">15 карточек</span>
+                        </div>
+                        <h3 className="text-base font-bold text-white">{item.title}</h3>
+                        <p className="text-xs text-slate-400 leading-relaxed">{item.description}</p>
+                      </div>
+
+                      <div className="pt-3 border-t border-slate-800/60 flex items-center justify-between gap-2">
+                        <div className="text-[11px] text-slate-500 truncate max-w-[180px]">
+                          {item.words.slice(0, 3).map(w => w.english).join(', ')}...
+                        </div>
+
+                        <button
+                          onClick={() => handleImportCollection(item)}
+                          className="px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 shrink-0"
+                        >
+                          <Icon name="folder-plus" className="w-3.5 h-3.5" />
+                          <span>Добавить в колоду</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* View 3: Pronunciation Practice Tab */}
             {activeTab === 'speech' && (
               <div className="flex flex-col items-center justify-center space-y-6 max-w-lg mx-auto w-full">
                 
@@ -1464,12 +1879,11 @@ JSON structure:
                   <div className="text-center py-16 px-4 bg-slate-900/40 rounded-3xl border border-slate-800/80 max-w-md w-full">
                     <Icon name="mic-off" className="w-12 h-12 text-slate-600 mx-auto mb-3" />
                     <h3 className="text-lg font-bold text-white mb-2">Колода пуста</h3>
-                    <p className="text-slate-400 text-xs">Добавьте новые слова, чтобы начать голосовую тренировку</p>
+                    <p className="text-slate-400 text-xs">Добавьте слова для тренировки произношения</p>
                   </div>
                 ) : currentSpeechCard ? (
                   <div className="w-full flex flex-col items-center space-y-5">
                     
-                    {/* Header Score & Counter */}
                     <div className="w-full flex items-center justify-between bg-slate-900/60 px-4 py-2.5 rounded-xl border border-slate-800 text-xs">
                       <span className="text-slate-400">
                         Слово <strong>{(speechCardIndex % deck.length) + 1}</strong> из {deck.length}
@@ -1481,7 +1895,6 @@ JSON structure:
                       </div>
                     </div>
 
-                    {/* Speech Target Card */}
                     <div className="w-full bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950/60 border border-indigo-500/30 rounded-3xl p-6 shadow-2xl flex flex-col items-center text-center space-y-4">
                       
                       <div className="flex items-center justify-between w-full">
@@ -1494,7 +1907,7 @@ JSON structure:
                           className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs flex items-center gap-1 border border-slate-700 transition-all"
                         >
                           <Icon name="volume-2" className="w-3.5 h-3.5 text-blue-400" />
-                          <span>Послушать по-русски</span>
+                          <span>Послушать</span>
                         </button>
                       </div>
 
@@ -1503,11 +1916,10 @@ JSON structure:
                           "{currentSpeechCard.russian}"
                         </h2>
                         <p className="text-xs text-slate-400">
-                          Включите микрофон и скажите перевод на английском
+                          Нажмите микрофон и произнесите перевод по-английски
                         </p>
                       </div>
 
-                      {/* Push to Talk Microphone Button */}
                       <div className="relative py-2">
                         {isListening && (
                           <div className="absolute inset-0 rounded-full bg-red-500/20 animate-ping"></div>
@@ -1522,17 +1934,16 @@ JSON structure:
                               : 'bg-gradient-to-tr from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white shadow-indigo-600/30'
                           }`}
                         >
-                          <Icon name={isListening ? 'mic' : 'mic'} className="w-8 h-8 animate-pulse" />
+                          <Icon name="mic" className="w-8 h-8 animate-pulse" />
                         </button>
                       </div>
 
                       <span className="text-xs font-semibold text-slate-300">
-                        {isListening ? "🔴 Слушаю... Говорите на английском!" : "Нажмите на микрофон для записи"}
+                        {isListening ? "🔴 Слушаю... Запись идет!" : "Нажмите для записи речи"}
                       </span>
 
                     </div>
 
-                    {/* Speech Verification Feedback Result */}
                     {speechFeedback && (
                       <div className={`w-full p-4 rounded-2xl border text-center space-y-3 animate-fadeIn ${
                         speechFeedback.success
@@ -1568,7 +1979,7 @@ JSON structure:
                             className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-medium rounded-xl border border-slate-700 flex items-center gap-1.5"
                           >
                             <Icon name="volume-2" className="w-3.5 h-3.5 text-indigo-400" />
-                            <span>Послушать идеальное произношение</span>
+                            <span>Послушать эталон</span>
                           </button>
 
                           {speechFeedback.success && (
@@ -1579,7 +1990,7 @@ JSON structure:
                               }}
                               className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-1"
                             >
-                              <span>Следующее слово</span>
+                              <span>Дальше</span>
                               <Icon name="arrow-right" className="w-3.5 h-3.5" />
                             </button>
                           )}
@@ -1587,7 +1998,6 @@ JSON structure:
                       </div>
                     )}
 
-                    {/* Navigation Controls */}
                     <div className="flex items-center justify-between w-full pt-2">
                       <button
                         onClick={() => {
@@ -1596,7 +2006,7 @@ JSON structure:
                         }}
                         className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-medium rounded-xl border border-slate-800"
                       >
-                        ⬅️ Предыдущее
+                        ⬅️ Назад
                       </button>
 
                       <button
@@ -1606,7 +2016,7 @@ JSON structure:
                         }}
                         className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-medium rounded-xl border border-slate-800 flex items-center gap-1"
                       >
-                        <span>Следующее</span>
+                        <span>Вперед</span>
                         <Icon name="arrow-right" className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -1617,9 +2027,11 @@ JSON structure:
               </div>
             )}
 
-            {/* View 3: Leaderboard & Friends View */}
+            {/* View 4: Friends & Following System View */}
             {activeTab === 'leaderboard' && (
               <div className="space-y-6 max-w-3xl mx-auto w-full">
+                
+                {/* User Profile Banner & Direct Friend Invite Link */}
                 <div className="bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 p-5 rounded-2xl border border-indigo-500/30 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 rounded-2xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400 shadow-inner shrink-0">
@@ -1633,16 +2045,15 @@ JSON structure:
                               type="text"
                               value={tempNameInput}
                               onChange={(e) => setTempNameInput(e.target.value)}
-                              placeholder="Введите имя..."
                               className="px-3 py-1 bg-slate-950 border border-indigo-500 rounded-lg text-sm text-white focus:outline-none"
                               autoFocus
                             />
                             <button
                               onClick={() => {
-                                const clean = tempNameInput.trim() || `Ученик #${syncId.slice(-4)}`;
+                                const clean = tempNameInput.trim() || 'Ученик';
                                 setUserName(clean);
                                 setIsEditingName(false);
-                                showToast('Имя успешно сохранено!', 'success');
+                                showToast('Имя сохранено!', 'success');
                               }}
                               className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg"
                             >
@@ -1652,7 +2063,7 @@ JSON structure:
                         ) : (
                           <>
                             <h3 className="text-lg font-bold text-white">
-                              {userName || `Ученик #${syncId ? syncId.slice(-4) : '...'}`}
+                              {userName || 'Ученик'}
                             </h3>
                             <button
                               onClick={() => {
@@ -1668,39 +2079,65 @@ JSON structure:
                         )}
                       </div>
                       <p className="text-xs text-slate-400 mt-0.5">
-                        Ваш прогресс: <strong className="text-emerald-400">{masteredCards.length} выучено</strong> • <span className="text-blue-400">{deck.length} в процессе</span> (Всего: {deck.length + masteredCards.length})
+                        Ваш ID: <code className="font-mono text-indigo-300">{syncId || '...'}</code> • <strong className="text-emerald-400">{masteredCards.length} выучено</strong>
                       </p>
                     </div>
                   </div>
 
                   <button
                     onClick={() => {
-                      copyToClipboard(shareableUrl || window.location.href, 'Ссылка приглашения скопирована! Отправьте её друзьям.');
+                      copyToClipboard(friendInviteUrl, 'Ссылка подписки скопирована! Отправьте её друзьям.');
                     }}
                     className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-orange-500/20 flex items-center gap-2 shrink-0 transition-all"
                   >
                     <Icon name="share-2" className="w-4 h-4" />
-                    <span>Пригласить друга</span>
+                    <span>Ссылка подписки для друга</span>
                   </button>
                 </div>
 
+                {/* Add Friend Input Box */}
+                <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 space-y-3">
+                  <h4 className="text-xs font-bold text-indigo-300 flex items-center gap-1.5">
+                    <Icon name="user-plus" className="w-4 h-4" />
+                    Добавить друга по его ID
+                  </h4>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={friendAddInput}
+                      onChange={(e) => setFriendAddInput(e.target.value)}
+                      placeholder="Вставьте ID друга..."
+                      className="flex-1 px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                    />
+                    <button
+                      onClick={() => handleAddFriend(friendAddInput)}
+                      disabled={!friendAddInput.trim()}
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs rounded-xl transition-all disabled:opacity-50"
+                    >
+                      Подписаться
+                    </button>
+                  </div>
+                </div>
+
+                {/* Friends Leaderboard Table */}
                 <div className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
                   <div className="p-4 bg-slate-950/60 border-b border-slate-800 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Icon name="crown" className="w-5 h-5 text-amber-400" />
-                      <h3 className="font-bold text-base text-white">Топ учеников</h3>
+                      <h3 className="font-bold text-base text-white">Мои друзья ({friendsProfiles.length})</h3>
                     </div>
                     <span className="text-xs text-slate-400">Обновляется в реальном времени</span>
                   </div>
 
-                  {leaderboard.length === 0 ? (
+                  {friendsProfiles.length === 0 ? (
                     <div className="text-center py-12 text-slate-500 text-sm">
                       <Icon name="users" className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                      Загрузка списка лидеров...
+                      Загрузка списка друзей...
                     </div>
                   ) : (
                     <div className="divide-y divide-slate-800/60">
-                      {leaderboard.map((item, index) => {
+                      {friendsProfiles.map((item, index) => {
                         const isMe = item.id === syncId;
                         const rank = index + 1;
 
@@ -1713,7 +2150,7 @@ JSON structure:
                           >
                             <div className="flex items-center gap-3.5">
                               <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs ${
-                                rank === 1 ? 'bg-amber-400 text-slate-950 shadow-lg shadow-amber-400/30' :
+                                rank === 1 ? 'bg-amber-400 text-slate-950 shadow-lg' :
                                 rank === 2 ? 'bg-slate-300 text-slate-950' :
                                 rank === 3 ? 'bg-amber-700 text-white' :
                                 'bg-slate-800 text-slate-400'
@@ -1734,7 +2171,7 @@ JSON structure:
                                 </div>
                                 <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-400">
                                   <span className="px-1.5 py-0.5 bg-slate-800 text-slate-300 rounded border border-slate-700">
-                                    Всего карточек: <strong className="text-white">{item.totalCards || 0}</strong>
+                                    Всего слов: <strong className="text-white">{item.totalCards || 0}</strong>
                                   </span>
                                   <span className="text-blue-400 font-medium">
                                     Учит сейчас: {item.activeCount ?? Math.max(0, (item.totalCards || 0) - (item.masteredCount || 0))}
@@ -1743,13 +2180,25 @@ JSON structure:
                               </div>
                             </div>
 
-                            <div className="text-right">
-                              <span className="text-base font-extrabold text-emerald-400 block">
-                                {item.masteredCount || 0}
-                              </span>
-                              <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
-                                выучено
-                              </span>
+                            <div className="flex items-center gap-3 text-right">
+                              <div>
+                                <span className="text-base font-extrabold text-emerald-400 block">
+                                  {item.masteredCount || 0}
+                                </span>
+                                <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">
+                                  выучено
+                                </span>
+                              </div>
+
+                              {!isMe && (
+                                <button
+                                  onClick={() => handleRemoveFriend(item.id)}
+                                  className="p-1.5 text-slate-500 hover:text-rose-400 transition-colors"
+                                  title="Отписаться от друга"
+                                >
+                                  <Icon name="user-minus" className="w-4 h-4" />
+                                </button>
+                              )}
                             </div>
                           </div>
                         );
@@ -1760,7 +2209,7 @@ JSON structure:
               </div>
             )}
 
-            {/* View 4: Active Deck View */}
+            {/* View 5: Active Deck View */}
             {activeTab === 'deck' && (
               <div className="space-y-4 w-full">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
@@ -1851,7 +2300,7 @@ JSON structure:
               </div>
             )}
 
-            {/* View 5: Mastered Cards View */}
+            {/* View 6: Mastered Cards View */}
             {activeTab === 'mastered' && (
               <div className="space-y-4 w-full">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
@@ -1862,7 +2311,7 @@ JSON structure:
                         {masteredCards.length} слов
                       </span>
                     </h2>
-                    <p className="text-xs text-slate-400">Слова, которые вы успешно освоили</p>
+                    <p className="text-xs text-slate-400">Слова, которые вы освоили</p>
                   </div>
 
                   <div className="relative w-full sm:w-64">
@@ -1949,7 +2398,6 @@ JSON structure:
                   </div>
                 </div>
 
-                {/* Voice Selection Panel */}
                 <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl mb-6 space-y-4">
                   <h4 className="text-xs font-semibold text-indigo-400 flex items-center gap-1.5">
                     <Icon name="volume-2" className="w-4 h-4" />
@@ -1958,7 +2406,7 @@ JSON structure:
 
                   <div className="space-y-3 text-xs">
                     <div>
-                      <label className="block text-slate-400 mb-1">Голос для английского языка (en-US / en-GB)</label>
+                      <label className="block text-slate-400 mb-1">Голос для английского языка</label>
                       <div className="flex items-center gap-2">
                         <select
                           value={selectedEnVoice}
@@ -1982,7 +2430,6 @@ JSON structure:
                           type="button"
                           onClick={() => handleSpeak("Hello! Welcome to LinguaCards AI.", 'en-US')}
                           className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 rounded-lg border border-slate-700 shrink-0"
-                          title="Тест английского голоса"
                         >
                           🔊 Тест
                         </button>
@@ -1990,7 +2437,7 @@ JSON structure:
                     </div>
 
                     <div>
-                      <label className="block text-slate-400 mb-1">Голос для русского языка (ru-RU)</label>
+                      <label className="block text-slate-400 mb-1">Голос для русского языка</label>
                       <div className="flex items-center gap-2">
                         <select
                           value={selectedRuVoice}
@@ -2014,7 +2461,6 @@ JSON structure:
                           type="button"
                           onClick={() => handleSpeak("Привет! Это проверка русского голоса.", 'ru-RU')}
                           className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 rounded-lg border border-slate-700 shrink-0"
-                          title="Тест русского голоса"
                         >
                           🔊 Тест
                         </button>
@@ -2023,12 +2469,11 @@ JSON structure:
                   </div>
                 </div>
 
-                {/* Device Cloud Sync */}
                 <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl mb-6 space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                      Ваш Код Синхронизации (Sync ID)
+                      Ваш ID Синхронизации
                     </span>
                   </div>
 
@@ -2049,12 +2494,11 @@ JSON structure:
                     </button>
                   </div>
 
-                  {/* Dynamic QR Code Display */}
                   <div className="pt-3 border-t border-slate-800/80 space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-blue-400 flex items-center gap-1.5">
                         <Icon name="share-2" className="w-3.5 h-3.5" />
-                        Быстрое подключение телефона через QR-код
+                        QR-код для подключения телефона
                       </span>
                     </div>
 
@@ -2063,19 +2507,15 @@ JSON structure:
                         <div className="p-3 bg-white rounded-xl shadow-xl inline-block">
                           <img
                             src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(shareableUrl)}`}
-                            alt="QR Code for Mobile Sync"
+                            alt="QR Code"
                             className="w-48 h-48 block mx-auto"
                           />
                         </div>
                       )}
 
-                      <p className="text-xs text-slate-300 leading-relaxed max-w-xs">
-                        <strong>📱 Отсканируйте QR-код камерой смартфона</strong>, чтобы открыть приложение и автоматически подключить вашу базу карточек!
-                      </p>
-
                       <button
                         type="button"
-                        onClick={() => copyToClipboard(shareableUrl, 'Прямая ссылка скопирована!')}
+                        onClick={() => copyToClipboard(shareableUrl, 'Ссылка скопирована!')}
                         className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
                       >
                         <Icon name="copy" className="w-4 h-4" />
@@ -2083,70 +2523,17 @@ JSON structure:
                       </button>
                     </div>
                   </div>
-
-                  <div className="pt-3 border-t border-slate-800/80 space-y-2">
-                    <button
-                      type="button"
-                      onClick={handleInstallApp}
-                      className="w-full py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-medium text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
-                    >
-                      <Icon name="smartphone" className="w-4 h-4" />
-                      <span>{isInstallable ? "📲 Установить как приложение на ПК / Android" : "📲 Как установить на iPhone / iOS"}</span>
-                    </button>
-
-                    <p className="text-[11px] text-slate-400 bg-slate-900 p-2.5 rounded-lg border border-slate-800">
-                      <strong>📱 Инструкция для iPhone (iOS):</strong><br/>
-                      1. Откройте эту ссылку в браузере <strong>Safari</strong>.<br/>
-                      2. Нажмите кнопку <strong>«Поделиться»</strong> (квадрат со стрелкой вверх внизу экрана).<br/>
-                      3. Прокрутите вниз и выберите <strong>«На экран "Домой"»</strong>.
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
-                    <input
-                      type="text"
-                      value={customSyncInput}
-                      onChange={(e) => setCustomSyncInput(e.target.value)}
-                      placeholder="Вставьте Sync ID или ссылку..."
-                      className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!customSyncInput.trim()) return;
-                        let extractedId = customSyncInput.trim();
-                        if (extractedId.includes('syncId=')) {
-                          try {
-                            const urlObj = new URL(extractedId);
-                            extractedId = urlObj.searchParams.get('syncId') || extractedId;
-                          } catch(e) {}
-                        }
-                        setSyncId(extractedId);
-                        localStorage.setItem('lingua_sync_id', extractedId);
-                        setCustomSyncInput('');
-                        showToast('Код синхронизации обновлен!', 'success');
-                      }}
-                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg transition-all"
-                    >
-                      Подключить
-                    </button>
-                  </div>
                 </div>
 
                 <div className="space-y-3 mb-6">
                   <div className="flex items-center justify-between">
                     <h4 className="text-xs font-semibold text-slate-300">Ключ Google Gemini API</h4>
-                    {DEFAULT_API_KEY && (
-                      <span className="text-[10px] text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/50">
-                        Встроен ключ
-                      </span>
-                    )}
                   </div>
                   <input
                     type="password"
                     value={tempApiKeyInput}
                     onChange={(e) => setTempApiKeyInput(e.target.value)}
-                    placeholder={DEFAULT_API_KEY ? "Используется встроенный ключ" : "AIzaSy..."}
+                    placeholder="AQ.Ab8RN6IS..."
                     className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500"
                   />
                   
@@ -2157,7 +2544,7 @@ JSON structure:
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 text-blue-400 hover:underline text-[11px]"
                     >
-                      <span>Получить бесплатный ключ в AI Studio</span>
+                      <span>Получить бесплатный ключ</span>
                     </a>
 
                     <button
@@ -2181,12 +2568,12 @@ JSON structure:
                     className="w-full sm:w-auto px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-xl flex items-center justify-center gap-2 border border-slate-700"
                   >
                     <Icon name="download" className="w-4 h-4" />
-                    <span>Скачать резервную копию</span>
+                    <span>Скачать бэкап</span>
                   </button>
 
                   <label className="w-full sm:w-auto px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-xl flex items-center justify-center gap-2 border border-slate-700 cursor-pointer">
                     <Icon name="upload" className="w-4 h-4" />
-                    <span>Импортировать файл</span>
+                    <span>Импортировать бэкап</span>
                     <input type="file" accept=".json" onChange={handleImportDeck} className="hidden" />
                   </label>
                 </div>
@@ -2212,7 +2599,7 @@ JSON structure:
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-white">Добавить карточку вручную</h3>
-                    <p className="text-xs text-slate-400">Без использования AI-генерации</p>
+                    <p className="text-xs text-slate-400">Без использования AI</p>
                   </div>
                 </div>
 
@@ -2307,7 +2694,7 @@ JSON structure:
             </div>
           )}
 
-          {/* Bulk Words Modal */}
+          {/* Bulk Add Words Modal */}
           {isBulkAddOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl relative max-h-[90vh] flex flex-col justify-between">
@@ -2337,14 +2724,14 @@ JSON structure:
                       onClick={() => setBulkInput("Ambitious\nCompassion\nInevitable\nUnprecedented\nPhenomenon")}
                       className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-blue-300 rounded-lg border border-slate-700"
                     >
-                      Список английских слов
+                      Список слов
                     </button>
                     <button
                       type="button"
                       onClick={() => setBulkInput("Adventure - Приключение\nChallenge - Вызов\nDestination - Пункт назначения\nOpportunity - Возможность")}
                       className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-indigo-300 rounded-lg border border-slate-700"
                     >
-                      Готовые пары (Слово - Перевод)
+                      Готовые пары
                     </button>
                   </div>
 
@@ -2355,10 +2742,6 @@ JSON structure:
                     placeholder={`Вставьте список слов по одному на строку:\n\nSerendipity\nPerseverance\n\nили:\nApple - Яблоко\nBook - Книга`}
                     className="w-full p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm font-mono text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 resize-none shadow-inner"
                   />
-                  
-                  <p className="text-[11px] text-slate-400 mt-2">
-                    💡 <strong>✨ AI Генерация</strong> переведет слова, создаст транскрипцию и примеры. <strong>⚡ Быстрый импорт</strong> мгновенно добавит список пар.
-                  </p>
                 </div>
 
                 <div className="pt-4 mt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-2.5">
