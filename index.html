@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<html lang="ru" class="dark h-full">
+<html lang="ru" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>LinguaCards AI — Тренажер английских слов</title>
 
-  <!-- PWA & Apple Meta Tags -->
+  <!-- PWA Settings & iOS Integration -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="LinguaCards" />
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3898/3898082.png" />
 
-  <!-- Tailwind CSS -->
+  <!-- Tailwind CSS & Lucide Icons -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -26,29 +26,29 @@
     }
   </script>
 
-  <!-- React & ReactDOM & Babel -->
+  <!-- React & Babel Core -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   
-  <!-- Firebase & QR Code -->
+  <!-- Firebase & QR Code Libraries -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
   <style>
     body {
-      background-color: #030712;
+      background-color: #090d16;
       color: #f3f4f6;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       overflow-x: hidden;
       touch-action: manipulation;
     }
-    .safe-top { padding-top: max(14px, env(safe-area-inset-top)); }
+    .safe-top { padding-top: max(12px, env(safe-area-inset-top)); }
     .safe-bottom { padding-bottom: max(20px, env(safe-area-inset-bottom)); }
     .card-flip { perspective: 1000px; }
     .card-inner {
-      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
       transform-style: preserve-3d;
     }
     .card-flipped { transform: rotateY(180deg); }
@@ -56,291 +56,235 @@
     .card-back { transform: rotateY(180deg); }
   </style>
 </head>
-<body class="h-full flex flex-col antialiased">
-  <div id="root" class="flex-1 flex flex-col"></div>
+<body class="min-h-screen flex flex-col antialiased">
+  <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useRef, useMemo } = React;
+    const { useState, useEffect, useRef } = React;
 
     const DEFAULT_API_KEY = "AQ.Ab8RN6ISBSPyMyTiUgv4LC9ZFNYBQu82KgCPHX2w6gH9KSKpow";
-
-    // 50+ Initial Base Words per Category & Level
-    const INITIAL_TOPICS = [
+    
+    const INITIAL_COLLECTIONS = [
       {
         id: 'travel',
         title: '✈️ Путешествия & Аэропорт',
-        description: 'Перелеты, бронирование отелей, таможня и ориентация в городе',
+        description: 'Перелеты, отели, таможня и ориентация в городе',
         levels: {
           beginner: [
-            { id: 't1', english: 'Passport', russian: 'Паспорт', phonetic: 'ˈpæspɔːrt', example: 'Show your passport at airport check-in.' },
-            { id: 't2', english: 'Luggage', russian: 'Багаж', phonetic: 'ˈlʌɡɪdʒ', example: 'I need to collect my luggage.' },
-            { id: 't3', english: 'Boarding pass', russian: 'Посадочный талон', phonetic: 'ˈbɔːrdɪŋ pæs', example: 'Keep your boarding pass ready for boarding.' },
-            { id: 't4', english: 'Ticket', russian: 'Билет', phonetic: 'ˈtɪkɪt', example: 'I bought a round-trip ticket online.' },
-            { id: 't5', english: 'Gate', russian: 'Выход на посадку', phonetic: 'ɡeɪt', example: 'Gate 4 is closing in ten minutes.' },
-            { id: 't6', english: 'Hotel', russian: 'Отель', phonetic: 'hoʊˈtel', example: 'Our hotel is located in the center.' },
-            { id: 't7', english: 'Flight', russian: 'Рейс', phonetic: 'flaɪt', example: 'The flight was smooth and pleasant.' },
-            { id: 't8', english: 'Customs', russian: 'Таможня', phonetic: 'ˈkʌstəmz', example: 'We cleared customs without any delays.' },
-            { id: 't9', english: 'Taxi', russian: 'Такси', phonetic: 'ˈtæksi', example: 'Let us take a taxi to the station.' },
-            { id: 't10', english: 'Map', russian: 'Карта', phonetic: 'mæp', example: 'Look at the tourist map.' }
+            { id: 't1', english: 'Passport', russian: 'Паспорт', phonetic: 'ˈpæspɔːrt', example: 'Show your passport at check-in.' },
+            { id: 't2', english: 'Luggage', russian: 'Багаж', phonetic: 'ˈlʌɡɪdʒ', example: 'I lost my luggage at the airport.' },
+            { id: 't3', english: 'Ticket', russian: 'Билет', phonetic: 'ˈtɪkɪt', example: 'I booked a round-trip ticket.' },
+            { id: 't4', english: 'Hotel', russian: 'Отель', phonetic: 'hoʊˈtel', example: 'We checked into our hotel early.' },
+            { id: 't5', english: 'Flight', russian: 'Рейс', phonetic: 'flaɪt', example: 'Our flight is delayed by two hours.' }
           ],
           intermediate: [
-            { id: 't11', english: 'Accommodation', russian: 'Жилье / Проживание', phonetic: 'əˌkɑːməˈdeɪʃn', example: 'We booked comfortable accommodation.' },
-            { id: 't12', english: 'Itinerary', russian: 'Маршрут поездки', phonetic: 'aɪˈtɪnəreri', example: 'Our travel itinerary includes Rome and Florence.' },
-            { id: 't13', english: 'Destination', russian: 'Пункт назначения', phonetic: 'ˌdestɪˈneɪʃn', example: 'Paris was our final destination.' },
-            { id: 't14', english: 'Reservation', russian: 'Бронирование', phonetic: 'ˌrezərˈveɪʃn', example: 'I have a room reservation.' },
-            { id: 't15', english: 'Departure', russian: 'Отправление', phonetic: 'dɪˈpɑːrtʃər', example: 'Check the departure time.' }
+            { id: 't6', english: 'Accommodation', russian: 'Жилье / Проживание', phonetic: 'əˌkɑːməˈdeɪʃn', example: 'We found affordable accommodation near downtown.' },
+            { id: 't7', english: 'Itinerary', russian: 'Маршрут путешествия', phonetic: 'aɪˈtɪnəreri', example: 'Our itinerary includes three main cities.' }
           ],
           advanced: [
-            { id: 't16', english: 'Layover', russian: 'Пересадка', phonetic: 'ˈleɪoʊvər', example: 'We had a short layover in Frankfurt.' },
-            { id: 't17', english: 'Embarkation', russian: 'Посадка на судно', phonetic: 'ˌembɑːrˈkeɪʃn', example: 'Embarkation begins at noon.' },
-            { id: 't18', english: 'Excursion', russian: 'Экскурсия', phonetic: 'ɪkˈskɜːrʒn', example: 'An exciting excursion into the canyon.' }
+            { id: 't8', english: 'Layover', russian: 'Пересадка между рейсами', phonetic: 'ˈleɪoʊvər', example: 'We had an eight-hour layover in Istanbul.' }
           ]
         }
       },
       {
         id: 'dining',
         title: '🍕 Рестораны & Еда',
-        description: 'Заказ блюд, меню, кафе, ингредиенты и расчет',
+        description: 'Заказ блюд, кафе, меню и оплата счетов',
         levels: {
           beginner: [
-            { id: 'd1', english: 'Menu', russian: 'Меню', phonetic: 'ˈmenjuː', example: 'May I see the menu please?' },
-            { id: 'd2', english: 'Water', russian: 'Вода', phonetic: 'ˈwɔːtər', example: 'A bottle of mineral water.' },
-            { id: 'd3', english: 'Bill', russian: 'Счет', phonetic: 'bɪl', example: 'Could we have the bill?' },
-            { id: 'd4', english: 'Table', russian: 'Столик', phonetic: 'ˈteɪbl', example: 'A table by the window.' },
-            { id: 'd5', english: 'Coffee', russian: 'Кофе', phonetic: 'ˈkɔːfi', example: 'Fresh hot coffee in the morning.' }
+            { id: 'd1', english: 'Menu', russian: 'Меню', phonetic: 'ˈmenjuː', example: 'Could we have the menu please?' },
+            { id: 'd2', english: 'Water', russian: 'Вода', phonetic: 'ˈwɔːtər', example: 'A glass of cold water, please.' },
+            { id: 'd3', english: 'Bill', russian: 'Счет', phonetic: 'bɪl', example: 'Can I pay the bill by card?' }
           ],
           intermediate: [
-            { id: 'd6', english: 'Appetizer', russian: 'Закуска', phonetic: 'ˈæpɪtaɪzər', example: 'We ordered garlic bread as an appetizer.' },
-            { id: 'd7', english: 'Main course', russian: 'Основное блюдо', phonetic: 'meɪn kɔːrs', example: 'Grilled salmon for the main course.' },
-            { id: 'd8', english: 'Tip', russian: 'Чаевые', phonetic: 'tɪp', example: 'Leaving a tip is customary here.' }
+            { id: 'd4', english: 'Appetizer', russian: 'Закуска', phonetic: 'ˈæpɪtaɪzər', example: 'We ordered soup as an appetizer.' }
           ],
           advanced: [
-            { id: 'd9', english: 'Cuisine', russian: 'Кухня (национальная)', phonetic: 'kwɪˈziːn', example: 'Authentic Italian cuisine.' },
-            { id: 'd10', english: 'Dietary restrictions', russian: 'Диетические ограничения', phonetic: 'ˈdaɪətəri rɪˈstrɪkʃnz', example: 'Please mention any dietary restrictions.' }
+            { id: 'd5', english: 'Cuisine', russian: 'Национальная кухня', phonetic: 'kwɪˈziːn', example: 'This restaurant offers authentic Mediterranean cuisine.' }
           ]
         }
       }
     ];
 
     function App() {
-      const [activeTab, setActiveTab] = useState('cards'); // 'cards', 'topics', 'speech', 'settings'
-      const [cards, setCards] = useState(() => {
-        const saved = localStorage.getItem('lc_deck');
-        return saved ? JSON.parse(saved) : [
-          { id: '1', english: 'Serendipity', russian: 'Счастливая случайность', phonetic: 'ˌserənˈdɪpəti', example: 'Finding this peaceful place was pure serendipity.' },
-          { id: '2', english: 'Resilience', russian: 'Стойкость', phonetic: 'rɪˈzɪliəns', example: 'Her emotional resilience helped her overcome difficulties.' }
-        ];
-      });
-
+      const [activeTab, setActiveTab] = useState('cards'); // 'cards', 'topics', 'speech', 'leaderboard'
+      const [cards, setCards] = useState([
+        { id: '1', english: 'Serendipity', russian: 'Счастливая случайность', phonetic: 'ˌserənˈdɪpəti', example: 'Finding this peaceful place was pure serendipity.' },
+        { id: '2', english: 'Resilience', russian: 'Устойчивость / Стойкость', phonetic: 'rɪˈzɪliəns', example: 'Her emotional resilience helped her overcome difficulties.' }
+      ]);
+      const [learnedIds, setLearnedIds] = useState([]);
       const [currentIndex, setCurrentIndex] = useState(0);
       const [isFlipped, setIsFlipped] = useState(false);
-      const [apiKey, setApiKey] = useState(() => localStorage.getItem('lc_apikey') || DEFAULT_API_KEY);
+      const [apiKey, setApiKey] = useState(DEFAULT_API_KEY);
       
-      // Topic Explorer Modal States
-      const [activeTopicObj, setActiveTopicObj] = useState(null);
-      const [activeLevelKey, setActiveLevelKey] = useState('beginner');
-      const [previewWordsList, setPreviewWordsList] = useState(null);
-      const [isGeneratingTopic, setIsGeneratingTopic] = useState(false);
+      // User & Social States
+      const [userId, setUserId] = useState(() => localStorage.getItem('lc_uid') || 'user_' + Math.random().toString(36).substr(2, 6));
+      const [userName, setUserName] = useState(() => localStorage.getItem('lc_uname') || '');
+      const [following, setFollowing] = useState(() => JSON.parse(localStorage.getItem('lc_following') || '[]'));
+      const [leaderboard, setLeaderboard] = useState([]);
 
-      // Interactive Clickable Word Modal
+      // Modals & Tools
+      const [showOnboarding, setShowOnboarding] = useState(!localStorage.getItem('lc_registered'));
+      const [showSettings, setShowSettings] = useState(false);
+      const [previewTopic, setPreviewTopic] = useState(null);
       const [activeWordModal, setActiveWordModal] = useState(null);
-
-      // Pronunciation Trainer
-      const [speechScore, setSpeechScore] = useState(0);
-      const [isListening, setIsListening] = useState(false);
-      const [speechFeedback, setSpeechFeedback] = useState(null);
-
-      useEffect(() => {
-        localStorage.setItem('lc_deck', JSON.stringify(cards));
-      }, [cards]);
+      const [inputWord, setInputWord] = useState('');
+      const [isGenerating, setIsGenerating] = useState(false);
+      const [voices, setVoices] = useState([]);
+      const [selectedVoice, setSelectedVoice] = useState('');
 
       useEffect(() => {
-        localStorage.setItem('lc_apikey', apiKey);
-      }, [apiKey]);
+        localStorage.setItem('lc_uid', userId);
+        localStorage.setItem('lc_uname', userName);
+        localStorage.setItem('lc_following', JSON.stringify(following));
+      }, [userId, userName, following]);
 
-      // Clickable Word in Example Sentence
-      const handleTokenClick = (wordToken) => {
-        const clean = wordToken.replace(/[^a-zA-Z]/g, '');
-        if (!clean) return;
-        setActiveWordModal({ word: clean, loading: true, translation: '' });
+      useEffect(() => {
+        const loadVoices = () => {
+          const vList = window.speechSynthesis.getVoices();
+          setVoices(vList);
+        };
+        loadVoices();
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+      }, []);
 
+      const handleTokenClick = (word) => {
+        const cleanWord = word.replace(/[^a-zA-Z]/g, '');
+        if (!cleanWord) return;
+        setActiveWordModal({ word: cleanWord, loading: true, translation: '' });
+        
         fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: `Translate the English word "${clean}" into Russian briefly with 1-2 words only.` }] }]
+            contents: [{ parts: [{ text: `Translate English word "${cleanWord}" to Russian briefly (1-2 words only).` }] }]
           })
         })
         .then(r => r.json())
         .then(data => {
           const trans = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Перевод';
-          setActiveWordModal({ word: clean, loading: false, translation: trans.trim() });
+          setActiveWordModal({ word: cleanWord, loading: false, translation: trans.trim() });
         })
-        .catch(() => {
-          setActiveWordModal({ word: clean, loading: false, translation: 'Ошибка сети' });
-        });
+        .catch(() => setActiveWordModal({ word: cleanWord, loading: false, translation: 'Ошибка' }));
       };
 
-      const addWordFromModal = () => {
+      const addModalWordToDeck = () => {
         if (!activeWordModal) return;
-        const newCard = {
-          id: 'card_' + Date.now(),
+        setCards(prev => [{
+          id: Date.now().toString(),
           english: activeWordModal.word,
           russian: activeWordModal.translation,
           phonetic: '',
-          example: `Added from context reading.`
-        };
-        setCards(prev => [newCard, ...prev]);
+          example: `Context word: ${activeWordModal.word}`
+        }, ...prev]);
         setActiveWordModal(null);
-      };
-
-      // Generate +20 New Words with AI for Topic & Level
-      const handleGenerateMoreAI = async (topicTitle, levelName) => {
-        setIsGeneratingTopic(true);
-        try {
-          const prompt = `Generate 20 new English vocabulary words with Russian translations, phonetics, and example sentences for topic "${topicTitle}" at level "${levelName}".
-Return ONLY a valid JSON array format like:
-[
-  {"english": "Word", "russian": "Перевод", "phonetic": "phonetic", "example": "Example sentence using the word."}
-]`;
-
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-          });
-
-          const data = await res.json();
-          let raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
-          raw = raw.replace(/```json/g, '').replace(/```/g, '').trim();
-          const parsed = JSON.parse(raw);
-
-          const formatted = parsed.map((item, idx) => ({
-            id: 'ai_' + Date.now() + '_' + idx,
-            english: item.english,
-            russian: item.russian,
-            phonetic: item.phonetic || '',
-            example: item.example || ''
-          }));
-
-          setPreviewWordsList(prev => [...prev, ...formatted]);
-        } catch (e) {
-          alert('Ошибка генерации AI. Проверьте API ключ.');
-        } finally {
-          setIsGeneratingTopic(false);
-        }
-      };
-
-      const importPreviewToList = () => {
-        if (!previewWordsList) return;
-        setCards(prev => [...previewWordsList, ...prev]);
-        setPreviewWordsList(null);
-        setActiveTopicObj(null);
-        setActiveTab('cards');
       };
 
       const currentCard = cards[currentIndex] || cards[0];
 
+      if (showOnboarding && !userName) {
+        return (
+          <div className="fixed inset-0 bg-[#090d16] z-50 flex flex-col items-center justify-center p-6 text-center">
+            <div className="max-w-md w-full bg-gray-900 border border-gray-800 p-6 rounded-3xl space-y-4 shadow-2xl">
+              <div className="w-14 h-14 bg-brand-600 rounded-2xl mx-auto flex items-center text-white text-2xl font-bold justify-icons">✨</div>
+              <h1 className="text-2xl font-bold text-white">Добро пожаловать в LinguaCards!</h1>
+              <p className="text-sm text-gray-400">Введите ваше имя или никнейм, чтобы начать обучение и соревноваться с друзьями.</p>
+              <input 
+                type="text" 
+                placeholder="Ваше имя (например, Алексей)" 
+                id="onboardName"
+                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-xl text-white outline-none focus:border-brand-500"
+              />
+              <button 
+                onClick={() => {
+                  const val = document.getElementById('onboardName').value.trim();
+                  if (val) {
+                    setUserName(val);
+                    setShowOnboarding(false);
+                    localStorage.setItem('lc_registered', 'true');
+                  }
+                }}
+                className="w-full py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl shadow-lg"
+              >
+                Начать обучение
+              </button>
+            </div>
+          </div>
+        );
+      }
+
       return (
-        <div className="flex-1 flex flex-col max-w-md mx-auto w-full pb-20 select-none">
-          
-          {/* Fixed Safe Header */}
-          <header className="sticky top-0 z-40 bg-gray-950/90 backdrop-blur-md border-b border-gray-800 safe-top px-4 py-3 flex items-center justify-between">
+        <div className="flex-1 flex flex-col max-w-md mx-auto w-full pb-24">
+          {/* Header */}
+          <header className="sticky top-0 z-40 bg-[#090d16]/95 backdrop-blur-md border-b border-gray-800/80 safe-top px-4 py-3 flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center text-white font-bold text-sm shadow-md">
-                L
-              </div>
-              <span className="font-bold text-base text-white tracking-tight">LinguaCards</span>
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-400 flex items-center justify-center text-white font-bold text-sm">L</div>
+              <span className="font-bold text-sm text-gray-100">LinguaCards</span>
             </div>
 
-            {/* Navigation Bar */}
-            <nav className="flex items-center space-x-1 bg-gray-900 p-1 rounded-xl border border-gray-800">
-              <button onClick={() => setActiveTab('cards')} className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition ${activeTab === 'cards' ? 'bg-brand-600 text-white shadow' : 'text-gray-400'}`}>
-                🎴 Карточки
-              </button>
-              <button onClick={() => setActiveTab('topics')} className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition ${activeTab === 'topics' ? 'bg-brand-600 text-white shadow' : 'text-gray-400'}`}>
-                📚 Темы
-              </button>
-              <button onClick={() => setActiveTab('speech')} className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition ${activeTab === 'speech' ? 'bg-brand-600 text-white shadow' : 'text-gray-400'}`}>
-                🎤 Речь
-              </button>
+            <nav className="flex items-center space-x-1 bg-gray-900/90 p-1 rounded-xl border border-gray-800 text-xs">
+              <button onClick={() => setActiveTab('cards')} className={`px-2.5 py-1 rounded-lg font-medium transition ${activeTab === 'cards' ? 'bg-brand-600 text-white' : 'text-gray-400'}`}>🎴</button>
+              <button onClick={() => setActiveTab('topics')} className={`px-2.5 py-1 rounded-lg font-medium transition ${activeTab === 'topics' ? 'bg-brand-600 text-white' : 'text-gray-400'}`}>📚</button>
+              <button onClick={() => setActiveTab('speech')} className={`px-2.5 py-1 rounded-lg font-medium transition ${activeTab === 'speech' ? 'bg-brand-600 text-white' : 'text-gray-400'}`}>🎤</button>
+              <button onClick={() => setActiveTab('leaderboard')} className={`px-2.5 py-1 rounded-lg font-medium transition ${activeTab === 'leaderboard' ? 'bg-brand-600 text-white' : 'text-gray-400'}`}>🏆</button>
             </nav>
+
+            <button onClick={() => setShowSettings(true)} className="p-2 text-gray-400 hover:text-white rounded-lg">⚙️</button>
           </header>
 
+          {/* Main Container */}
           <main className="p-4 flex-1 flex flex-col">
-            
-            {/* TAB 1: CARDS */}
             {activeTab === 'cards' && currentCard && (
               <div className="flex-1 flex flex-col justify-center my-auto">
-                <div onClick={() => setIsFlipped(!isFlipped)} className="card-flip w-full cursor-pointer min-h-[340px]">
-                  <div className={`card-inner relative w-full h-full rounded-3xl bg-gradient-to-b from-gray-900 to-gray-950 border border-gray-800 p-6 flex flex-col justify-between shadow-2xl ${isFlipped ? 'card-flipped' : ''}`}>
+                <div onClick={() => setIsFlipped(!isFlipped)} className="card-flip w-full cursor-pointer min-h-[320px]">
+                  <div className={`card-inner relative w-full h-full rounded-2xl bg-gradient-to-b from-gray-800/90 to-gray-900 border border-gray-700/60 p-6 flex flex-col justify-between shadow-2xl ${isFlipped ? 'card-flipped' : ''}`}>
                     
-                    {/* Front */}
                     <div className="card-front absolute inset-0 p-6 flex flex-col justify-between">
-                      <div className="text-xs text-gray-500 font-semibold tracking-wider">НАЖМИТЕ ДЛЯ ПЕРЕВОДА 🔄</div>
+                      <div className="text-xs text-gray-400 font-semibold tracking-wider">НАЖМИТЕ ДЛЯ ПЕРЕВОДА 🔄</div>
                       <div className="text-center my-auto">
-                        <h2 className="text-3xl font-black text-white">{currentCard.english}</h2>
-                        {currentCard.phonetic && <p className="text-sm text-brand-400 mt-2 font-mono">[{currentCard.phonetic}]</p>}
+                        <h2 className="text-3xl font-extrabold text-white">{currentCard.english}</h2>
+                        {currentCard.phonetic && <p className="text-sm text-brand-400 mt-2">[{currentCard.phonetic}]</p>}
                       </div>
-                      <div className="text-xs text-gray-600 text-center">Карточка {currentIndex + 1} из {cards.length}</div>
+                      <div className="text-xs text-gray-500 text-center">Карточка {currentIndex + 1} из {cards.length}</div>
                     </div>
 
-                    {/* Back */}
                     <div className="card-back absolute inset-0 p-6 flex flex-col justify-between">
-                      <div className="text-xs text-brand-400 font-bold tracking-wide">ПЕРЕВОД & ПРИМЕР</div>
-                      <div className="text-center my-auto space-y-3">
+                      <div className="text-xs text-brand-400 font-bold">ПЕРЕВОД & ПРИМЕР</div>
+                      <div className="text-center my-auto">
                         <h3 className="text-2xl font-bold text-emerald-400">{currentCard.russian}</h3>
-                        
                         {currentCard.example && (
-                          <div className="p-3 bg-gray-900/80 rounded-2xl border border-gray-800 text-sm text-gray-300 leading-relaxed">
-                            {currentCard.example.split(' ').map((token, idx) => (
-                              <span
-                                key={idx}
-                                onClick={(e) => { e.stopPropagation(); handleTokenClick(token); }}
-                                className="inline-block hover:text-brand-400 hover:underline cursor-pointer px-0.5"
-                              >
-                                {token}{' '}
+                          <div className="mt-4 p-3 bg-gray-950/60 rounded-xl border border-gray-800 text-sm text-gray-300">
+                            {currentCard.example.split(' ').map((w, idx) => (
+                              <span key={idx} onClick={(e) => { e.stopPropagation(); handleTokenClick(w); }} className="inline-block hover:text-brand-400 hover:underline cursor-pointer px-0.5">
+                                {w}{' '}
                               </span>
                             ))}
                           </div>
                         )}
                       </div>
-                      <div className="text-xs text-gray-500 text-center">Нажмите любое слово в примере для перевода</div>
+                      <div className="text-xs text-gray-500 text-center">Нажмите слово для перевода</div>
                     </div>
 
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 mt-6">
-                  <button onClick={() => { setIsFlipped(false); setCurrentIndex((currentIndex + 1) % cards.length); }} className="py-3 bg-gray-900 hover:bg-gray-800 text-gray-300 font-semibold rounded-2xl border border-gray-800">
-                    Пропустить
-                  </button>
-                  <button onClick={() => { setIsFlipped(false); setCurrentIndex((currentIndex + 1) % cards.length); }} className="py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl shadow-lg">
-                    ✓ Выучил
-                  </button>
+                  <button onClick={() => setCurrentIndex((currentIndex + 1) % cards.length)} className="py-3 bg-gray-800 hover:bg-gray-700 text-gray-200 font-semibold rounded-xl border border-gray-700">Пропустить</button>
+                  <button onClick={() => { setLearnedIds([...learnedIds, currentCard.id]); setCurrentIndex((currentIndex + 1) % cards.length); }} className="py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg">✓ Выучил</button>
                 </div>
               </div>
             )}
 
-            {/* TAB 2: TOPICS & LEVELS */}
             {activeTab === 'topics' && (
               <div className="space-y-4">
-                <h2 className="text-lg font-bold text-white">📚 Тематические подборки</h2>
-                {INITIAL_TOPICS.map(topic => (
-                  <div key={topic.id} className="p-4 bg-gray-900/90 border border-gray-800 rounded-2xl space-y-3">
-                    <h3 className="font-bold text-brand-400">{topic.title}</h3>
-                    <p className="text-xs text-gray-400">{topic.description}</p>
+                <h2 className="text-lg font-bold text-white">📚 Подборки по уровням</h2>
+                {INITIAL_COLLECTIONS.map(col => (
+                  <div key={col.id} className="p-4 bg-gray-900 border border-gray-800 rounded-2xl space-y-3">
+                    <h3 className="font-bold text-brand-400">{col.title}</h3>
+                    <p className="text-xs text-gray-400">{col.description}</p>
                     <div className="grid grid-cols-3 gap-2 pt-1">
                       {['beginner', 'intermediate', 'advanced'].map(lvl => (
-                        <button
-                          key={lvl}
-                          onClick={() => {
-                            setActiveTopicObj(topic);
-                            setActiveLevelKey(lvl);
-                            setPreviewWordsList(topic.levels[lvl]);
-                          }}
-                          className="py-2 px-1 bg-gray-800 hover:bg-brand-600 rounded-xl text-xs font-semibold text-center border border-gray-700/60 transition"
-                        >
+                        <button key={lvl} onClick={() => setPreviewTopic({ col, lvl })} className="py-2 px-1 bg-gray-800 hover:bg-brand-600 rounded-lg text-xs font-semibold text-center border border-gray-700">
                           {lvl === 'beginner' ? '🟢 A1-A2' : lvl === 'intermediate' ? '🟡 B1-B2' : '🔴 C1-C2'}
                         </button>
                       ))}
@@ -350,86 +294,51 @@ Return ONLY a valid JSON array format like:
               </div>
             )}
 
-            {/* TAB 3: SPEECH */}
-            {activeTab === 'speech' && (
-              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-6">
-                <div className="w-20 h-20 rounded-full bg-brand-600/20 border border-brand-500/40 flex items-center justify-center text-brand-400 text-3xl">
-                  🎤
+            {activeTab === 'leaderboard' && (
+              <div className="space-y-4">
+                <h2 className="text-lg font-bold text-white">🏆 Рейтинг друзей</h2>
+                <div className="p-4 bg-gray-900 border border-gray-800 rounded-2xl space-y-3">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-300 font-semibold">Ваш ID: <code className="text-brand-400">{userId}</code></span>
+                    <span className="text-emerald-400 font-bold">{learnedIds.length} выучено</span>
+                  </div>
+                  <button onClick={() => {
+                    const link = `${window.location.origin}?follow=${userId}`;
+                    navigator.clipboard.writeText(link);
+                    alert('Ссылка для друга скопирована!');
+                  }} className="w-full py-2.5 bg-brand-600 text-white text-xs font-bold rounded-xl">🔗 Скопировать ссылку приглашения</button>
                 </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-bold text-white">Тренажер произношения</h3>
-                  <p className="text-xs text-gray-400 max-w-xs">Слушайте русские слова и повторяйте их на английском языке с автоматической проверкой.</p>
-                </div>
-                <div className="p-4 bg-gray-900 rounded-2xl border border-gray-800 w-full max-w-xs space-y-2">
-                  <div className="text-xs text-gray-500">Счетчик очков</div>
-                  <div className="text-2xl font-extrabold text-amber-400">🏆 {speechScore} баллов</div>
-                </div>
-                <button onClick={() => setSpeechScore(s => s + 10)} className="py-3 px-6 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-2xl shadow-lg">
-                  Симулировать успех (+10)
-                </button>
               </div>
             )}
           </main>
 
-          {/* PREVIEW WORDS MODAL */}
-          {previewWordsList && activeTopicObj && (
-            <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex flex-col p-4">
-              <div className="flex items-center justify-between pb-3 border-b border-gray-800">
-                <div>
-                  <h3 className="font-bold text-white">{activeTopicObj.title}</h3>
-                  <p className="text-xs text-brand-400 uppercase">{activeLevelKey}</p>
+          {/* Settings Modal */}
+          {showSettings && (
+            <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-gray-900 border border-gray-700 p-5 rounded-2xl max-w-sm w-full space-y-4">
+                <div className="flex justify-between items-center"><h3 className="font-bold text-white">⚙️ Настройки</h3><button onClick={() => setShowSettings(false)} className="text-gray-400">✕</button></div>
+                <div className="space-y-2">
+                  <label className="text-xs text-gray-400">Ваше имя в рейтинге:</label>
+                  <input type="text" value={userName} onChange={e => setUserName(e.target.value)} className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-xl text-white text-sm" />
                 </div>
-                <button onClick={() => setPreviewWordsList(null)} className="p-2 text-gray-400 hover:text-white">✕</button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto py-3 space-y-2">
-                {previewWordsList.map((w, idx) => (
-                  <div key={idx} className="p-3 bg-gray-900 rounded-xl border border-gray-800 flex justify-between items-center text-xs">
-                    <div>
-                      <span className="font-bold text-white text-sm">{w.english}</span>
-                      <span className="text-gray-400 ml-2">[{w.russian}]</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="pt-3 border-t border-gray-800 flex flex-col gap-2">
-                <button
-                  onClick={() => handleGenerateMoreAI(activeTopicObj.title, activeLevelKey)}
-                  disabled={isGeneratingTopic}
-                  className="py-2.5 bg-indigo-900/60 hover:bg-indigo-900 text-indigo-300 font-semibold text-xs rounded-xl border border-indigo-700/50 flex items-center justify-center gap-2"
-                >
-                  {isGeneratingTopic ? 'Генерация +20 слов...' : '✨ +20 новых слов с AI'}
-                </button>
-
-                <button
-                  onClick={importPreviewToList}
-                  className="py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs rounded-xl shadow-lg"
-                >
-                  Добавить всю подборку в колоду ({previewWordsList.length})
-                </button>
+                <button onClick={() => setShowSettings(false)} className="w-full py-2.5 bg-brand-600 text-white font-bold rounded-xl text-sm">Сохранить</button>
               </div>
             </div>
           )}
 
-          {/* CLICKABLE WORD POPUP MODAL */}
+          {/* Word Modal */}
           {activeWordModal && (
             <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-gray-900 border border-gray-700 p-5 rounded-2xl max-w-xs w-full text-center space-y-3 shadow-2xl">
+              <div className="bg-gray-900 border border-gray-700 p-5 rounded-2xl max-w-xs w-full text-center space-y-3">
                 <h4 className="text-xl font-bold text-white">{activeWordModal.word}</h4>
-                {activeWordModal.loading ? (
-                  <div className="text-xs text-brand-400 animate-pulse">Переводим через AI...</div>
-                ) : (
-                  <p className="text-lg text-emerald-400 font-semibold">{activeWordModal.translation}</p>
-                )}
+                {activeWordModal.loading ? <div className="text-xs text-brand-400 animate-pulse">Перевод AI...</div> : <p className="text-lg text-emerald-400 font-semibold">{activeWordModal.translation}</p>}
                 <div className="flex space-x-2 pt-2">
                   <button onClick={() => setActiveWordModal(null)} className="flex-1 py-2 bg-gray-800 text-gray-300 text-xs rounded-xl">Закрыть</button>
-                  <button onClick={addWordFromModal} className="flex-1 py-2 bg-brand-600 text-white font-bold text-xs rounded-xl">+ В колоду</button>
+                  <button onClick={addModalWordToDeck} className="flex-1 py-2 bg-brand-600 text-white font-bold text-xs rounded-xl">+ В колоду</button>
                 </div>
               </div>
             </div>
           )}
-
         </div>
       );
     }
