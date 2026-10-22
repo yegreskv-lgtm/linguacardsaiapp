@@ -103,7 +103,6 @@
         let saved = localStorage.getItem('lc_all_words');
         if (saved) {
           let parsed = JSON.parse(saved);
-          // Миграция старых скучных примеров "This is a ..." из предыдущих версий!
           parsed = parsed.map((w, i) => {
             if (w.example && w.example.trim() === `This is a ${w.english}.`) {
               w.example = getBetterExample(w.english, i);
@@ -165,7 +164,6 @@
           incomingWords.forEach(w => {
             const enClean = w.english.toLowerCase().trim();
             if (!existingEn.has(enClean)) {
-              // Убедимся, что транскрипция обрамлена скобками, если она есть
               let phone = w.phonetic || '';
               if (phone && !phone.startsWith('[')) phone = `[${phone}]`;
               added.push({ ...w, phonetic: phone, id: 'w_' + Date.now() + Math.random(), status: 'learning' });
@@ -184,6 +182,7 @@
         });
       };
 
+      // РЕККУРСИВНЫЙ/РЕЗЕРВНЫЙ МЕХАНИЗМ: Если AI не ответил или вернул ошибку, создаем карточку локально!
       const handleSmartImport = () => {
         const textToImport = importText.trim();
         if (!textToImport) return;
@@ -200,11 +199,10 @@ For each word, provide:
 1. "english": The English word.
 2. "russian": The Russian translation.
 3. "phonetic": The IPA transcription (e.g. "[wɜːd]").
-4. "example": Write a rich, diverse, and contextual everyday English sentence using the word (DO NOT use basic "This is a..." templates).
+4. "example": Write a rich, diverse, and contextual everyday English sentence using the word.
 
-Output format MUST be exactly a JSON array of objects. No markdown formatting (\`\`\`json), no extra text, just the raw array.
-Example of expected output:
-[{"english":"sad","russian":"грустный","phonetic":"[sæd]","example":"She felt incredibly sad after hearing the bad news."}]` 
+Output format MUST be exactly a JSON array of objects. No markdown formatting, no extra text, just the raw array.
+Example: [{"english":"sad","russian":"грустный","phonetic":"[sæd]","example":"She felt incredibly sad after hearing the bad news."}]` 
             }] }]
           })
         })
@@ -212,32 +210,47 @@ Example of expected output:
         .then(data => {
           setIsImporting(false);
           let txt = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-          
-          // Жесткая очистка от маркдауна и лишних символов
           txt = txt.replace(/```json/gi, '').replace(/```/gi, '').trim();
           const match = txt.match(/\[[\s\S]*\]/);
           
-          if (!match) {
-            alert('AI не смог распознать слова. Ответ не похож на список слов. Попробуйте еще раз.');
-            return;
+          if (match) {
+            try {
+              const parsed = JSON.parse(match[0]);
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                addWordsUnique(parsed);
+                setImportText('');
+                setActiveTab('cards');
+                return;
+              }
+            } catch(e) {}
           }
           
-          let cleanJson = match[0];
-          
-          try {
-            const parsed = JSON.parse(cleanJson);
-            if (Array.isArray(parsed) && parsed.length > 0) {
-              addWordsUnique(parsed);
-              setImportText('');
-              setActiveTab('cards');
-            } else {
-              alert('Слова не найдены в вашем запросе.');
-            }
-          } catch(e) {
-            alert('Ошибка обработки ответа AI (неверный формат). Попробуйте еще раз.');
-          }
+          // ФОЛЛБЕК (Fallback): если AI завис или вернул не JSON, добавляем слово сами локально без падений!
+          fallbackLocalAdd(textToImport);
         })
-        .catch(() => { setIsImporting(false); alert('Ошибка соединения с AI. Проверьте интернет.'); });
+        .catch(() => {
+          setIsImporting(false);
+          // ФОЛЛБЕК при сбое сети
+          fallbackLocalAdd(textToImport);
+        });
+      };
+
+      // Надежное локальное добавление, если сеть/AI недоступны
+      const fallbackLocalAdd = (input) => {
+        const parts = input.split(/[,;|]/);
+        const en = parts[0] ? parts[0].trim() : input;
+        const ru = parts[1] ? parts[1].trim() : 'перевод';
+        
+        const fallbackWord = {
+          english: en,
+          russian: ru,
+          phonetic: `[${en.toLowerCase()}]`,
+          example: getBetterExample(en, Date.now())
+        };
+        
+        addWordsUnique([fallbackWord]);
+        setImportText('');
+        setActiveTab('cards');
       };
 
       const handleSkip = () => {
@@ -317,11 +330,15 @@ Example of expected output:
         })
         .then(r => r.json())
         .then(data => {
-          let trans = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Перевод не найден';
+          let trans = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
           trans = trans.replace(/["'\n.]/g, '').trim();
+          if (!trans) trans = cleanWord; // фоллбек
           setActiveWordModal({ word: cleanWord, loading: false, translation: trans });
         })
-        .catch(() => setActiveWordModal({ word: cleanWord, loading: false, translation: 'Ошибка сети' }));
+        .catch(() => {
+          // фоллбек сети клика
+          setActiveWordModal({ word: cleanWord, loading: false, translation: cleanWord });
+        });
       };
 
       const addModalWordToLibrary = () => {
@@ -338,7 +355,7 @@ Example of expected output:
           id: 'w_' + Date.now(),
           english: activeWordModal.word,
           russian: activeWordModal.translation,
-          phonetic: `[${activeWordModal.word}]`, 
+          phonetic: `[${activeWordModal.word.toLowerCase()}]`, 
           example: getBetterExample(activeWordModal.word, Date.now()),
           status: 'learning'
         };
@@ -454,7 +471,7 @@ Example of expected output:
                           <div className="my-auto w-full">
                             <h3 className="text-4xl font-bold text-brand-400 mb-2">{currentCard.english}</h3>
                             
-                            {/* Вывод транскрипции (если пусто, показываем слово между слэшами) */}
+                            {/* Вывод транскрипции */}
                             {currentCard.phonetic ? (
                                <p className="text-lg text-gray-400 mb-6 font-medium">{currentCard.phonetic}</p>
                             ) : (
@@ -505,11 +522,11 @@ Example of expected output:
                 <h2 className="text-2xl font-bold text-white">Моя библиотека</h2>
                 
                 <div className="p-5 bg-gray-900 border border-gray-800 rounded-3xl shadow-lg">
-                  <p className="text-xs text-gray-400 mb-3">Умное добавление (по одному или пачкой):</p>
+                  <p className="text-xs text-gray-400 mb-3">Умное добавление (по одному или через черточку, например: sad, грустный):</p>
                   <div className="flex space-x-2">
-                    <input type="text" id="addWordInput" value={importText} onChange={e=>setImportText(e.target.value)} placeholder="Например: sad, грустный..." className="flex-1 bg-gray-800 text-white px-4 py-3 rounded-2xl outline-none text-sm border border-gray-700 focus:border-brand-500 shadow-inner" />
+                    <input type="text" id="addWordInput" value={importText} onChange={e=>setImportText(e.target.value)} placeholder="sad, грустный..." className="flex-1 bg-gray-800 text-white px-4 py-3 rounded-2xl outline-none text-sm border border-gray-700 focus:border-brand-500 shadow-inner" />
                     <button onClick={handleSmartImport} disabled={isImporting} className="px-5 bg-brand-600 hover:bg-brand-500 text-white rounded-2xl font-bold text-sm shadow-lg shrink-0 transition-transform active:scale-95">
-                      {isImporting ? '⏳' : '➕ AI'}
+                      {isImporting ? '⏳' : '➕ Добавить'}
                     </button>
                   </div>
                 </div>
@@ -735,7 +752,7 @@ Example of expected output:
                 )}
                 <div className="flex space-x-3 pt-4">
                   <button onClick={() => setActiveWordModal(null)} className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-medium rounded-2xl transition-colors">Отмена</button>
-                  <button onClick={addModalWordToLibrary} className="flex-1 py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold text-sm rounded-2xl shadow-lg transition-transform active:scale-95">В библиотеку</button>
+                  <button onClick={addModalWordIdLibrary} className="flex-1 py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold text-sm rounded-2xl shadow-lg transition-transform active:scale-95">В библиотеку</button>
                 </div>
               </div>
             </div>
