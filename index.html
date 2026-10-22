@@ -463,6 +463,50 @@
         setTimeout(() => setToast(null), 3000);
       };
 
+      // Universal Reliable Copy to Clipboard Helper
+      const copyToClipboard = (textToCopy, successMessage = 'Скопировано в буфер обмена!') => {
+        if (!textToCopy) return;
+
+        const fallbackExecCopy = (str) => {
+          try {
+            const textArea = document.createElement("textarea");
+            textArea.value = str;
+            textArea.style.position = "fixed";
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.width = "2em";
+            textArea.style.height = "2em";
+            textArea.style.padding = "0";
+            textArea.style.border = "none";
+            textArea.style.outline = "none";
+            textArea.style.boxShadow = "none";
+            textArea.style.background = "transparent";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            const successful = document.execCommand('copy');
+            document.body.removeChild(textArea);
+            if (successful) {
+              showToast(successMessage, 'success');
+            } else {
+              showToast('Скопируйте вручную из поля ввода', 'info');
+            }
+          } catch (err) {
+            console.error('Fallback execCommand failed:', err);
+            showToast('Не удалось скопировать. Скопируйте ссылку вручную', 'error');
+          }
+        };
+
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(textToCopy)
+            .then(() => showToast(successMessage, 'success'))
+            .catch(() => fallbackExecCopy(textToCopy));
+        } else {
+          fallbackExecCopy(textToCopy);
+        }
+      };
+
       // Toast Notification Component
       const renderToast = () => {
         if (!toast) return null;
@@ -552,7 +596,7 @@
       }, []);
 
       const shareableUrl = useMemo(() => {
-        if (!syncId) return '';
+        if (!syncId) return window.location.href;
         const baseUrl = window.location.origin + window.location.pathname;
         return `${baseUrl}?syncId=${encodeURIComponent(syncId)}`;
       }, [syncId]);
@@ -756,6 +800,7 @@ JSON structure:
   "exampleRu": "Russian translation of the example sentence"
 }`;
 
+        // Updated Gemini API model endpoint to gemini-3.8-flash
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${activeKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1226,7 +1271,7 @@ JSON structure:
               </div>
             )}
 
-            {}
+            {/* View 2: Leaderboard & Friends View */}
             {activeTab === 'leaderboard' && (
               <div className="space-y-6 max-w-3xl mx-auto w-full">
                 <div className="bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 p-5 rounded-2xl border border-indigo-500/30 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -1284,8 +1329,7 @@ JSON structure:
 
                   <button
                     onClick={() => {
-                      navigator.clipboard.writeText(shareableUrl || window.location.href);
-                      showToast('Ссылка приглашения скопирована! Отправьте её друзьям.', 'success');
+                      copyToClipboard(shareableUrl || window.location.href, 'Ссылка приглашения скопирована! Отправьте её друзьям.');
                     }}
                     className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-orange-500/20 flex items-center gap-2 shrink-0 transition-all"
                   >
@@ -1538,7 +1582,7 @@ JSON structure:
 
           </main>
 
-          {}
+          {/* Settings Modal */}
           {isSettingsOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
@@ -1559,7 +1603,7 @@ JSON structure:
                   </div>
                 </div>
 
-                <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl mb-6 space-y-3">
+                <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl mb-6 space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
@@ -1576,15 +1620,47 @@ JSON structure:
                     />
                     <button
                       type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(syncId);
-                        showToast('Код синхронизации скопирован!', 'success');
-                      }}
+                      onClick={() => copyToClipboard(syncId, 'Код синхронизации скопирован!')}
                       className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg flex items-center gap-1 border border-slate-700"
                     >
                       <Icon name="copy" className="w-3.5 h-3.5" />
                       <span>Копировать</span>
                     </button>
+                  </div>
+
+                  {/* High Resolution Dynamic QR Code Display */}
+                  <div className="pt-3 border-t border-slate-800/80 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-blue-400 flex items-center gap-1.5">
+                        <Icon name="share-2" className="w-3.5 h-3.5" />
+                        Быстрое подключение телефона через QR-код
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col items-center justify-center bg-slate-900/90 p-4 rounded-2xl border border-slate-800 space-y-3 text-center">
+                      {shareableUrl && (
+                        <div className="p-3 bg-white rounded-xl shadow-xl inline-block">
+                          <img
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(shareableUrl)}`}
+                            alt="QR Code for Mobile Sync"
+                            className="w-48 h-48 block mx-auto"
+                          />
+                        </div>
+                      )}
+
+                      <p className="text-xs text-slate-300 leading-relaxed max-w-xs">
+                        <strong>📱 Отсканируйте QR-код камерой смартфона</strong>, чтобы открыть приложение и автоматически подключить вашу базу карточек!
+                      </p>
+
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(shareableUrl, 'Прямая ссылка скопирована!')}
+                        className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+                      >
+                        <Icon name="copy" className="w-4 h-4" />
+                        <span>Скопировать прямую ссылку</span>
+                      </button>
+                    </div>
                   </div>
 
                   <div className="pt-3 border-t border-slate-800/80 space-y-2">
@@ -1603,45 +1679,6 @@ JSON structure:
                       2. Нажмите кнопку <strong>«Поделиться»</strong> (квадрат со стрелкой вверх внизу экрана).<br/>
                       3. Прокрутите вниз и выберите <strong>«На экран "Домой"»</strong>.
                     </p>
-                  </div>
-
-                  <div className="pt-3 border-t border-slate-800/80 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-blue-400 flex items-center gap-1.5">
-                        <Icon name="share-2" className="w-3.5 h-3.5" />
-                        Быстрое подключение телефона
-                      </span>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row items-center gap-4 bg-slate-900/90 p-3 rounded-xl border border-slate-800">
-                      {syncId && (
-                        <div className="p-2 bg-white rounded-lg shrink-0 shadow-md">
-                          <img
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=${encodeURIComponent(shareableUrl)}`}
-                            alt="QR Code for Phone Sync"
-                            className="w-24 h-24 block"
-                          />
-                        </div>
-                      )}
-
-                      <div className="space-y-2 text-center sm:text-left">
-                        <p className="text-[11px] text-slate-300 leading-snug">
-                          <strong>Отсканируйте QR-код</strong> камерой телефона или скопируйте прямую ссылку:
-                        </p>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText(shareableUrl);
-                            showToast('Прямая ссылка скопирована! Отправьте её себе на телефон.', 'success');
-                          }}
-                          className="w-full sm:w-auto px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-medium rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5"
-                        >
-                          <Icon name="copy" className="w-3.5 h-3.5" />
-                          <span>Скопировать прямую ссылку</span>
-                        </button>
-                      </div>
-                    </div>
                   </div>
 
                   <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
@@ -1737,7 +1774,7 @@ JSON structure:
             </div>
           )}
 
-          {}
+          {/* Manual Card Add Modal */}
           {isManualAddOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
@@ -1849,7 +1886,7 @@ JSON structure:
             </div>
           )}
 
-          {}
+          {/* Bulk Words Modal */}
           {isBulkAddOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl relative max-h-[90vh] flex flex-col justify-between">
