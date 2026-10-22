@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="ru" class="h-full bg-slate-950 text-slate-100">
+<html lang="ru" class="h-full bg-slate-950 text-slate-100 overflow-x-hidden max-w-full">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
   <meta name="theme-color" content="#020617" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -34,6 +34,7 @@
           animation: {
             'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
             'bounce-short': 'bounceShort 0.5s ease-in-out',
+            'ping-once': 'ping 0.8s cubic-bezier(0, 0, 0.2, 1) 1',
           },
           keyframes: {
             bounceShort: {
@@ -56,9 +57,13 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Custom CSS for 3D flip animation and scrollbars -->
+  <!-- Custom CSS for 3D flip animation, iOS safe areas, and scrollbars -->
   <style>
-    body {
+    html, body {
+      overflow-x: hidden;
+      max-width: 100%;
+      width: 100%;
+      overscroll-behavior-x: none;
       font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
@@ -92,9 +97,9 @@
     }
   </style>
 </head>
-<body class="h-full min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-brand-500 selection:text-white">
+<body class="h-full min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-brand-500 selection:text-white overflow-x-hidden max-w-full w-full">
   
-  <div id="root" class="flex-grow flex flex-col"></div>
+  <div id="root" class="flex-grow flex flex-col w-full max-w-full overflow-x-hidden"></div>
 
   <!-- Firebase Modular SDK Imports -->
   <script type="module">
@@ -141,6 +146,23 @@
             <svg {...iconProps}>
               <path d="m12 3-1.9 5.8a2 2 0 0 1-1.28 1.28L3 12l5.8 1.9a2 2 0 0 1 1.28 1.28L12 21l1.9-5.8a2 2 0 0 1 1.28-1.28L21 12l-5.8-1.9a2 2 0 0 1-1.28-1.28Z"/>
               <path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>
+            </svg>
+          );
+        case 'mic':
+          return (
+            <svg {...iconProps}>
+              <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" x2="12" y1="19" y2="22"/>
+            </svg>
+          );
+        case 'mic-off':
+          return (
+            <svg {...iconProps}>
+              <line x1="1" x2="23" y1="1" y2="23"/>
+              <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V5a3 3 0 0 0-5.94-.6"/>
+              <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/>
+              <line x1="12" x2="12" y1="19" y2="22"/>
             </svg>
           );
         case 'settings':
@@ -289,7 +311,7 @@
             <svg {...iconProps}>
               <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
               <circle cx="9" cy="7" r="4"/>
-              <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M22 21v-2a4 4 0 0 1-3-3.87"/>
               <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
           );
@@ -335,6 +357,13 @@
             <svg {...iconProps}>
               <circle cx="12" cy="8" r="6"/>
               <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
+            </svg>
+          );
+        case 'arrow-right':
+          return (
+            <svg {...iconProps}>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+              <polyline points="12 5 19 12 12 19"/>
             </svg>
           );
         default:
@@ -434,7 +463,7 @@
       const [currentCardIndex, setCurrentCardIndex] = useState(0);
       const [isFlipped, setIsFlipped] = useState(false);
 
-      const [activeTab, setActiveTab] = useState('study');
+      const [activeTab, setActiveTab] = useState('study'); // 'study', 'speech', 'deck', 'mastered', 'leaderboard'
       const [newWordInput, setNewWordInput] = useState('');
       const [isGenerating, setIsGenerating] = useState(false);
       const [toast, setToast] = useState(null);
@@ -450,6 +479,17 @@
       const [deferredPrompt, setDeferredPrompt] = useState(null);
       const [isInstallable, setIsInstallable] = useState(false);
 
+      // Voices State
+      const [availableVoices, setAvailableVoices] = useState([]);
+      const [selectedEnVoice, setSelectedEnVoice] = useState(() => localStorage.getItem('lingua_en_voice') || '');
+      const [selectedRuVoice, setSelectedRuVoice] = useState(() => localStorage.getItem('lingua_ru_voice') || '');
+
+      // Pronunciation Trainer State
+      const [speechCardIndex, setSpeechCardIndex] = useState(0);
+      const [isListening, setIsListening] = useState(false);
+      const [speechFeedback, setSpeechFeedback] = useState(null); // { success: boolean, transcript: string, expected: string }
+      const [speechScore, setSpeechScore] = useState(0);
+
       const [manualForm, setManualForm] = useState({
         english: '',
         russian: '',
@@ -461,6 +501,141 @@
       const showToast = (message, type = 'info') => {
         setToast({ message, type });
         setTimeout(() => setToast(null), 3000);
+      };
+
+      // Load SpeechSynthesis Voices dynamically
+      useEffect(() => {
+        const updateVoices = () => {
+          if ('speechSynthesis' in window) {
+            const voices = window.speechSynthesis.getVoices();
+            setAvailableVoices(voices);
+
+            if (voices.length > 0) {
+              if (!selectedEnVoice) {
+                const defaultEn = voices.find(v => v.lang.startsWith('en-US')) || voices.find(v => v.lang.startsWith('en'));
+                if (defaultEn) {
+                  setSelectedEnVoice(defaultEn.name);
+                  localStorage.setItem('lingua_en_voice', defaultEn.name);
+                }
+              }
+              if (!selectedRuVoice) {
+                const defaultRu = voices.find(v => v.lang.startsWith('ru'));
+                if (defaultRu) {
+                  setSelectedRuVoice(defaultRu.name);
+                  localStorage.setItem('lingua_ru_voice', defaultRu.name);
+                }
+              }
+            }
+          }
+        };
+
+        updateVoices();
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.onvoiceschanged = updateVoices;
+        }
+      }, []);
+
+      // Text-to-Speech Handler with custom voice selection
+      const handleSpeak = (text, lang = 'en-US') => {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = lang;
+
+          const chosenVoiceName = lang.startsWith('ru') ? selectedRuVoice : selectedEnVoice;
+          if (chosenVoiceName && availableVoices.length > 0) {
+            const matchedVoice = availableVoices.find(v => v.name === chosenVoiceName);
+            if (matchedVoice) utterance.voice = matchedVoice;
+          }
+
+          utterance.rate = 0.9;
+          window.speechSynthesis.speak(utterance);
+        }
+      };
+
+      // Helper for normalization
+      const normalizeText = (str = '') => {
+        return str.toLowerCase().replace(/[^\w\s]/gi, '').replace(/\s+/g, ' ').trim();
+      };
+
+      // Current Pronunciation Card
+      const currentSpeechCard = useMemo(() => {
+        if (deck.length === 0) return null;
+        return deck[speechCardIndex % deck.length] || null;
+      }, [deck, speechCardIndex]);
+
+      // Automatically speak Russian translation when entering Speech tab or changing card
+      useEffect(() => {
+        if (activeTab === 'speech' && currentSpeechCard) {
+          setSpeechFeedback(null);
+          handleSpeak(currentSpeechCard.russian, 'ru-RU');
+        }
+      }, [activeTab, speechCardIndex, currentSpeechCard]);
+
+      // Start Speech Recognition
+      const handleStartListening = () => {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+          showToast('Распознавание речи не поддерживается в этом браузере. Используйте Chrome или Safari', 'error');
+          return;
+        }
+
+        setSpeechFeedback(null);
+        setIsListening(true);
+
+        try {
+          const recognition = new SpeechRecognition();
+          recognition.lang = 'en-US';
+          recognition.interimResults = false;
+          recognition.maxAlternatives = 1;
+
+          recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            setIsListening(false);
+            
+            if (currentSpeechCard) {
+              const cleanSpoken = normalizeText(transcript);
+              const cleanExpected = normalizeText(currentSpeechCard.english);
+
+              // Check for exact or substring match
+              const isMatch = cleanSpoken === cleanExpected || cleanSpoken.includes(cleanExpected) || cleanExpected.includes(cleanSpoken);
+
+              if (isMatch) {
+                setSpeechFeedback({
+                  success: true,
+                  transcript: transcript,
+                  expected: currentSpeechCard.english
+                });
+                setSpeechScore(prev => prev + 10);
+                handleSpeak("Great job!", 'en-US');
+              } else {
+                setSpeechFeedback({
+                  success: false,
+                  transcript: transcript,
+                  expected: currentSpeechCard.english
+                });
+                handleSpeak("Try again", 'en-US');
+              }
+            }
+          };
+
+          recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            setIsListening(false);
+            if (event.error !== 'no-speech') {
+              showToast(`Ошибка микрофона: ${event.error}`, 'error');
+            }
+          };
+
+          recognition.onend = () => {
+            setIsListening(false);
+          };
+
+          recognition.start();
+        } catch (err) {
+          console.error("Speech Recognition start error:", err);
+          setIsListening(false);
+        }
       };
 
       // Universal Reliable Copy to Clipboard Helper
@@ -772,17 +947,6 @@
         showToast(`Слово "${cardToRestore.english}" возвращено в колоду`, 'info');
       };
 
-      // Text to Speech
-      const handleSpeak = (text) => {
-        if ('speechSynthesis' in window) {
-          window.speechSynthesis.cancel();
-          const utterance = new SpeechSynthesisUtterance(text);
-          utterance.lang = 'en-US';
-          utterance.rate = 0.9;
-          window.speechSynthesis.speak(utterance);
-        }
-      };
-
       const generateCardWithAI = async (inputWord) => {
         const activeKey = apiKey || DEFAULT_API_KEY;
         if (!activeKey) {
@@ -800,7 +964,7 @@ JSON structure:
   "exampleRu": "Russian translation of the example sentence"
 }`;
 
-        // Updated Gemini API model endpoint to gemini-3.8-flash
+        // Gemini API endpoint using gemini-3.8-flash
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${activeKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -982,21 +1146,25 @@ JSON structure:
         return masteredCards.filter(c => c.english.toLowerCase().includes(term) || c.russian.toLowerCase().includes(term));
       }, [masteredCards, searchTerm]);
 
+      const enVoicesList = useMemo(() => availableVoices.filter(v => v.lang.startsWith('en')), [availableVoices]);
+      const ruVoicesList = useMemo(() => availableVoices.filter(v => v.lang.startsWith('ru')), [availableVoices]);
+
       return (
-        <div className="flex-grow flex flex-col justify-between max-w-5xl mx-auto w-full p-4 md:p-6 space-y-6">
+        <div className="flex-grow flex flex-col justify-between max-w-5xl mx-auto w-full p-3 sm:p-6 space-y-4 sm:space-y-6 overflow-x-hidden">
           {renderToast()}
 
-          {/* Top App Header */}
-          <header className="flex items-center justify-between border-b border-slate-800/80 pb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white font-extrabold text-xl shadow-lg shadow-blue-500/20">
+          {/* Top App Header — Compact & Safe Area Adapted */}
+          <header className="w-full max-w-full flex items-center justify-between gap-1.5 sm:gap-3 border-b border-slate-800/80 pb-3 pt-[env(safe-area-inset-top)] overflow-hidden">
+            <div className="flex items-center gap-2 min-w-0 shrink">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white font-extrabold text-lg sm:text-xl shadow-lg shadow-blue-500/20 shrink-0">
                 L
               </div>
-              <div>
-                <h1 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
-                  LinguaCards <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">AI</span>
+              <div className="min-w-0">
+                <h1 className="text-base sm:text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent truncate flex items-center gap-1.5">
+                  <span>LinguaCards</span>
+                  <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 font-normal">AI</span>
                 </h1>
-                <p className="text-xs text-slate-400 flex items-center gap-1.5">
+                <p className="hidden sm:flex text-xs text-slate-400 items-center gap-1.5 truncate">
                   <span>Тренажер английских слов</span>
                   {isCloudActive && (
                     <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-950/60 px-1.5 py-0.2 rounded border border-emerald-800/50">
@@ -1007,63 +1175,80 @@ JSON structure:
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
               {/* Navigation Tabs */}
-              <nav className="flex items-center bg-slate-900/80 p-1 rounded-xl border border-slate-800">
+              <nav className="flex items-center bg-slate-900/90 p-1 rounded-xl border border-slate-800 shrink-0 overflow-x-auto">
                 <button
                   onClick={() => setActiveTab('study')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  className={`flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     activeTab === 'study'
                       ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
                   }`}
+                  title="Тренировка"
                 >
-                  <Icon name="book-open" className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Тренировка</span>
+                  <Icon name="book-open" className="w-3.5 h-3.5 shrink-0" />
+                  <span className="hidden md:inline">Карточки</span>
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('speech')}
+                  className={`flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    activeTab === 'speech'
+                      ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/30'
+                      : 'text-indigo-400 hover:text-indigo-200 hover:bg-slate-800/50'
+                  }`}
+                  title="Произношение"
+                >
+                  <Icon name="mic" className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                  <span className="hidden md:inline">🎤 Произношение</span>
                 </button>
 
                 <button
                   onClick={() => setActiveTab('deck')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  className={`flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     activeTab === 'deck'
                       ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
                   }`}
+                  title="Колода"
                 >
-                  <Icon name="layers" className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Колода</span>
-                  <span className="px-1.5 py-0.2 text-[10px] bg-slate-800 text-slate-300 rounded-full border border-slate-700">
+                  <Icon name="layers" className="w-3.5 h-3.5 shrink-0" />
+                  <span className="hidden md:inline">Колода</span>
+                  <span className="px-1 py-0.2 text-[10px] bg-slate-800 text-slate-300 rounded-full border border-slate-700">
                     {deck.length}
                   </span>
                 </button>
 
                 <button
                   onClick={() => setActiveTab('mastered')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  className={`flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     activeTab === 'mastered'
                       ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
                   }`}
+                  title="Выучено"
                 >
-                  <Icon name="trophy" className="w-3.5 h-3.5 text-amber-400" />
-                  <span className="hidden sm:inline">Выучено</span>
-                  <span className="px-1.5 py-0.2 text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800/50 rounded-full">
+                  <Icon name="trophy" className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span className="hidden md:inline">Выучено</span>
+                  <span className="px-1 py-0.2 text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800/50 rounded-full">
                     {masteredCards.length}
                   </span>
                 </button>
 
                 <button
                   onClick={() => setActiveTab('leaderboard')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  className={`flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     activeTab === 'leaderboard'
                       ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
                   }`}
+                  title="Рейтинг"
                 >
-                  <Icon name="crown" className="w-3.5 h-3.5 text-amber-400" />
-                  <span className="hidden sm:inline">Рейтинг</span>
+                  <Icon name="crown" className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span className="hidden md:inline">Рейтинг</span>
                   {leaderboard.length > 0 && (
-                    <span className="px-1.5 py-0.2 text-[10px] bg-amber-500/20 text-amber-300 rounded-full border border-amber-500/30 font-semibold">
+                    <span className="px-1 py-0.2 text-[10px] bg-amber-500/20 text-amber-300 rounded-full border border-amber-500/30 font-semibold">
                       {leaderboard.length}
                     </span>
                   )}
@@ -1072,18 +1257,18 @@ JSON structure:
 
               <button
                 onClick={() => setIsSettingsOpen(true)}
-                className="p-2 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl border border-slate-800 transition-all"
+                className="p-2 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl border border-slate-800 transition-all shrink-0"
                 title="Настройки и синхронизация"
               >
-                <Icon name="settings" className="w-4 h-4" />
+                <Icon name="settings" className="w-4 h-4 shrink-0" />
               </button>
             </div>
           </header>
 
           {/* Word Addition Controls */}
-          <section className="bg-slate-900/60 p-3.5 rounded-2xl border border-slate-800 shadow-xl">
-            <form onSubmit={handleAddSingleWord} className="flex flex-col sm:flex-row items-center gap-2">
-              <div className="relative flex-1 w-full">
+          <section className="bg-slate-900/60 p-3 sm:p-3.5 rounded-2xl border border-slate-800 shadow-xl w-full max-w-full">
+            <form onSubmit={handleAddSingleWord} className="flex flex-col sm:flex-row items-center gap-2 w-full">
+              <div className="relative flex-1 w-full min-w-0">
                 <input
                   type="text"
                   value={newWordInput}
@@ -1102,7 +1287,7 @@ JSON structure:
                 </button>
               </div>
 
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
                 <button
                   type="submit"
                   disabled={isGenerating || !newWordInput.trim()}
@@ -1135,11 +1320,11 @@ JSON structure:
           </section>
 
           {/* Dynamic Content Views */}
-          <main className="flex-grow flex flex-col justify-center">
+          <main className="flex-grow flex flex-col justify-center w-full max-w-full">
             
-            {/* View 1: Study Mode */}
+            {/* View 1: Study Mode (Flashcards) */}
             {activeTab === 'study' && (
-              <div className="flex flex-col items-center justify-center space-y-6">
+              <div className="flex flex-col items-center justify-center space-y-5 sm:space-y-6 w-full">
                 
                 {deck.length === 0 ? (
                   <div className="text-center py-16 px-4 bg-slate-900/40 rounded-3xl border border-slate-800/80 max-w-md w-full">
@@ -1158,7 +1343,7 @@ JSON structure:
                     </button>
                   </div>
                 ) : currentCard ? (
-                  <div className="w-full max-w-md flex flex-col items-center space-y-5">
+                  <div className="w-full max-w-md flex flex-col items-center space-y-4 sm:space-y-5">
                     
                     {/* Session Progress Header */}
                     <div className="w-full flex items-center justify-between text-xs text-slate-400 px-1">
@@ -1208,7 +1393,7 @@ JSON structure:
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleSpeak(currentCard.english);
+                                handleSpeak(currentCard.english, 'en-US');
                               }}
                               className="p-1.5 bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 rounded-lg transition-all"
                               title="Озвучить слово"
@@ -1271,7 +1456,168 @@ JSON structure:
               </div>
             )}
 
-            {/* View 2: Leaderboard & Friends View */}
+            {/* View 2: Pronunciation Practice Mode (🎤 Тренажер произношения) */}
+            {activeTab === 'speech' && (
+              <div className="flex flex-col items-center justify-center space-y-6 max-w-lg mx-auto w-full">
+                
+                {deck.length === 0 ? (
+                  <div className="text-center py-16 px-4 bg-slate-900/40 rounded-3xl border border-slate-800/80 max-w-md w-full">
+                    <Icon name="mic-off" className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+                    <h3 className="text-lg font-bold text-white mb-2">Колода пуста</h3>
+                    <p className="text-slate-400 text-xs">Добавьте новые слова, чтобы начать голосовую тренировку</p>
+                  </div>
+                ) : currentSpeechCard ? (
+                  <div className="w-full flex flex-col items-center space-y-5">
+                    
+                    {/* Header Score & Counter */}
+                    <div className="w-full flex items-center justify-between bg-slate-900/60 px-4 py-2.5 rounded-xl border border-slate-800 text-xs">
+                      <span className="text-slate-400">
+                        Слово <strong>{(speechCardIndex % deck.length) + 1}</strong> из {deck.length}
+                      </span>
+
+                      <div className="flex items-center gap-1.5 text-amber-400 font-bold bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">
+                        <Icon name="award" className="w-4 h-4" />
+                        <span>{speechScore} очков</span>
+                      </div>
+                    </div>
+
+                    {/* Speech Target Card */}
+                    <div className="w-full bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950/60 border border-indigo-500/30 rounded-3xl p-6 shadow-2xl flex flex-col items-center text-center space-y-4">
+                      
+                      <div className="flex items-center justify-between w-full">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-indigo-400 bg-indigo-950/80 px-2.5 py-1 rounded-md border border-indigo-800/50">
+                          Повторите по-английски
+                        </span>
+
+                        <button
+                          onClick={() => handleSpeak(currentSpeechCard.russian, 'ru-RU')}
+                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs flex items-center gap-1 border border-slate-700 transition-all"
+                        >
+                          <Icon name="volume-2" className="w-3.5 h-3.5 text-blue-400" />
+                          <span>Послушать по-русски</span>
+                        </button>
+                      </div>
+
+                      <div className="py-4">
+                        <h2 className="text-2xl sm:text-3xl font-black text-white tracking-wide mb-2">
+                          "{currentSpeechCard.russian}"
+                        </h2>
+                        <p className="text-xs text-slate-400">
+                          Включите микрофон и скажите перевод на английском
+                        </p>
+                      </div>
+
+                      {/* Push to Talk Microphone Button */}
+                      <div className="relative py-2">
+                        {isListening && (
+                          <div className="absolute inset-0 rounded-full bg-red-500/20 animate-ping"></div>
+                        )}
+
+                        <button
+                          onClick={handleStartListening}
+                          disabled={isListening}
+                          className={`relative w-20 h-20 rounded-full flex items-center justify-center transition-all shadow-2xl active:scale-95 ${
+                            isListening
+                              ? 'bg-gradient-to-tr from-rose-600 to-red-500 text-white shadow-red-500/40 ring-4 ring-red-500/30'
+                              : 'bg-gradient-to-tr from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white shadow-indigo-600/30'
+                          }`}
+                        >
+                          <Icon name={isListening ? 'mic' : 'mic'} className="w-8 h-8 animate-pulse" />
+                        </button>
+                      </div>
+
+                      <span className="text-xs font-semibold text-slate-300">
+                        {isListening ? "🔴 Слушаю... Говорите на английском!" : "Нажмите на микрофон для записи"}
+                      </span>
+
+                    </div>
+
+                    {/* Speech Verification Feedback Result */}
+                    {speechFeedback && (
+                      <div className={`w-full p-4 rounded-2xl border text-center space-y-3 animate-fadeIn ${
+                        speechFeedback.success
+                          ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-200'
+                          : 'bg-rose-950/60 border-rose-500/40 text-rose-200'
+                      }`}>
+                        <div className="flex items-center justify-center gap-2 font-bold text-base">
+                          {speechFeedback.success ? (
+                            <>
+                              <Icon name="check-circle" className="w-5 h-5 text-emerald-400" />
+                              <span>Отличное произношение! (+10 очков) ✅</span>
+                            </>
+                          ) : (
+                            <>
+                              <Icon name="x" className="w-5 h-5 text-rose-400" />
+                              <span>Попробуйте еще раз ❌</span>
+                            </>
+                          )}
+                        </div>
+
+                        <div className="space-y-1 text-xs">
+                          <p className="opacity-80">
+                            Вы сказали: <strong className="text-white">"{speechFeedback.transcript || '...'}"</strong>
+                          </p>
+                          <p className="opacity-80">
+                            Ожидалось: <strong className="text-indigo-300">"{currentSpeechCard.english}"</strong> {currentSpeechCard.transcription}
+                          </p>
+                        </div>
+
+                        <div className="pt-2 flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => handleSpeak(currentSpeechCard.english, 'en-US')}
+                            className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs font-medium rounded-xl border border-slate-700 flex items-center gap-1.5"
+                          >
+                            <Icon name="volume-2" className="w-3.5 h-3.5 text-indigo-400" />
+                            <span>Послушать идеальное произношение</span>
+                          </button>
+
+                          {speechFeedback.success && (
+                            <button
+                              onClick={() => {
+                                setSpeechCardIndex(prev => prev + 1);
+                                setSpeechFeedback(null);
+                              }}
+                              className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-md flex items-center gap-1"
+                            >
+                              <span>Следующее слово</span>
+                              <Icon name="arrow-right" className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Navigation Controls */}
+                    <div className="flex items-center justify-between w-full pt-2">
+                      <button
+                        onClick={() => {
+                          setSpeechCardIndex(prev => (prev > 0 ? prev - 1 : deck.length - 1));
+                          setSpeechFeedback(null);
+                        }}
+                        className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-medium rounded-xl border border-slate-800"
+                      >
+                        ⬅️ Предыдущее
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setSpeechCardIndex(prev => prev + 1);
+                          setSpeechFeedback(null);
+                        }}
+                        className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-medium rounded-xl border border-slate-800 flex items-center gap-1"
+                      >
+                        <span>Следующее</span>
+                        <Icon name="arrow-right" className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                  </div>
+                ) : null}
+
+              </div>
+            )}
+
+            {/* View 3: Leaderboard & Friends View */}
             {activeTab === 'leaderboard' && (
               <div className="space-y-6 max-w-3xl mx-auto w-full">
                 <div className="bg-gradient-to-r from-slate-900 via-indigo-950/40 to-slate-900 p-5 rounded-2xl border border-indigo-500/30 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -1414,9 +1760,9 @@ JSON structure:
               </div>
             )}
 
-            {/* View 3: Active Deck View */}
+            {/* View 4: Active Deck View */}
             {activeTab === 'deck' && (
-              <div className="space-y-4">
+              <div className="space-y-4 w-full">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
                   <div>
                     <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -1458,7 +1804,7 @@ JSON structure:
                               <h3 className="text-base font-bold text-white flex items-center gap-2">
                                 {card.english}
                                 <button 
-                                  onClick={() => handleSpeak(card.english)}
+                                  onClick={() => handleSpeak(card.english, 'en-US')}
                                   className="text-slate-500 hover:text-indigo-400 transition-colors"
                                 >
                                   <Icon name="volume-2" className="w-3.5 h-3.5" />
@@ -1505,9 +1851,9 @@ JSON structure:
               </div>
             )}
 
-            {/* View 4: Mastered Cards View */}
+            {/* View 5: Mastered Cards View */}
             {activeTab === 'mastered' && (
-              <div className="space-y-4">
+              <div className="space-y-4 w-full">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
                   <div>
                     <h2 className="text-lg font-bold text-white flex items-center gap-2">
@@ -1549,7 +1895,7 @@ JSON structure:
                               <h3 className="text-base font-bold text-white flex items-center gap-2">
                                 {card.english}
                                 <button 
-                                  onClick={() => handleSpeak(card.english)}
+                                  onClick={() => handleSpeak(card.english, 'en-US')}
                                   className="text-slate-500 hover:text-indigo-400 transition-colors"
                                 >
                                   <Icon name="volume-2" className="w-3.5 h-3.5" />
@@ -1598,11 +1944,86 @@ JSON structure:
                     <Icon name="settings" className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-white">Настройки и Синхронизация</h3>
-                    <p className="text-xs text-slate-400">Управление ключами и устройствами</p>
+                    <h3 className="text-lg font-bold text-white">Настройки и Голоса</h3>
+                    <p className="text-xs text-slate-400">Управление озвучкой, синхронизацией и ключами</p>
                   </div>
                 </div>
 
+                {/* Voice Selection Panel */}
+                <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl mb-6 space-y-4">
+                  <h4 className="text-xs font-semibold text-indigo-400 flex items-center gap-1.5">
+                    <Icon name="volume-2" className="w-4 h-4" />
+                    Выбор голосов озвучки (Text-to-Speech)
+                  </h4>
+
+                  <div className="space-y-3 text-xs">
+                    <div>
+                      <label className="block text-slate-400 mb-1">Голос для английского языка (en-US / en-GB)</label>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={selectedEnVoice}
+                          onChange={(e) => {
+                            setSelectedEnVoice(e.target.value);
+                            localStorage.setItem('lingua_en_voice', e.target.value);
+                          }}
+                          className="flex-1 px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:border-indigo-500"
+                        >
+                          {enVoicesList.length === 0 ? (
+                            <option value="">Системный голос по умолчанию</option>
+                          ) : (
+                            enVoicesList.map(v => (
+                              <option key={v.name} value={v.name}>
+                                {v.name} ({v.lang})
+                              </option>
+                            ))
+                          )}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => handleSpeak("Hello! Welcome to LinguaCards AI.", 'en-US')}
+                          className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 rounded-lg border border-slate-700 shrink-0"
+                          title="Тест английского голоса"
+                        >
+                          🔊 Тест
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-400 mb-1">Голос для русского языка (ru-RU)</label>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={selectedRuVoice}
+                          onChange={(e) => {
+                            setSelectedRuVoice(e.target.value);
+                            localStorage.setItem('lingua_ru_voice', e.target.value);
+                          }}
+                          className="flex-1 px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-slate-200 focus:outline-none focus:border-indigo-500"
+                        >
+                          {ruVoicesList.length === 0 ? (
+                            <option value="">Системный голос по умолчанию</option>
+                          ) : (
+                            ruVoicesList.map(v => (
+                              <option key={v.name} value={v.name}>
+                                {v.name} ({v.lang})
+                              </option>
+                            ))
+                          )}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => handleSpeak("Привет! Это проверка русского голоса.", 'ru-RU')}
+                          className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-300 rounded-lg border border-slate-700 shrink-0"
+                          title="Тест русского голоса"
+                        >
+                          🔊 Тест
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Device Cloud Sync */}
                 <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl mb-6 space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5">
@@ -1628,7 +2049,7 @@ JSON structure:
                     </button>
                   </div>
 
-                  {/* High Resolution Dynamic QR Code Display */}
+                  {/* Dynamic QR Code Display */}
                   <div className="pt-3 border-t border-slate-800/80 space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-blue-400 flex items-center gap-1.5">
