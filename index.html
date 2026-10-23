@@ -91,6 +91,7 @@
         case 'volume-2': return <svg {...iconProps}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>;
         case 'x': return <svg {...iconProps}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>;
         case 'list-plus': return <svg {...iconProps}><path d="M11 12H3"/><path d="M16 6H3"/><path d="M16 18H3"/><path d="M18 9v6"/><path d="M21 12h-6"/></svg>;
+        case 'clipboard': return <svg {...iconProps}><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>;
         default: return null;
       }
     };
@@ -116,16 +117,17 @@
       "egg": { en: "Egg", ru: "Яйцо", tr: "[eɡ]" }
     };
 
-    const encodeDataToHash = (data) => {
+    // Сжатие данных в компактный текстовый код
+    const encodeToCompactCode = (data) => {
       try {
         const jsonStr = JSON.stringify(data);
         return btoa(encodeURIComponent(jsonStr));
       } catch (e) { return ''; }
     };
 
-    const decodeHashToData = (hash) => {
+    const decodeFromCompactCode = (code) => {
       try {
-        const jsonStr = decodeURIComponent(atob(hash));
+        const jsonStr = decodeURIComponent(atob(code.trim()));
         return JSON.parse(jsonStr);
       } catch (e) { return null; }
     };
@@ -149,8 +151,8 @@
       });
 
       const [selectedFriend, setSelectedFriend] = useState(null);
-      const [friendModalData, setFriendModalData] = useState(null);
-      const [isShortening, setIsShortening] = useState(false);
+      const [importCodeInput, setImportCodeInput] = useState('');
+      const [generatedCode, setGeneratedCode] = useState('');
 
       const [sessionQueue, setSessionQueue] = useState([]);
       const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -166,17 +168,6 @@
       const [bulkInput, setBulkInput] = useState('');
       const [isBulkProcessing, setIsBulkProcessing] = useState(false);
       const [editingCard, setEditingCard] = useState(null);
-
-      useEffect(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const friendDataParam = urlParams.get('friend');
-        if (friendDataParam) {
-          const decoded = decodeHashToData(friendDataParam);
-          if (decoded && decoded.username) {
-            setFriendModalData(decoded);
-          }
-        }
-      }, []);
 
       useEffect(() => {
         localStorage.setItem('lingua_deck', JSON.stringify(deck));
@@ -195,20 +186,41 @@
         setTimeout(() => setToast(null), 4000);
       };
 
-      const handleConfirmAddFriend = (friendPayload) => {
-        if (!friendPayload) return;
+      // Генерация короткого кода для друга
+      const handleGenerateCode = () => {
+        const myPayload = {
+          username: username || 'Сергей',
+          deckCount: deck.length,
+          masteredCount: masteredCards.length,
+          deck: deck,
+          mastered: masteredCards,
+          updatedAt: Date.now()
+        };
+        const code = encodeToCompactCode(myPayload);
+        setGeneratedCode(code);
+        navigator.clipboard.writeText(code);
+        showToast('Код скопирован в буфер обмена! Отправьте его другу 📋', 'success');
+      };
+
+      // Импорт друга по текстовому коду
+      const handleImportFriendCode = (e) => {
+        e.preventDefault();
+        const decoded = decodeFromCompactCode(importCodeInput);
+        if (!decoded || !decoded.username || !Array.isArray(decoded.deck)) {
+          showToast('Неверный код друга. Проверьте правильность!', 'error');
+          return;
+        }
+
         setFriends(prev => {
-          const exists = prev.some(f => f.username.toLowerCase() === friendPayload.username.toLowerCase());
+          const exists = prev.some(f => f.username.toLowerCase() === decoded.username.toLowerCase());
           if (exists) {
-            return prev.map(f => f.username.toLowerCase() === friendPayload.username.toLowerCase() ? friendPayload : f);
+            return prev.map(f => f.username.toLowerCase() === decoded.username.toLowerCase() ? decoded : f);
           }
-          return [...prev, friendPayload];
+          return [...prev, decoded];
         });
 
-        window.history.replaceState({}, document.title, window.location.pathname);
-        setFriendModalData(null);
-        setActiveTab('friends');
-        showToast(`Вы успешно добавили в друзья: ${friendPayload.username}! 🎉`, 'success');
+        setImportCodeInput('');
+        showToast(`Друг "${decoded.username}" успешно добавлен! 🎉`, 'success');
       };
 
       const handleAddCardFromFriend = (card) => {
@@ -219,38 +231,6 @@
         const newCard = { ...card, id: 'card-' + Date.now() };
         setDeck(prev => [newCard, ...prev]);
         showToast(`Слово "${card.english}" добавлено к вам! 🚀`, 'success');
-      };
-
-      // Функция создания короткой ссылки через TinyURL API
-      const handleCopyShareLink = async () => {
-        const myPayload = {
-          username: username || 'Сергей',
-          deckCount: deck.length,
-          masteredCount: masteredCards.length,
-          deck: deck,
-          mastered: masteredCards,
-          updatedAt: Date.now()
-        };
-        const encoded = encodeDataToHash(myPayload);
-        const fullLink = `${window.location.origin}${window.location.pathname}?friend=${encoded}`;
-
-        setIsShortening(true);
-        try {
-          const response = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(fullLink)}`);
-          if (response.ok) {
-            const shortUrl = await response.text();
-            navigator.clipboard.writeText(shortUrl);
-            showToast('Короткая ссылка скопирована! Отправьте её другу 📲', 'success');
-          } else {
-            throw new Error();
-          }
-        } catch (e) {
-          // Если сервис сокращения недоступен, копируем обычную
-          navigator.clipboard.writeText(fullLink);
-          showToast('Ссылка скопирована в буфер обмена!', 'success');
-        } finally {
-          setIsShortening(false);
-        }
       };
 
       const currentCard = useMemo(() => {
@@ -667,20 +647,48 @@
               </div>
             )}
 
-            {/* ВКЛАДКА: ДРУЗЬЯ И ИХ ПРОГРЕСС */}
+            {/* ВКЛАДКА: ДРУЗЬЯ И ОБМЕН КОДОВ */}
             {activeTab === 'friends' && (
-              <div className="space-y-4 max-w-2xl mx-auto w-full">
-                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div>
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <Icon name="share-2" className="w-5 h-5 text-blue-400" /> Короткая ссылка для друга
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-1">Приложение мгновенно создаст короткую ссылку (например, tinyurl), в которой зашифрованы ваши достижения!</p>
-                  </div>
-                  <button onClick={handleCopyShareLink} disabled={isShortening} className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shrink-0 disabled:opacity-50">
-                    {isShortening ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Icon name="copy" className="w-4 h-4" />}
-                    <span>Скопировать короткую ссылку</span>
+              <div className="space-y-6 max-w-2xl mx-auto w-full">
+                {/* Блок отправки своего кода */}
+                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <Icon name="share-2" className="w-5 h-5 text-blue-400" /> Поделиться своей колодой
+                  </h3>
+                  <p className="text-xs text-slate-400">Нажмите кнопку ниже, чтобы сжать всю вашу базу слов в аккуратный компактный текст-код:</p>
+                  
+                  <button onClick={handleGenerateCode} className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-lg transition-all">
+                    <Icon name="copy" className="w-4 h-4" /> Скопировать мой код-приглашение
                   </button>
+
+                  {generatedCode && (
+                    <div className="mt-3">
+                      <label className="block text-[11px] text-slate-400 mb-1">Ваш сгенерированный код:</label>
+                      <textarea readOnly rows={2} value={generatedCode} className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-[11px] font-mono text-slate-300 resize-none select-all" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Блок добавления друга по его коду */}
+                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    <Icon name="user-plus" className="w-5 h-5 text-emerald-400" /> Добавить друга по коду
+                  </h3>
+                  <p className="text-xs text-slate-400">Вставьте код, который прислал вам друг, чтобы видеть его прогресс и добавлять слова себе:</p>
+
+                  <form onSubmit={handleImportFriendCode} className="space-y-3">
+                    <textarea
+                      rows={3}
+                      required
+                      value={importCodeInput}
+                      onChange={(e) => setImportCodeInput(e.target.value)}
+                      placeholder="Вставьте код друга сюда..."
+                      className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-100 placeholder-slate-600 resize-none focus:outline-none focus:border-emerald-500"
+                    />
+                    <button type="submit" className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+                      <Icon name="users" className="w-4 h-4" /> Добавить друга и посмотреть слова
+                    </button>
+                  </form>
                 </div>
 
                 <h3 className="text-lg font-bold text-white pt-2">Ваши друзья ({friends.length})</h3>
@@ -688,7 +696,7 @@
                 {friends.length === 0 ? (
                   <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-8 text-center">
                     <Icon name="users" className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                    <p className="text-xs text-slate-400">У вас пока нет друзей. Скопируйте ссылку и отправьте её другу!</p>
+                    <p className="text-xs text-slate-400">Список друзей пуст. Скопируйте свой код или попросите код у друга!</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 gap-3">
@@ -719,36 +727,31 @@
               <div className="max-w-2xl mx-auto w-full space-y-6 py-2">
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
                   <h2 className="text-xl font-extrabold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
-                    <Icon name="help-circle" className="w-6 h-6 text-blue-400" /> Инструкция по работе с приложением
+                    <Icon name="help-circle" className="w-6 h-6 text-blue-400" /> Инструкция по работе с кодами
                   </h2>
 
                   <div className="space-y-4 text-xs leading-relaxed text-slate-300">
                     <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                      <h3 className="font-bold text-sm text-blue-400 mb-1">1. Как правильно добавлять слова?</h3>
-                      <p className="mb-2">Вы можете вводить слова в верхнее поле в любом удобном формате:</p>
-                      <ul className="list-disc list-inside space-y-1 text-slate-400">
-                        <li><strong>Одно слово:</strong> введите <code className="text-indigo-300">apple</code> — приложение само найдет перевод и добавит транскрипцию.</li>
-                        <li><strong>Пара слов:</strong> введите <code className="text-indigo-300">car - машина</code> через дефис.</li>
-                        <li><strong>Массово списком:</strong> нажмите кнопку <strong>«Списком»</strong> и вставьте сразу несколько слов с новой строчки!</li>
-                      </ul>
+                      <h3 className="font-bold text-sm text-blue-400 mb-1">1. Как отправлять свой прогресс другу?</h3>
+                      <ol className="list-decimal list-inside space-y-1 text-slate-400">
+                        <li>Зайдите во вкладку <strong>«Друзья»</strong>.</li>
+                        <li>Нажмите <strong>«Скопировать мой код-приглашение»</strong>.</li>
+                        <li>Отправьте этот короткий текст другу в Telegram, WhatsApp или SMS.</li>
+                      </ol>
                     </div>
 
                     <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                      <h3 className="font-bold text-sm text-emerald-400 mb-1">2. Как работает отправка ссылки друзьям?</h3>
-                      <ul className="list-disc list-inside space-y-1 text-slate-400">
-                        <li>Перейдите во вкладку <strong>«Друзья»</strong> или <strong>«Настройки»</strong>.</li>
-                        <li>Нажмите кнопку <strong>«Скопировать короткую ссылку»</strong>. Приложение автоматически превратит длинный список слов в аккуратную короткую ссылку.</li>
-                        <li>Отправьте её другу в Telegram или WhatsApp. Друг нажмет на неё, подтвердит добавление, и вы будете видеть достижения друг друга, а также сможете брать любые слова из его колоды!</li>
-                      </ul>
+                      <h3 className="font-bold text-sm text-emerald-400 mb-1">2. Как добавить друга по его коду?</h3>
+                      <ol className="list-decimal list-inside space-y-1 text-slate-400">
+                        <li>Скопируйте текст-код, который прислал вам друг.</li>
+                        <li>Вставьте его в поле во вкладке <strong>«Друзья»</strong> в блоке «Добавить друга по коду».</li>
+                        <li>Нажмите кнопку добавления. Теперь вы видите его статистику и можете переносить любые его слова к себе в 1 клик!</li>
+                      </ol>
                     </div>
 
                     <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                      <h3 className="font-bold text-sm text-indigo-400 mb-1">3. Обучение карточкам</h3>
-                      <ul className="list-disc list-inside space-y-1 text-slate-400">
-                        <li><strong>Клик по карточке</strong> переворачивает её.</li>
-                        <li><strong>Динамик</strong> озвучивает слово на английском.</li>
-                        <li><strong>«Выучил»</strong> — переносит слово в ваш архив достижений.</li>
-                      </ul>
+                      <h3 className="font-bold text-sm text-indigo-400 mb-1">3. Добавление слов</h3>
+                      <p className="text-slate-400">Вводите слова по одному (например: <code className="text-indigo-300">car - машина</code>) или используйте кнопку <strong>«Списком»</strong> для массовой загрузки.</p>
                     </div>
                   </div>
                 </div>
@@ -774,13 +777,6 @@
                   </div>
 
                   <div className="pt-2 border-t border-slate-800">
-                    <button onClick={handleCopyShareLink} disabled={isShortening} className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-2 disabled:opacity-50">
-                      {isShortening ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Icon name="share-2" className="w-4 h-4" />}
-                      <span>Скопировать короткую ссылку для друга</span>
-                    </button>
-                  </div>
-
-                  <div className="pt-2 border-t border-slate-800">
                     <button onClick={() => setActiveTab('manual')} className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center justify-center gap-2">
                       <Icon name="help-circle" className="w-4 h-4 text-blue-400" /> Открыть инструкцию
                     </button>
@@ -790,27 +786,6 @@
             )}
 
           </main>
-
-          {/* МОДАЛЬНОЕ ОКНО: ПОДТВЕРЖДЕНИЕ ДОБАВЛЕНИЯ ДРУГА */}
-          {friendModalData && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 text-center space-y-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center mx-auto text-white shadow-lg">
-                  <Icon name="user-plus" className="w-7 h-7" />
-                </div>
-                <h3 className="text-lg font-bold text-white">Добавить в друзья?</h3>
-                <p className="text-xs text-slate-400">
-                  Пользователь <strong className="text-emerald-400">{friendModalData.username}</strong> хочет поделиться своей колодой из <strong>{friendModalData.deckCount}</strong> слов!
-                </p>
-                <div className="flex gap-2 pt-2">
-                  <button onClick={() => setFriendModalData(null)} className="flex-1 py-2.5 text-xs text-slate-400 hover:text-white">Отмена</button>
-                  <button onClick={() => handleConfirmAddFriend(friendModalData)} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl">
-                    Добавить
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* МОДАЛЬНОЕ ОКНО: ПРОСМОТР СЛОВ ДРУГА */}
           {selectedFriend && (
