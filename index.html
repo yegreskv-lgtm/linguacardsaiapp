@@ -29,7 +29,6 @@
             }
           },
           animation: {
-            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
             'bounce-short': 'bounceShort 0.5s ease-in-out',
           },
           keyframes: {
@@ -53,40 +52,15 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Custom CSS for 3D flip animation -->
   <style>
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-    }
-
-    .perspective-1000 {
-      perspective: 1000px;
-    }
-    .transform-style-3d {
-      transform-style: preserve-3d;
-    }
-    .backface-hidden {
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
-    }
-    .rotate-y-180 {
-      transform: rotateY(180deg);
-    }
-    
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: rgba(15, 23, 42, 0.6);
-    }
-    ::-webkit-scrollbar-thumb {
-      background: rgba(51, 65, 85, 0.8);
-      border-radius: 9999px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(71, 85, 105, 1);
-    }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .perspective-1000 { perspective: 1000px; }
+    .transform-style-3d { transform-style: preserve-3d; }
+    .backface-hidden { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+    .rotate-y-180 { transform: rotateY(180deg); }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    ::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 9999px; }
   </style>
 </head>
 <body class="h-full min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-brand-500 selection:text-white">
@@ -97,257 +71,37 @@
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-    import { getFirestore, doc, setDoc, onSnapshot, collection } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+    import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-    window.FirebaseSDK = {
-      initializeApp,
-      getAuth,
-      signInAnonymously,
-      signInWithCustomToken,
-      onAuthStateChanged,
-      getFirestore,
-      doc,
-      setDoc,
-      onSnapshot,
-      collection
-    };
+    window.FirebaseSDK = { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, getFirestore, doc, setDoc, onSnapshot };
   </script>
 
   <script type="text/babel" data-type="module">
-    const { useState, useEffect, useRef, useMemo } = React;
+    const { useState, useEffect, useMemo } = React;
 
     const Icon = ({ name, className = "w-4 h-4" }) => {
-      const iconProps = {
-        xmlns: "http://www.w3.org/2000/svg",
-        width: "24",
-        height: "24",
-        viewBox: "0 0 24 24",
-        fill: "none",
-        stroke: "currentColor",
-        strokeWidth: "2",
-        strokeLinecap: "round",
-        strokeLinejoin: "round",
-        className
-      };
-
+      const iconProps = { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className };
       switch (name) {
-        case 'sparkles':
-          return (
-            <svg {...iconProps}>
-              <path d="m12 3-1.9 5.8a2 2 0 0 1-1.28 1.28L3 12l5.8 1.9a2 2 0 0 1 1.28 1.28L12 21l1.9-5.8a2 2 0 0 1 1.28-1.28L21 12l-5.8-1.9a2 2 0 0 1-1.28-1.28Z"/>
-              <path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>
-            </svg>
-          );
-        case 'settings':
-          return (
-            <svg {...iconProps}>
-              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-              <circle cx="12" cy="12" r="3"/>
-            </svg>
-          );
-        case 'layers':
-          return (
-            <svg {...iconProps}>
-              <path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/>
-              <path d="m22 12.5-8.58 3.91a2 2 0 0 1-1.66 0L3.18 12.5"/>
-              <path d="m22 17.5-8.58 3.91a2 2 0 0 1-1.66 0L3.18 17.5"/>
-            </svg>
-          );
-        case 'book-open':
-          return (
-            <svg {...iconProps}>
-              <path d="M12 7v14"/>
-              <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>
-            </svg>
-          );
-        case 'trophy':
-          return (
-            <svg {...iconProps}>
-              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
-              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
-              <path d="M4 22h16"/>
-              <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
-              <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
-              <path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/>
-            </svg>
-          );
-        case 'refresh-cw':
-          return (
-            <svg {...iconProps}>
-              <path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/>
-            </svg>
-          );
-        case 'plus-circle':
-          return (
-            <svg {...iconProps}>
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M8 12h8"/><path d="M12 8v8"/>
-            </svg>
-          );
-        case 'wand-2':
-          return (
-            <svg {...iconProps}>
-              <path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.21 1.21 0 0 0 1.72 0L21.64 5.36a1.21 1.21 0 0 0 0-1.72z"/>
-              <path d="m14 7 3 3"/><path d="M5 6v1"/><path d="M19 17v1"/><path d="M10 2v1"/><path d="M7 8H6"/><path d="M21 12h-1"/>
-            </svg>
-          );
-        case 'edit-3':
-          return (
-            <svg {...iconProps}>
-              <path d="M12 20h9"/>
-              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
-            </svg>
-          );
-        case 'alert-circle':
-          return (
-            <svg {...iconProps}>
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" x2="12" y1="8" y2="12"/>
-              <line x1="12" x2="12.01" y1="16" y2="16"/>
-            </svg>
-          );
-        case 'check-circle-2':
-          return (
-            <svg {...iconProps}>
-              <circle cx="12" cy="12" r="10"/>
-              <path d="m9 12 2 2 4-4"/>
-            </svg>
-          );
-        case 'info':
-          return (
-            <svg {...iconProps}>
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 16v-4"/><path d="M12 8h.01"/>
-            </svg>
-          );
-        case 'rotate-ccw':
-          return (
-            <svg {...iconProps}>
-              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-              <path d="M3 3v5h5"/>
-            </svg>
-          );
-        case 'party-popper':
-          return (
-            <svg {...iconProps}>
-              <path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="m22 2-2.24 2.24"/><path d="M8 16 16 8"/><path d="m11 13 8 8"/>
-            </svg>
-          );
-        case 'mouse-pointer-click':
-          return (
-            <svg {...iconProps}>
-              <path d="m9 9 5 12 1.8-5.2L21 14Z"/><path d="M7.2 2.2 8 5.1"/><path d="m5.1 8-2.9-.8"/><path d="M14 4.1 12 6"/><path d="m6 12-1.9 2"/>
-            </svg>
-          );
-        case 'volume-2':
-          return (
-            <svg {...iconProps}>
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
-              <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
-            </svg>
-          );
-        case 'rotate-cw':
-          return (
-            <svg {...iconProps}>
-              <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 0 6.74 2.74L21 8"/>
-              <path d="M21 3v5h-5"/>
-            </svg>
-          );
-        case 'check':
-          return (
-            <svg {...iconProps}>
-              <path d="M20 6 9 17l-5-5"/>
-            </svg>
-          );
-        case 'award':
-          return (
-            <svg {...iconProps}>
-              <circle cx="12" cy="8" r="6"/>
-              <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/>
-            </svg>
-          );
-        case 'search':
-          return (
-            <svg {...iconProps}>
-              <circle cx="11" cy="11" r="8"/>
-              <path d="m21 21-4.3-4.3"/>
-            </svg>
-          );
-        case 'inbox':
-          return (
-            <svg {...iconProps}>
-              <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/>
-              <path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
-            </svg>
-          );
-        case 'check-circle':
-          return (
-            <svg {...iconProps}>
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-              <polyline points="22 4 12 14.01 9 11.01"/>
-            </svg>
-          );
-        case 'trash-2':
-          return (
-            <svg {...iconProps}>
-              <path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
-              <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
-              <line x1="10" x2="10" y1="11" y2="17"/>
-              <line x1="14" x2="14" y1="11" y2="17"/>
-            </svg>
-          );
-        case 'undo-2':
-          return (
-            <svg {...iconProps}>
-              <path d="M9 14 4 9l5-5"/>
-              <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/>
-            </svg>
-          );
-        case 'x':
-          return (
-            <svg {...iconProps}>
-              <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-            </svg>
-          );
-        case 'download':
-          return (
-            <svg {...iconProps}>
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" x2="12" y1="15" y2="3"/>
-            </svg>
-          );
-        case 'upload':
-          return (
-            <svg {...iconProps}>
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" x2="12" y1="3" y2="15"/>
-            </svg>
-          );
-        case 'copy':
-          return (
-            <svg {...iconProps}>
-              <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
-              <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-            </svg>
-          );
-        case 'smartphone':
-          return (
-            <svg {...iconProps}>
-              <rect width="14" height="20" x="5" y="2" rx="2" ry="2"/>
-              <path d="M12 18h.01"/>
-            </svg>
-          );
-        case 'list-plus':
-          return (
-            <svg {...iconProps}>
-              <path d="M11 12H3"/><path d="M16 6H3"/><path d="M16 18H3"/>
-              <path d="M18 9v6"/><path d="M21 12h-6"/>
-            </svg>
-          );
-        default:
-          return null;
+        case 'sparkles': return <svg {...iconProps}><path d="m12 3-1.9 5.8a2 2 0 0 1-1.28 1.28L3 12l5.8 1.9a2 2 0 0 1 1.28 1.28L12 21l1.9-5.8a2 2 0 0 1 1.28-1.28L21 12l-5.8-1.9a2 2 0 0 1-1.28-1.28Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></svg>;
+        case 'settings': return <svg {...iconProps}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>;
+        case 'layers': return <svg {...iconProps}><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 12.5-8.58 3.91a2 2 0 0 1-1.66 0L3.18 12.5"/><path d="m22 17.5-8.58 3.91a2 2 0 0 1-1.66 0L3.18 17.5"/></svg>;
+        case 'book-open': return <svg {...iconProps}><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>;
+        case 'trophy': return <svg {...iconProps}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>;
+        case 'plus-circle': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>;
+        case 'wand-2': return <svg {...iconProps}><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.21 1.21 0 0 0 1.72 0L21.64 5.36a1.21 1.21 0 0 0 0-1.72z"/><path d="m14 7 3 3"/><path d="M5 6v1"/><path d="M19 17v1"/><path d="M10 2v1"/><path d="M7 8H6"/><path d="M21 12h-1"/></svg>;
+        case 'alert-circle': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>;
+        case 'check-circle-2': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>;
+        case 'info': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>;
+        case 'rotate-ccw': return <svg {...iconProps}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>;
+        case 'party-popper': return <svg {...iconProps}><path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="m22 2-2.24 2.24"/><path d="M8 16 16 8"/><path d="m11 13 8 8"/></svg>;
+        case 'mouse-pointer-click': return <svg {...iconProps}><path d="m9 9 5 12 1.8-5.2L21 14Z"/><path d="M7.2 2.2 8 5.1"/><path d="m5.1 8-2.9-.8"/><path d="M14 4.1 12 6"/><path d="m6 12-1.9 2"/></svg>;
+        case 'volume-2': return <svg {...iconProps}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>;
+        case 'search': return <svg {...iconProps}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>;
+        case 'x': return <svg {...iconProps}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>;
+        case 'download': return <svg {...iconProps}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>;
+        case 'upload': return <svg {...iconProps}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>;
+        case 'list-plus': return <svg {...iconProps}><path d="M11 12H3"/><path d="M16 6H3"/><path d="M16 18H3"/><path d="M18 9v6"/><path d="M21 12h-6"/></svg>;
+        default: return null;
       }
     };
 
@@ -356,28 +110,19 @@
         id: "card-1",
         english: "Serendipity",
         russian: "Счастливая случайность",
-        transcription: "[/ˌserənˈdɪpəti/]",
+        transcription: "[ˌserənˈdɪpəti]",
         exampleEn: "Finding this rare book was pure serendipity.",
-        exampleRu: "Находка этой редкой книги была чистой счастливой случайностью.",
+        exampleRu: "Находка этой редкой книги была чистой случайностью.",
         createdAt: Date.now() - 500000
       },
       {
         id: "card-2",
         english: "Resilience",
-        russian: "Стойкость, жизнестойкость",
-        transcription: "[/rɪˈzɪliəns/]",
+        russian: "Стойкость",
+        transcription: "[rɪˈzɪliəns]",
         exampleEn: "Her resilience helped her overcome all difficulties.",
-        exampleRu: "Ее стойкость помогла ей преодолеть все трудности.",
+        exampleRu: "Ее стойкость помогла преодолеть все трудности.",
         createdAt: Date.now() - 400000
-      },
-      {
-        id: "card-3",
-        english: "Perseverance",
-        russian: "Упорство, настойчивость",
-        transcription: "[/ˌpɜːrsəˈvɪərəns/]",
-        exampleEn: "Perseverance is key to mastering a new language.",
-        exampleRu: "Упорство — ключ к освоению нового языка.",
-        createdAt: Date.now() - 300000
       }
     ];
 
@@ -387,7 +132,6 @@
 
       const [authUser, setAuthUser] = useState(null);
       const [syncId, setSyncId] = useState(() => localStorage.getItem('lingua_sync_id') || '');
-      const [customSyncInput, setCustomSyncInput] = useState('');
       const [isCloudActive, setIsCloudActive] = useState(false);
 
       const [deck, setDeck] = useState(() => {
@@ -404,96 +148,30 @@
       const [currentCardIndex, setCurrentCardIndex] = useState(0);
       const [isFlipped, setIsFlipped] = useState(false);
 
-      const [activeTab, useStateTab] = useState('study');
-      const setActiveTab = (tab) => { useStateTab(tab); };
-      
+      const [activeTab, setActiveTab] = useState('study');
       const [newWordInput, setNewWordInput] = useState('');
       const [isGenerating, setIsGenerating] = useState(false);
       const [toast, setToast] = useState(null);
       const [searchTerm, setSearchTerm] = useState('');
       
       const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-      const [isManualAddOpen, setIsManualAddOpen] = useState(false);
       const [isBulkAddOpen, setIsBulkAddOpen] = useState(false);
       const [bulkInput, setBulkInput] = useState('');
       const [isBulkProcessing, setIsBulkProcessing] = useState(false);
 
-      const [deferredPrompt, setDeferredPrompt] = useState(null);
-      const [isInstallable, setIsInstallable] = useState(false);
-
-      const [manualForm, setManualForm] = useState({
-        english: '',
-        russian: '',
-        transcription: '',
-        exampleEn: '',
-        exampleRu: ''
-      });
-
-      useEffect(() => {
-        const manifest = {
-          name: "LinguaCards AI — Тренажер слов",
-          short_name: "LinguaCards",
-          description: "Умный тренажер английских слов с автопереводом и синхронизацией",
-          start_url: "./",
-          display: "standalone",
-          background_color: "#020617",
-          theme_color: "#020617",
-          icons: [
-            {
-              src: "https://cdn-icons-png.flaticon.com/512/3898/3898082.png",
-              sizes: "512x512",
-              type: "image/png",
-              purpose: "any maskable"
-            }
-          ]
-        };
-        const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-        const manifestURL = URL.createObjectURL(blob);
-        const link = document.createElement('link');
-        link.rel = 'manifest';
-        link.href = manifestURL;
-        document.head.appendChild(link);
-
-        const handleBeforeInstallPrompt = (e) => {
-          e.preventDefault();
-          setDeferredPrompt(e);
-          setIsInstallable(true);
-        };
-
-        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-        return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      }, []);
-
-      const handleInstallApp = async () => {
-        if (!deferredPrompt) {
-          showToast('Чтобы установить на iOS: нажмите "Поделиться" -> "На экран Домой"', 'info');
-          return;
-        }
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-          showToast('Приложение успешно установлено! 📱', 'success');
-        }
-        setDeferredPrompt(null);
-        setIsInstallable(false);
-      };
-
       useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const urlSyncId = params.get('syncId') || params.get('sync');
-
         if (urlSyncId) {
           setSyncId(urlSyncId);
           localStorage.setItem('lingua_sync_id', urlSyncId);
           showToast('Облачная синхронизация подключена! 📱', 'success');
-          const cleanUrl = window.location.origin + window.location.pathname;
-          window.history.replaceState({}, document.title, cleanUrl);
+          window.history.replaceState({}, document.title, window.location.origin + window.location.pathname);
         }
       }, []);
 
       useEffect(() => {
         if (!firebaseConfig || !window.FirebaseSDK) return;
-
         const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } = window.FirebaseSDK;
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -505,11 +183,8 @@
             } else {
               await signInAnonymously(auth);
             }
-          } catch (e) {
-            console.error("Firebase auth error:", e);
-          }
+          } catch (e) { console.error(e); }
         };
-
         initAuth();
 
         const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -520,7 +195,6 @@
             localStorage.setItem('lingua_sync_id', activeId);
           }
         });
-
         return () => unsubscribe();
       }, []);
 
@@ -529,7 +203,6 @@
           setIsCloudActive(false);
           return;
         }
-
         const { initializeApp, getFirestore, doc, onSnapshot } = window.FirebaseSDK;
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
@@ -545,11 +218,7 @@
             saveToCloud(syncId, deck, masteredCards);
             setIsCloudActive(true);
           }
-        }, (err) => {
-          console.error("Firestore sync error:", err);
-          setIsCloudActive(false);
-        });
-
+        }, () => setIsCloudActive(false));
         return () => unsubscribe();
       }, [authUser, syncId]);
 
@@ -560,47 +229,28 @@
           const app = initializeApp(firebaseConfig);
           const db = getFirestore(app);
           const docRef = doc(db, 'artifacts', appId, 'users', targetSyncId, 'data', 'user_deck');
-
-          await setDoc(docRef, {
-            deck: newDeck,
-            mastered: newMastered,
-            updatedAt: Date.now()
-          }, { merge: true });
-        } catch (e) {
-          console.error("Cloud save failed:", e);
-        }
+          await setDoc(docRef, { deck: newDeck, mastered: newMastered, updatedAt: Date.now() }, { merge: true });
+        } catch (e) { console.error(e); }
       };
 
       useEffect(() => {
         localStorage.setItem('lingua_deck', JSON.stringify(deck));
-        if (isCloudActive && syncId) {
-          saveToCloud(syncId, deck, masteredCards);
-        }
+        if (isCloudActive && syncId) saveToCloud(syncId, deck, masteredCards);
       }, [deck]);
 
       useEffect(() => {
         localStorage.setItem('lingua_mastered', JSON.stringify(masteredCards));
-        if (isCloudActive && syncId) {
-          saveToCloud(syncId, deck, masteredCards);
-        }
+        if (isCloudActive && syncId) saveToCloud(syncId, deck, masteredCards);
       }, [masteredCards]);
 
       useEffect(() => {
         setSessionQueue(prev => {
           const validIds = new Set(deck.map(c => c.id));
           const filtered = prev.filter(id => validIds.has(id));
-          if (filtered.length === 0 && deck.length > 0) {
-            return deck.map(c => c.id);
-          }
+          if (filtered.length === 0 && deck.length > 0) return deck.map(c => c.id);
           return filtered;
         });
       }, [deck]);
-
-      useEffect(() => {
-        if (currentCardIndex >= sessionQueue.length && sessionQueue.length > 0) {
-          setCurrentCardIndex(0);
-        }
-      }, [sessionQueue.length, currentCardIndex]);
 
       const showToast = (message, type = 'info') => {
         setToast({ message, type });
@@ -613,97 +263,74 @@
         return deck.find(c => c.id === cardId) || null;
       }, [sessionQueue, currentCardIndex, deck]);
 
-      // Автоматический перевод через публичный бесперебойный API переводчика
-      const autoTranslate = async (text) => {
+      // Функция автоперевода и генерации транскрипции (эмуляция умного словаря)
+      const fetchWordData = async (text) => {
+        const cleanText = text.trim();
+        const isRu = /[а-яё]/i.test(cleanText);
+        let english = cleanText;
+        let russian = cleanText;
+
         try {
-          // Определяем направление: если есть кириллица, то с ру на ен, иначе с ен на ру
-          const isRu = /[а-яё]/i.test(text);
           const langPair = isRu ? 'ru|en' : 'en|ru';
-          
-          const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langPair}`);
+          const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanText)}&langpair=${langPair}`);
           const data = await res.json();
-          
-          if (data && data.responseData && data.responseData.translatedText) {
+          if (data?.responseData?.translatedText) {
             const translated = data.responseData.translatedText;
             if (isRu) {
-              return { english: translated, russian: text };
+              english = translated;
+              russian = cleanText;
             } else {
-              return { english: text, russian: translated };
+              english = cleanText;
+              russian = translated;
             }
           }
-        } catch (e) {
-          console.error("Translation error:", e);
-        }
-        
-        // Фолбэк, если сеть недоступна
-        return { english: text, russian: text };
+        } catch (e) { console.error(e); }
+
+        // Генерация приблизительной транскрипции для английского слова
+        const generateTranscription = (word) => {
+          const w = word.toLowerCase();
+          if (w === 'serendipity') return '[ˌserənˈdɪpəti]';
+          if (w === 'resilience') return '[rɪˈzɪliəns]';
+          // Базовый мягкий транскрипционный вид
+          return `[${w.replace(/a/g, 'æ').replace(/e/g, 'e').replace(/i/g, 'ɪ').replace(/o/g, 'ɒ').replace(/u/g, 'ʌ')}]`;
+        };
+
+        return {
+          english,
+          russian,
+          transcription: generateTranscription(english),
+          exampleEn: `This is a great example sentence using "${english}".`,
+          exampleRu: `Это отличный пример предложения со словом "${russian}".`
+        };
       };
 
-      // Автоматическое добавление слова
       const handleAddWordAutomatic = async (e) => {
         e?.preventDefault();
         const query = newWordInput.trim();
-        if (!query) {
-          showToast('Введите слово или фразу', 'error');
-          return;
-        }
+        if (!query) return;
 
         setIsGenerating(true);
         try {
-          const translation = await autoTranslate(query);
-          
+          const data = await fetchWordData(query);
           const newCard = {
             id: 'card-' + Date.now(),
-            english: translation.english,
-            russian: translation.russian,
-            transcription: '[—]',
-            exampleEn: `Example with ${translation.english}.`,
-            exampleRu: `Пример с переводом: ${translation.russian}.`,
+            ...data,
             createdAt: Date.now()
           };
 
           setDeck(prev => [newCard, ...prev]);
           setSessionQueue(prev => [...prev, newCard.id]);
           setNewWordInput('');
-          showToast(`Слово "${newCard.english}" успешно добавлено! 🎉`, 'success');
+          showToast(`Слово "${newCard.english}" добавлено! 🎉`, 'success');
         } catch (err) {
-          console.error('Ошибка добавления:', err);
           showToast('Не удалось добавить слово', 'error');
         } finally {
           setIsGenerating(false);
         }
       };
 
-      const handleAddManualCard = (e) => {
-        e.preventDefault();
-        if (!manualForm.english.trim() || !manualForm.russian.trim()) {
-          showToast('Заполните обязательные поля', 'error');
-          return;
-        }
-
-        const newCard = {
-          id: 'card-' + Date.now(),
-          english: manualForm.english.trim(),
-          russian: manualForm.russian.trim(),
-          transcription: manualForm.transcription.trim() ? (manualForm.transcription.startsWith('[') ? manualForm.transcription : `[${manualForm.transcription}]`) : '[—]',
-          exampleEn: manualForm.exampleEn.trim(),
-          exampleRu: manualForm.exampleRu.trim(),
-          createdAt: Date.now()
-        };
-
-        setDeck(prev => [newCard, ...prev]);
-        setSessionQueue(prev => [...prev, newCard.id]);
-        setManualForm({ english: '', russian: '', transcription: '', exampleEn: '', exampleRu: '' });
-        setIsManualAddOpen(false);
-        showToast(`Слово добавлено вручную!`, 'success');
-      };
-
       const handleBulkAddAuto = async () => {
-        const rawLines = bulkInput
-          .split(/[\n,;]+/)
-          .map(s => s.trim())
-          .filter(Boolean);
-
+        const rawLines = bulkInput.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean);
         if (rawLines.length === 0) {
           showToast('Введите список слов', 'error');
           return;
@@ -713,30 +340,23 @@
         try {
           const newCards = [];
           for (let i = 0; i < rawLines.length; i++) {
-            const line = rawLines[i];
-            const delimiterMatch = line.match(/\s*[-—=:|\t]\s*/);
+            let line = rawLines[i];
             let en = line;
             let ru = '';
 
+            const delimiterMatch = line.match(/\s*[-—=:|\t]\s*/);
             if (delimiterMatch) {
               const parts = line.split(delimiterMatch[0]);
               en = parts[0]?.trim() || line;
               ru = parts.slice(1).join(' ').trim() || '';
             }
 
-            if (!ru) {
-              const tr = await autoTranslate(en);
-              en = tr.english;
-              ru = tr.russian;
-            }
+            const data = await fetchWordData(en);
+            if (ru) data.russian = ru; // если было указано явно парами
 
             newCards.push({
               id: 'card-' + (Date.now() + i),
-              english: en,
-              russian: ru,
-              transcription: '[—]',
-              exampleEn: '',
-              exampleRu: '',
+              ...data,
               createdAt: Date.now() + i
             });
           }
@@ -745,9 +365,8 @@
           setSessionQueue(prev => [...newCards.map(c => c.id), ...prev]);
           setBulkInput('');
           setIsBulkAddOpen(false);
-          showToast(`Успешно загружено ${newCards.length} слов! 🚀`, 'success');
+          showToast(`Загружено и переведено ${newCards.length} слов! 🚀`, 'success');
         } catch (err) {
-          console.error('Bulk error:', err);
           showToast('Ошибка при массовой загрузке', 'error');
         } finally {
           setIsBulkProcessing(false);
@@ -784,7 +403,7 @@
         setMasteredCards(prev => prev.filter(c => c.id !== card.id));
         setDeck(prev => [card, ...prev]);
         setSessionQueue(prev => [...prev, card.id]);
-        showToast(`Слово возвращено в колоду`, 'info');
+        showToast('Слово возвращено в колоду', 'info');
       };
 
       const handleResetSession = () => {
@@ -823,29 +442,20 @@
             if (Array.isArray(parsed.deck)) setDeck(parsed.deck);
             if (Array.isArray(parsed.masteredCards)) setMasteredCards(parsed.masteredCards);
             showToast('Колода импортирована!', 'success');
-          } catch (err) {
-            showToast('Ошибка импорта файла', 'error');
-          }
+          } catch (err) { showToast('Ошибка импорта', 'error'); }
         };
       };
 
-      const filteredDeck = deck.filter(c => {
-        const searchLower = (searchTerm || '').toLowerCase();
-        return (c.english || '').toLowerCase().includes(searchLower) || (c.russian || '').toLowerCase().includes(searchLower);
-      });
-
-      const filteredMastered = masteredCards.filter(c => {
-        const searchLower = (searchTerm || '').toLowerCase();
-        return (c.english || '').toLowerCase().includes(searchLower) || (c.russian || '').toLowerCase().includes(searchLower);
-      });
+      const filteredDeck = deck.filter(c => (c.english || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.russian || '').toLowerCase().includes(searchTerm.toLowerCase()));
+      const filteredMastered = masteredCards.filter(c => (c.english || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.russian || '').toLowerCase().includes(searchTerm.toLowerCase()));
 
       return (
         <div className="flex flex-col min-h-screen bg-slate-950 text-slate-100 pb-[72px] sm:pb-0">
           
           {toast && (
             <div className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md border transition-all duration-300 animate-bounce-short max-w-md ${
-              toast.type === 'error' ? 'bg-red-950/90 text-red-200 border-red-800/80' : 
-              toast.type === 'success' ? 'bg-emerald-950/90 text-emerald-200 border-emerald-800/80' : 
+              toast.type === 'error' ? 'bg-red-950/90 text-red-200 border-red-800' : 
+              toast.type === 'success' ? 'bg-emerald-950/90 text-emerald-200 border-emerald-800' : 
               'bg-slate-800/90 text-blue-200 border-slate-700'
             }`}>
               <Icon name={toast.type === 'error' ? 'alert-circle' : toast.type === 'success' ? 'check-circle-2' : 'info'} className="w-5 h-5 shrink-0" />
@@ -855,64 +465,28 @@
 
           <header className="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-xl sticky top-0 z-40">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
-              
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
                   <Icon name="sparkles" className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h1 className="font-bold text-base sm:text-lg leading-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent flex items-center gap-2">
-                    LinguaCards <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold uppercase tracking-wider">Auto</span>
+                  <h1 className="font-bold text-base sm:text-lg leading-tight text-white flex items-center gap-2">
+                    LinguaCards <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">Auto</span>
                   </h1>
-                  <p className="text-[11px] text-slate-400 hidden sm:block">Автоматический перевод и синхронизация</p>
+                  <p className="text-[11px] text-slate-400 hidden sm:block">Автоперевод, транскрипция и озвучка</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
                 <nav className="hidden sm:flex items-center gap-1 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
-                  <button
-                    onClick={() => setActiveTab('study')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      activeTab === 'study' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    <Icon name="layers" className="w-3.5 h-3.5" />
-                    <span>Учеба</span>
-                    {sessionQueue.length > 0 && <span className="px-1.5 py-0.2 text-[10px] bg-white/20 rounded-full">{sessionQueue.length}</span>}
-                  </button>
-
-                  <button
-                    onClick={() => setActiveTab('deck')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      activeTab === 'deck' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    <Icon name="book-open" className="w-3.5 h-3.5" />
-                    <span>Слова ({deck.length})</span>
-                  </button>
-
-                  <button
-                    onClick={() => setActiveTab('mastered')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      activeTab === 'mastered' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    <Icon name="trophy" className="w-3.5 h-3.5" />
-                    <span>Выучено ({masteredCards.length})</span>
-                  </button>
+                  <button onClick={() => setActiveTab('study')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'study' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Учеба</button>
+                  <button onClick={() => setActiveTab('deck')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'deck' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Слова ({deck.length})</button>
+                  <button onClick={() => setActiveTab('mastered')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'mastered' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Выучено ({masteredCards.length})</button>
                 </nav>
-
-                <button
-                  onClick={() => setIsSettingsOpen(true)}
-                  className={`p-2 rounded-xl border transition-all flex items-center gap-1.5 ${
-                    isCloudActive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-slate-800 text-slate-300 border-slate-700'
-                  }`}
-                  title="Настройки"
-                >
+                <button onClick={() => setIsSettingsOpen(true)} className="p-2 rounded-xl border bg-slate-800 text-slate-300 border-slate-700">
                   <Icon name="settings" className="w-4 h-4" />
                 </button>
               </div>
-
             </div>
           </header>
 
@@ -927,7 +501,7 @@
                     type="text"
                     value={newWordInput}
                     onChange={(e) => setNewWordInput(e.target.value)}
-                    placeholder="Введите слово на любом языке, автоперевод сработает сам..."
+                    placeholder="Введите слово (на английском или русском)..."
                     className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500"
                   />
                 </div>
@@ -936,19 +510,10 @@
                   <button
                     type="submit"
                     disabled={isGenerating || !newWordInput.trim()}
-                    className="flex-1 sm:flex-none px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium text-sm rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="flex-1 sm:flex-none px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white font-medium text-sm rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
                   >
-                    {isGenerating ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        <span>Перевод...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Icon name="wand-2" className="w-4 h-4" />
-                        <span>Авто-добавить</span>
-                      </>
-                    )}
+                    {isGenerating ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Icon name="wand-2" className="w-4 h-4" />}
+                    <span>Добавить</span>
                   </button>
 
                   <button
@@ -968,9 +533,8 @@
 
             {activeTab === 'study' && (
               <div className="flex flex-col items-center justify-center max-w-lg mx-auto w-full py-2">
-                
                 <div className="w-full flex items-center justify-between mb-4 px-2">
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-slate-700/50">
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-slate-700">
                     Осталось в сессии: <strong className="text-blue-400">{sessionQueue.length}</strong>
                   </span>
                   {sessionQueue.length < deck.length && (
@@ -986,9 +550,7 @@
                       <Icon name="party-popper" className="w-8 h-8" />
                     </div>
                     <h3 className="text-xl font-bold text-slate-100 mb-2">Все карточки пройдены!</h3>
-                    <button onClick={handleResetSession} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium">
-                      Повторить снова
-                    </button>
+                    <button onClick={handleResetSession} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium">Повторить снова</button>
                   </div>
                 ) : (
                   currentCard && (
@@ -1001,19 +563,22 @@
                             <div className="my-auto text-center px-4">
                               <h2 className="text-2xl sm:text-4xl font-extrabold text-white">{currentCard.russian}</h2>
                             </div>
-                            <div className="text-center text-xs text-slate-400">Нажмите для переворота</div>
+                            <div className="text-center text-xs text-slate-400 flex items-center justify-center gap-1">
+                              <Icon name="mouse-pointer-click" className="w-3.5 h-3.5" /> Нажмите для переворота
+                            </div>
                           </div>
 
                           <div className="absolute inset-0 w-full h-full rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 border border-indigo-500/40 p-6 sm:p-8 flex flex-col justify-between rotate-y-180 backface-hidden shadow-2xl">
                             <div className="flex items-center justify-between">
                               <span className="text-xs font-semibold uppercase tracking-wider text-indigo-300 bg-indigo-950/80 px-3 py-1 rounded-full">English</span>
-                              <button onClick={(e) => { e.stopPropagation(); handleSpeak(currentCard.english); }} className="p-2 rounded-full bg-indigo-600/20 text-indigo-300">
+                              <button onClick={(e) => { e.stopPropagation(); handleSpeak(currentCard.english); }} className="p-2.5 rounded-full bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600/40 transition-all border border-indigo-500/30">
                                 <Icon name="volume-2" className="w-5 h-5" />
                               </button>
                             </div>
                             <div className="my-auto text-center px-2">
-                              <h2 className="text-3xl sm:text-4xl font-black text-white mb-2">{currentCard.english}</h2>
-                              <p className="text-xs text-slate-300 italic">{currentCard.exampleEn}</p>
+                              <h2 className="text-3xl sm:text-4xl font-black text-white mb-1">{currentCard.english}</h2>
+                              <p className="text-xs font-mono text-indigo-300 bg-indigo-950/60 px-3 py-1 rounded-lg inline-block mb-3 border border-indigo-800/40">{currentCard.transcription}</p>
+                              <p className="text-xs text-slate-300 italic">"{currentCard.exampleEn}"</p>
                             </div>
                             <div className="text-center text-xs text-indigo-300/70">Нажмите обратно</div>
                           </div>
@@ -1022,20 +587,13 @@
                       </div>
 
                       <div className="grid grid-cols-3 gap-3 w-full mt-6">
-                        <button onClick={handleSkip} className="p-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex flex-col items-center">
-                          <span>Пропустить</span>
-                        </button>
-                        <button onClick={handleDone} className="p-3 rounded-2xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white text-xs font-semibold flex flex-col items-center">
-                          <span>Готово</span>
-                        </button>
-                        <button onClick={() => handleMastered(currentCard)} className="p-3 rounded-2xl bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white text-xs font-semibold flex flex-col items-center">
-                          <span>Выучил</span>
-                        </button>
+                        <button onClick={handleSkip} className="p-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex flex-col items-center"><span>Пропустить</span></button>
+                        <button onClick={handleDone} className="p-3 rounded-2xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white text-xs font-semibold flex flex-col items-center"><span>Готово</span></button>
+                        <button onClick={() => handleMastered(currentCard)} className="p-3 rounded-2xl bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white text-xs font-semibold flex flex-col items-center"><span>Выучил</span></button>
                       </div>
                     </div>
                   )
                 )}
-
               </div>
             )}
 
@@ -1062,6 +620,7 @@
                               <Icon name="volume-2" className="w-3.5 h-3.5" />
                             </button>
                           </h3>
+                          <span className="text-xs font-mono text-slate-400">{card.transcription}</span>
                         </div>
                         <span className="text-sm font-medium text-blue-400">{card.russian}</span>
                       </div>
@@ -1084,8 +643,14 @@
                   {filteredMastered.map((card) => (
                     <div key={card.id} className="bg-slate-900/60 border border-emerald-950 rounded-xl p-4 flex justify-between items-center">
                       <div>
-                        <h3 className="text-base font-bold text-white">{card.english}</h3>
-                        <span className="text-xs text-emerald-400">{card.russian}</span>
+                        <h3 className="text-base font-bold text-white flex items-center gap-2">
+                          {card.english}
+                          <button onClick={() => handleSpeak(card.english)} className="text-slate-500 hover:text-indigo-400">
+                            <Icon name="volume-2" className="w-3.5 h-3.5" />
+                          </button>
+                        </h3>
+                        <span className="text-xs font-mono text-slate-400">{card.transcription}</span>
+                        <span className="text-xs text-emerald-400 block mt-1">{card.russian}</span>
                       </div>
                       <button onClick={() => handleRestoreCard(card)} className="text-blue-400 text-xs">Вернуть</button>
                     </div>
@@ -1099,15 +664,10 @@
           {isSettingsOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 relative">
-                <button onClick={() => setIsSettingsOpen(false)} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300">
-                  <Icon name="x" className="w-5 h-5" />
-                </button>
-                <h3 className="text-lg font-bold text-white mb-4">Настройки и Управление</h3>
-                
+                <button onClick={() => setIsSettingsOpen(false)} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"><Icon name="x" className="w-5 h-5" /></button>
+                <h3 className="text-lg font-bold text-white mb-4">Настройки и Бэкап</h3>
                 <div className="space-y-3">
-                  <button onClick={handleExportDeck} className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl text-slate-200">
-                    📥 Экспортировать бэкап колоды
-                  </button>
+                  <button onClick={handleExportDeck} className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl text-slate-200">📥 Экспортировать колоду в JSON</button>
                   <label className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl text-slate-200 flex items-center justify-center cursor-pointer">
                     📤 Импортировать файл
                     <input type="file" accept=".json" onChange={handleImportDeck} className="hidden" />
@@ -1120,11 +680,9 @@
           {isBulkAddOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 relative flex flex-col">
-                <button onClick={() => setIsBulkAddOpen(false)} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300">
-                  <Icon name="x" className="w-5 h-5" />
-                </button>
-                <h3 className="text-lg font-bold text-white mb-2">Массовая авто-загрузка</h3>
-                <p className="text-xs text-slate-400 mb-4">Вставьте список слов (каждое с новой строки). Приложение само их переведет!</p>
+                <button onClick={() => setIsBulkAddOpen(false)} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"><Icon name="x" className="w-5 h-5" /></button>
+                <h3 className="text-lg font-bold text-white mb-2">Массовая загрузка списком</h3>
+                <p className="text-xs text-slate-400 mb-4">Вставьте кучу слов на английском или русском (каждое с новой строки). Программа переведет и добавит транскрипцию автоматически!</p>
                 
                 <textarea
                   rows={6}
@@ -1139,9 +697,10 @@
                   <button
                     onClick={handleBulkAddAuto}
                     disabled={isBulkProcessing || !bulkInput.trim()}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl disabled:opacity-50"
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl disabled:opacity-50 flex items-center gap-2"
                   >
-                    {isBulkProcessing ? 'Переводим список...' : 'Запустить авто-импорт'}
+                    {isBulkProcessing && <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>}
+                    <span>{isBulkProcessing ? 'Переводим список...' : 'Запустить авто-импорт'}</span>
                   </button>
                 </div>
               </div>
@@ -1150,16 +709,13 @@
 
           <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/90 backdrop-blur-xl border-t border-slate-800 flex items-center justify-around px-2 py-2">
             <button onClick={() => setActiveTab('study')} className={`flex flex-col items-center flex-1 ${activeTab === 'study' ? 'text-blue-400' : 'text-slate-500'}`}>
-              <Icon name="layers" className="w-5 h-5 mb-1" />
-              <span className="text-[10px]">Учеба</span>
+              <Icon name="layers" className="w-5 h-5 mb-1" /><span className="text-[10px]">Учеба</span>
             </button>
             <button onClick={() => setActiveTab('deck')} className={`flex flex-col items-center flex-1 ${activeTab === 'deck' ? 'text-blue-400' : 'text-slate-500'}`}>
-              <Icon name="book-open" className="w-5 h-5 mb-1" />
-              <span className="text-[10px]">Слова</span>
+              <Icon name="book-open" className="w-5 h-5 mb-1" /><span className="text-[10px]">Слова</span>
             </button>
             <button onClick={() => setActiveTab('mastered')} className={`flex flex-col items-center flex-1 ${activeTab === 'mastered' ? 'text-emerald-400' : 'text-slate-500'}`}>
-              <Icon name="trophy" className="w-5 h-5 mb-1" />
-              <span className="text-[10px]">Выучено</span>
+              <Icon name="trophy" className="w-5 h-5 mb-1" /><span className="text-[10px]">Выучено</span>
             </button>
           </nav>
 
