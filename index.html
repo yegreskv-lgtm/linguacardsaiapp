@@ -24,7 +24,6 @@
           },
           animation: {
             'bounce-short': 'bounceShort 0.5s ease-in-out',
-            'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
           },
           keyframes: {
             bounceShort: {
@@ -78,9 +77,11 @@
         case 'key': return <svg {...iconProps}><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.778-7.778zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>;
         case 'trash-2': return <svg {...iconProps}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>;
         case 'shuffle': return <svg {...iconProps}><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4"/><path d="M2 6h1.4c1.3 0 2.5.6 3.3 1.7l.8 1.1"/><path d="M14.4 14.2l.8 1.1c.8 1.1 2 1.7 3.3 1.7H22"/><path d="m18 18 4 4-4 4"/></svg>;
-        case 'user': return <svg {...iconProps}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
-        case 'log-out': return <svg {...iconProps}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>;
-        case 'cloud': return <svg {...iconProps}><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>;
+        case 'users': return <svg {...iconProps}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+        case 'share-2': return <svg {...iconProps}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>;
+        case 'help-circle': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>;
+        case 'copy': return <svg {...iconProps}><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>;
+        case 'user-plus': return <svg {...iconProps}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="16" x2="22" y1="11" y2="11"/></svg>;
         case 'alert-circle': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>;
         case 'check-circle-2': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>;
         case 'info': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>;
@@ -90,7 +91,6 @@
         case 'volume-2': return <svg {...iconProps}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>;
         case 'x': return <svg {...iconProps}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>;
         case 'list-plus': return <svg {...iconProps}><path d="M11 12H3"/><path d="M16 6H3"/><path d="M16 18H3"/><path d="M18 9v6"/><path d="M21 12h-6"/></svg>;
-        case 'refresh-cw': return <svg {...iconProps}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>;
         default: return null;
       }
     };
@@ -116,14 +116,24 @@
       "egg": { en: "Egg", ru: "Яйцо", tr: "[eɡ]" }
     };
 
-    // Облачное API-хранилище (работает из локальных HTML файлов)
-    const STORAGE_KEY = "$2a$10$7Z/U5Q5qX/8Y0z2oH6.mEO5E4F9QG4E9vX"; 
+    // Сжатие данных в безопасный URL-хеш
+    const encodeDataToHash = (data) => {
+      try {
+        const jsonStr = JSON.stringify(data);
+        return btoa(encodeURIComponent(jsonStr));
+      } catch (e) { return ''; }
+    };
+
+    const decodeHashToData = (hash) => {
+      try {
+        const jsonStr = decodeURIComponent(atob(hash));
+        return JSON.parse(jsonStr);
+      } catch (e) { return null; }
+    };
 
     function App() {
-      const [username, setUsername] = useState(() => localStorage.getItem('lingua_username') || '');
-      const [loginInput, setLoginInput] = useState('');
-      const [isLoggedIn, setIsLoggedIn] = useState(!!username);
-
+      const [username, setUsername] = useState(() => localStorage.getItem('lingua_username') || 'Сергей');
+      
       const [deck, setDeck] = useState(() => {
         const saved = localStorage.getItem('lingua_deck');
         return saved ? JSON.parse(saved) : INITIAL_CARDS;
@@ -133,6 +143,14 @@
         const saved = localStorage.getItem('lingua_mastered');
         return saved ? JSON.parse(saved) : [];
       });
+
+      const [friends, setFriends] = useState(() => {
+        const saved = localStorage.getItem('lingua_friends');
+        return saved ? JSON.parse(saved) : [];
+      });
+
+      const [selectedFriend, setSelectedFriend] = useState(null);
+      const [friendModalData, setFriendModalData] = useState(null);
 
       const [sessionQueue, setSessionQueue] = useState([]);
       const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -148,100 +166,77 @@
       const [bulkInput, setBulkInput] = useState('');
       const [isBulkProcessing, setIsBulkProcessing] = useState(false);
       const [editingCard, setEditingCard] = useState(null);
-      const [isSyncing, setIsSyncing] = useState(false);
 
-      // --- ЗАГРУЗКА ИЗ ОБЛАКА ПРИ ВХОДЕ/СТАРТЕ ---
-      const fetchFromCloud = async (user) => {
-        if (!user) return;
-        setIsSyncing(true);
-        try {
-          const cleanUser = user.trim().toLowerCase();
-          const res = await fetch(`https://api.jsonbin.io/v3/b/${encodeURIComponent('user_' + cleanUser)}`, {
-            headers: { 'X-Master-Key': '$2b$10$w09ZkM4H3H.3K28l0A3F/u3j.kX7r1lD' }
-          });
-          if (res.ok) {
-            const result = await res.json();
-            if (result.record?.deck) {
-              setDeck(result.record.deck);
-              localStorage.setItem('lingua_deck', JSON.stringify(result.record.deck));
-            }
-            if (result.record?.mastered) {
-              setMasteredCards(result.record.mastered);
-              localStorage.setItem('lingua_mastered', JSON.stringify(result.record.mastered));
-            }
-          }
-        } catch (e) {
-          console.log("Первый вход или загрузка локальных данных");
-        } finally {
-          setIsSyncing(false);
-        }
-      };
-
-      // --- СОХРАНЕНИЕ В ОБЛАКО ---
-      const saveToCloud = async (user, currentDeck, currentMastered) => {
-        if (!user) return;
-        setIsSyncing(true);
-        try {
-          const cleanUser = user.trim().toLowerCase();
-          await fetch(`https://api.jsonbin.io/v3/b`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-Bin-Name': 'user_' + cleanUser,
-              'X-Bin-Private': 'false'
-            },
-            body: JSON.stringify({ deck: currentDeck, mastered: currentMastered, updatedAt: Date.now() })
-          });
-        } catch (e) {
-          console.error(e);
-        } finally {
-          setTimeout(() => setIsSyncing(false), 500);
-        }
-      };
-
-      // Авто-синхронизация каждые 5 секунд и при старте
+      // При старте проверяем, перешел ли пользователь по ссылке друга
       useEffect(() => {
-        if (username) {
-          fetchFromCloud(username);
-          const interval = setInterval(() => fetchFromCloud(username), 5000);
-          return () => clearInterval(interval);
+        const urlParams = new URLSearchParams(window.location.search);
+        const friendDataParam = urlParams.get('friend');
+        if (friendDataParam) {
+          const decoded = decodeHashToData(friendDataParam);
+          if (decoded && decoded.username) {
+            setFriendModalData(decoded);
+          }
         }
-      }, [username]);
+      }, []);
 
-      // Сохраняем локально и отправляем в облако
       useEffect(() => {
         localStorage.setItem('lingua_deck', JSON.stringify(deck));
-        if (username) saveToCloud(username, deck, masteredCards);
       }, [deck]);
 
       useEffect(() => {
         localStorage.setItem('lingua_mastered', JSON.stringify(masteredCards));
-        if (username) saveToCloud(username, deck, masteredCards);
       }, [masteredCards]);
 
-      const handleLogin = (e) => {
-        e.preventDefault();
-        const clean = loginInput.trim();
-        if (!clean) return;
-        setUsername(clean);
-        localStorage.setItem('lingua_username', clean);
-        setIsLoggedIn(true);
-        setLoginInput('');
-        fetchFromCloud(clean);
-        showToast(`Добро пожаловать, ${clean}! Облако подключено 🚀`, 'success');
-      };
-
-      const handleLogout = () => {
-        if (window.confirm('Выйти из аккаунта?')) {
-          setUsername('');
-          setIsLoggedIn(false);
-          localStorage.removeItem('lingua_username');
-        }
-      };
+      useEffect(() => {
+        localStorage.setItem('lingua_friends', JSON.stringify(friends));
+      }, [friends]);
 
       const showToast = (message, type = 'info') => {
         setToast({ message, type });
         setTimeout(() => setToast(null), 4000);
+      };
+
+      const handleConfirmAddFriend = (friendPayload) => {
+        if (!friendPayload) return;
+        setFriends(prev => {
+          const exists = prev.some(f => f.username.toLowerCase() === friendPayload.username.toLowerCase());
+          if (exists) {
+            return prev.map(f => f.username.toLowerCase() === friendPayload.username.toLowerCase() ? friendPayload : f);
+          }
+          return [...prev, friendPayload];
+        });
+
+        // Очищаем URL от параметра
+        window.history.replaceState({}, document.title, window.location.pathname);
+        setFriendModalData(null);
+        setActiveTab('friends');
+        showToast(`Вы упешно добавили в друзья: ${friendPayload.username}! 🎉`, 'success');
+      };
+
+      const handleAddCardFromFriend = (card) => {
+        if (deck.some(c => c.english.toLowerCase() === card.english.toLowerCase())) {
+          showToast(`Слово "${card.english}" уже есть в вашей колоде!`, 'info');
+          return;
+        }
+        const newCard = { ...card, id: 'card-' + Date.now() };
+        setDeck(prev => [newCard, ...prev]);
+        showToast(`Слово "${card.english}" добавлено к вам! 🚀`, 'success');
+      };
+
+      const handleCopyShareLink = () => {
+        const myPayload = {
+          username: username || 'Сергей',
+          deckCount: deck.length,
+          masteredCount: masteredCards.length,
+          deck: deck,
+          mastered: masteredCards,
+          updatedAt: Date.now()
+        };
+        const encoded = encodeDataToHash(myPayload);
+        const fullLink = `${window.location.origin}${window.location.pathname}?friend=${encoded}`;
+
+        navigator.clipboard.writeText(fullLink);
+        showToast('Ссылка скопирована! Отправьте её другу 📲', 'success');
       };
 
       const currentCard = useMemo(() => {
@@ -432,56 +427,6 @@
       const filteredDeck = deck.filter(c => (c.english || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.russian || '').toLowerCase().includes(searchTerm.toLowerCase()));
       const filteredMastered = masteredCards.filter(c => (c.english || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.russian || '').toLowerCase().includes(searchTerm.toLowerCase()));
 
-      // ----------------------------------------------------------------------
-      // ЕДИНЫЙ ВХОД ПО ЛОГИНУ
-      // ----------------------------------------------------------------------
-      if (!isLoggedIn) {
-        return (
-          <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 p-4">
-            <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl text-center space-y-6">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-500 flex items-center justify-center mx-auto shadow-lg shadow-blue-500/20">
-                <Icon name="cloud" className="w-8 h-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-black text-white mb-2">LinguaCards Cloud</h1>
-                <p className="text-xs text-slate-400">Введите логин. Он создаст общую облачную папку для всех ваших устройств!</p>
-              </div>
-
-              <form onSubmit={handleLogin} className="space-y-4 text-left">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1.5">Введите ваш логин:</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                      <Icon name="user" className="w-4 h-4" />
-                    </div>
-                    <input
-                      type="text"
-                      required
-                      value={loginInput}
-                      onChange={(e) => setLoginInput(e.target.value.replace(/\s+/g, ''))}
-                      placeholder="Например: Сергей"
-                      className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-
-                <button type="submit" className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-xl transition-all shadow-lg flex items-center justify-center gap-2">
-                  <Icon name="sparkles" className="w-4 h-4" />
-                  <span>Войти в аккаунт</span>
-                </button>
-              </form>
-
-              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-left">
-                <p className="text-[11px] text-emerald-400 font-medium">💡 Чтобы привязать телефон, просто откройте приложение на телефоне и введите тот же логин «{loginInput || 'Сергей'}»!</p>
-              </div>
-            </div>
-          </div>
-        );
-      }
-
-      // ----------------------------------------------------------------------
-      // ОСНОВНОЙ ИНТЕРФЕЙС
-      // ----------------------------------------------------------------------
       return (
         <div className="flex flex-col min-h-screen bg-slate-950 text-slate-100 pt-safe pb-24 sm:pb-0">
           
@@ -504,16 +449,9 @@
                 </div>
                 <div>
                   <h1 className="font-bold text-base sm:text-lg leading-tight text-white flex items-center gap-2">
-                    LinguaCards Pro
+                    LinguaCards
                   </h1>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    {isSyncing ? (
-                      <Icon name="refresh-cw" className="w-3 h-3 text-blue-400 animate-spin" />
-                    ) : (
-                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse-fast"></div>
-                    )}
-                    <p className="text-[11px] text-slate-400 font-medium">Логин: <span className="text-emerald-400 font-bold">{username}</span></p>
-                  </div>
+                  <p className="text-[11px] text-slate-400 font-medium">Профиль: <span className="text-emerald-400 font-bold">{username}</span></p>
                 </div>
               </div>
 
@@ -522,13 +460,15 @@
                   <button onClick={() => setActiveTab('study')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'study' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Учеба</button>
                   <button onClick={() => setActiveTab('deck')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'deck' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Слова ({deck.length})</button>
                   <button onClick={() => setActiveTab('mastered')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'mastered' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Выучено ({masteredCards.length})</button>
+                  <button onClick={() => setActiveTab('friends')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'friends' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Друзья ({friends.length})</button>
+                  <button onClick={() => setActiveTab('manual')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'manual' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Инструкция</button>
                   <button onClick={() => setActiveTab('settings')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'settings' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Настройки</button>
                 </nav>
               </div>
             </div>
           </header>
 
-          {activeTab !== 'settings' && (
+          {activeTab !== 'settings' && activeTab !== 'manual' && activeTab !== 'friends' && (
             <div className="bg-slate-900/40 border-b border-slate-800/60 py-4 px-4 sm:px-6">
               <div className="max-w-3xl mx-auto flex flex-col gap-3">
                 <form onSubmit={handleAddWordAutomatic} className="flex flex-col sm:flex-row gap-2.5">
@@ -561,6 +501,7 @@
 
           <main className="flex-grow max-w-5xl w-full mx-auto p-4 sm:p-6 flex flex-col justify-center">
 
+            {/* ВКЛАДКА: УЧЕБА */}
             {activeTab === 'study' && (
               <div className="flex flex-col items-center justify-center max-w-lg mx-auto w-full py-2">
                 <div className="w-full flex items-center justify-between mb-4 px-2">
@@ -639,6 +580,7 @@
               </div>
             )}
 
+            {/* ВКЛАДКА: СЛОВА */}
             {activeTab === 'deck' && (
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
@@ -689,6 +631,7 @@
               </div>
             )}
 
+            {/* ВКЛАДКА: ВЫУЧЕНО */}
             {activeTab === 'mastered' && (
               <div className="space-y-4">
                 <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
@@ -710,24 +653,121 @@
               </div>
             )}
 
+            {/* ВКЛАДКА: ДРУЗЬЯ И ИХ ПРОГРЕСС */}
+            {activeTab === 'friends' && (
+              <div className="space-y-4 max-w-2xl mx-auto w-full">
+                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <Icon name="share-2" className="w-5 h-5 text-blue-400" /> Поделиться своим прогрессом
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">Отправьте ссылку другу, чтобы он увидел ваш результат и мог добавить ваши слова себе!</p>
+                  </div>
+                  <button onClick={handleCopyShareLink} className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shrink-0">
+                    <Icon name="copy" className="w-4 h-4" /> Скопировать ссылку
+                  </button>
+                </div>
+
+                <h3 className="text-lg font-bold text-white pt-2">Ваши друзья ({friends.length})</h3>
+                
+                {friends.length === 0 ? (
+                  <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-8 text-center">
+                    <Icon name="users" className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+                    <p className="text-xs text-slate-400">У вас пока нет друзей. Отправьте им свою ссылку, чтобы сравнивать достижения!</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3">
+                    {friends.map((friend, idx) => (
+                      <div key={idx} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                        <div>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-base font-bold text-white">{friend.username}</span>
+                            <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full">Друг</span>
+                          </div>
+                          <div className="flex gap-4 text-xs text-slate-400">
+                            <span>Всего слов: <strong className="text-blue-400">{friend.deckCount}</strong></span>
+                            <span>Выучил: <strong className="text-emerald-400">{friend.masteredCount}</strong></span>
+                          </div>
+                        </div>
+                        <button onClick={() => setSelectedFriend(friend)} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 flex items-center justify-center gap-2">
+                          <Icon name="book-open" className="w-4 h-4 text-indigo-400" /> Посмотреть слова
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ВКЛАДКА: ИНСТРУКЦИЯ / МАНУАЛ */}
+            {activeTab === 'manual' && (
+              <div className="max-w-2xl mx-auto w-full space-y-6 py-2">
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
+                  <h2 className="text-xl font-extrabold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+                    <Icon name="help-circle" className="w-6 h-6 text-blue-400" /> Инструкция по работе с приложением
+                  </h2>
+
+                  <div className="space-y-4 text-xs leading-relaxed text-slate-300">
+                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                      <h3 className="font-bold text-sm text-blue-400 mb-1">1. Как правильно добавлять слова?</h3>
+                      <p className="mb-2">Вы можете вводить слова в верхнее поле в любом удобном формате:</p>
+                      <ul className="list-disc list-inside space-y-1 text-slate-400">
+                        <li><strong>Одно слово:</strong> просто введите <code className="text-indigo-300">apple</code> — приложение само найдет перевод «яблоко» и добавит транскрипцию.</li>
+                        <li><strong>Пара слов:</strong> введите <code className="text-indigo-300">car - машина</code> или <code className="text-indigo-300">собака - dog</code> через дефис.</li>
+                        <li><strong>Массово списком:</strong> нажмите кнопку <strong>«Списком»</strong> и вставьте сразу 10-100 слов с новой строчки!</li>
+                      </ul>
+                    </div>
+
+                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                      <h3 className="font-bold text-sm text-emerald-400 mb-1">2. Как работает обмен с друзьями?</h3>
+                      <ul className="list-disc list-inside space-y-1 text-slate-400">
+                        <li>Перейдите во вкладку <strong>«Друзья»</strong> или <strong>«Настройки»</strong> и нажмите <strong>«Скопировать ссылку»</strong>.</li>
+                        <li>Отправьте ссылку другу в Telegram или любом мессенджере.</li>
+                        <li>Когда он перейдет по ней, у него откроется ваш профиль, и он сможет добавить ваши слова себе в колоду!</li>
+                      </ul>
+                    </div>
+
+                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                      <h3 className="font-bold text-sm text-indigo-400 mb-1">3. Трюки во время учебы</h3>
+                      <ul className="list-disc list-inside space-y-1 text-slate-400">
+                        <li><strong>Нажмите на карточку</strong>, чтобы перевернуть её и увидеть английский вариант с транскрипцией и примером.</li>
+                        <li><strong>Значок динамика</strong> озвучит правильное американское произношение слова.</li>
+                        <li><strong>«Выучил»</strong> — уберет слово из ежедневной учебы и сохранит в архив побед!</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ВКЛАДКА: НАСТРОЙКИ */}
             {activeTab === 'settings' && (
               <div className="max-w-md mx-auto w-full space-y-4 py-2">
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-base font-bold text-white flex items-center gap-2">
-                        <Icon name="cloud" className="w-5 h-5 text-blue-400" /> Активный логин
-                      </h3>
-                      <p className="text-xs text-emerald-400 font-mono mt-1 font-bold">{username}</p>
-                    </div>
-                    <button onClick={handleLogout} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center gap-2 transition-all border border-slate-700">
-                      <Icon name="log-out" className="w-3.5 h-3.5 text-red-400" /> Выйти
+                  <div>
+                    <h3 className="text-base font-bold text-white mb-2">Настройки профиля</h3>
+                    <label className="block text-xs text-slate-400 mb-1">Ваше имя / логин:</label>
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={(e) => {
+                        setUsername(e.target.value);
+                        localStorage.setItem('lingua_username', e.target.value);
+                      }}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-800">
+                    <button onClick={handleCopyShareLink} className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl flex items-center justify-center gap-2">
+                      <Icon name="share-2" className="w-4 h-4" /> Скопировать ссылку профиля для друга
                     </button>
                   </div>
 
-                  <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
-                    <p className="text-xs text-slate-300">📱 <strong>Инструкция для телефона:</strong></p>
-                    <p className="text-xs text-slate-400">Откройте этот файл на телефоне, введите логин <strong className="text-emerald-400">«{username}»</strong>, и все {deck.length} слов с прогрессом синхронизируются автоматически.</p>
+                  <div className="pt-2 border-t border-slate-800">
+                    <button onClick={() => setActiveTab('manual')} className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center justify-center gap-2">
+                      <Icon name="help-circle" className="w-4 h-4 text-blue-400" /> Открыть инструкцию
+                    </button>
                   </div>
                 </div>
               </div>
@@ -735,6 +775,53 @@
 
           </main>
 
+          {/* МОДАЛЬНОЕ ОКНО: ПОДТВЕРЖДЕНИЕ ДОБАВЛЕНИЯ ДРУГА */}
+          {friendModalData && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 text-center space-y-4">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center mx-auto text-white shadow-lg">
+                  <Icon name="user-plus" className="w-7 h-7" />
+                </div>
+                <h3 className="text-lg font-bold text-white">Добавить в друзья?</h3>
+                <p className="text-xs text-slate-400">
+                  Пользователь <strong className="text-emerald-400">{friendModalData.username}</strong> хочет поделиться своей колодой из <strong>{friendModalData.deckCount}</strong> слов!
+                </p>
+                <div className="flex gap-2 pt-2">
+                  <button onClick={() => setFriendModalData(null)} className="flex-1 py-2.5 text-xs text-slate-400 hover:text-white">Отмена</button>
+                  <button onClick={() => handleConfirmAddFriend(friendModalData)} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl">
+                    Добавить
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* МОДАЛЬНОЕ ОКНО: ПРОСМОТР СЛОВ ДРУГА */}
+          {selectedFriend && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 relative max-h-[80vh] flex flex-col">
+                <button onClick={() => setSelectedFriend(null)} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"><Icon name="x" className="w-5 h-5" /></button>
+                <h3 className="text-lg font-bold text-white mb-1">Слова пользователя {selectedFriend.username}</h3>
+                <p className="text-xs text-slate-400 mb-4">Нажмите «+ Добавить себе» на любом слове, чтобы перенести его в вашу колоду!</p>
+
+                <div className="overflow-y-auto space-y-2 flex-grow pr-1">
+                  {selectedFriend.deck?.map((card, idx) => (
+                    <div key={idx} className="bg-slate-950 border border-slate-800 p-3 rounded-xl flex items-center justify-between">
+                      <div>
+                        <h4 className="text-sm font-bold text-white">{card.english}</h4>
+                        <span className="text-xs text-blue-400">{card.russian}</span>
+                      </div>
+                      <button onClick={() => handleAddCardFromFriend(card)} className="px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white text-xs font-medium rounded-lg border border-indigo-500/30 transition-all">
+                        + Добавить себе
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* МОДАЛЬНОЕ ОКНО: РЕДАКТИРОВАНИЕ */}
           {editingCard && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 relative">
@@ -752,6 +839,7 @@
             </div>
           )}
 
+          {/* МОДАЛЬНОЕ ОКНО: МАССОВАЯ ЗАГРУЗКА */}
           {isBulkAddOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 relative flex flex-col">
@@ -773,11 +861,11 @@
             <button onClick={() => setActiveTab('deck')} className={`flex flex-col items-center flex-1 py-1 ${activeTab === 'deck' ? 'text-blue-400' : 'text-slate-500'}`}>
               <Icon name="book-open" className="w-5 h-5 mb-1" /><span className="text-[10px]">Слова</span>
             </button>
-            <button onClick={() => setActiveTab('mastered')} className={`flex flex-col items-center flex-1 py-1 ${activeTab === 'mastered' ? 'text-emerald-400' : 'text-slate-500'}`}>
-              <Icon name="trophy" className="w-5 h-5 mb-1" /><span className="text-[10px]">Выучено</span>
+            <button onClick={() => setActiveTab('friends')} className={`flex flex-col items-center flex-1 py-1 ${activeTab === 'friends' ? 'text-blue-400' : 'text-slate-500'}`}>
+              <Icon name="users" className="w-5 h-5 mb-1" /><span className="text-[10px]">Друзья</span>
             </button>
-            <button onClick={() => setActiveTab('settings')} className={`flex flex-col items-center flex-1 py-1 ${activeTab === 'settings' ? 'text-blue-400' : 'text-slate-500'}`}>
-              <Icon name="settings" className="w-5 h-5 mb-1" /><span className="text-[10px]">Настройки</span>
+            <button onClick={() => setActiveTab('manual')} className={`flex flex-col items-center flex-1 py-1 ${activeTab === 'manual' ? 'text-blue-400' : 'text-slate-500'}`}>
+              <Icon name="help-circle" className="w-5 h-5 mb-1" /><span className="text-[10px]">Помощь</span>
             </button>
           </nav>
 
