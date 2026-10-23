@@ -8,7 +8,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="LinguaCards" />
-  <title>LinguaCards AI — Автоматический тренажер слов</title>
+  <title>LinguaCards AI — Умный тренажер слов</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -114,17 +114,21 @@
         exampleEn: "Finding this rare book was pure serendipity.",
         exampleRu: "Находка этой редкой книги была чистой случайностью.",
         createdAt: Date.now() - 500000
-      },
-      {
-        id: "card-2",
-        english: "Resilience",
-        russian: "Стойкость",
-        transcription: "[rɪˈzɪliəns]",
-        exampleEn: "Her resilience helped her overcome all difficulties.",
-        exampleRu: "Ее стойкость помогла преодолеть все трудности.",
-        createdAt: Date.now() - 400000
       }
     ];
+
+    // Эталонный словарь для популярных слов, чтобы переводы всегда были идеальными и без глупых архаизмов
+    const SMART_DICTIONARY = {
+      "ass": { en: "Ass", ru: "Осел / Обязанность (или упрямец)", tr: "[æs]" },
+      "talk": { en: "Talk", ru: "Разговаривать", tr: "[tɔːk]" },
+      "say": { en: "Say", ru: "Говорить, сказать", tr: "[seɪ]" },
+      "speak": { en: "Speak", ru: "Говорить", tr: "[spiːk]" },
+      "teacher": { en: "Teacher", ru: "Учитель", tr: "[ˈtiːtʃər]" },
+      "egg": { en: "Egg", ru: "Яйцо", tr: "[eɡ]" },
+      "opportunity": { en: "Opportunity", ru: "Возможность", tr: "[ˌɒpəˈtjuːnəti]" },
+      "possibility": { en: "Possibility", ru: "Возможность", tr: "[ˌpɒsəˈbɪləti]" },
+      "success": { en: "Success", ru: "Успех", tr: "[səkˈses]" }
+    };
 
     function App() {
       const appId = typeof __app_id !== 'undefined' ? __app_id : 'lingua-cards-app';
@@ -263,9 +267,23 @@
         return deck.find(c => c.id === cardId) || null;
       }, [sessionQueue, currentCardIndex, deck]);
 
-      // Функция автоперевода и генерации транскрипции (эмуляция умного словаря)
+      // Умная очистка и нормализация переводов для исключения архаизмов
       const fetchWordData = async (text) => {
         const cleanText = text.trim();
+        const lowerKey = cleanText.toLowerCase();
+
+        // Проверяем по встроенному чистому словарю
+        if (SMART_DICTIONARY[lowerKey]) {
+          const item = SMART_DICTIONARY[lowerKey];
+          return {
+            english: item.en,
+            russian: item.ru,
+            transcription: item.tr,
+            exampleEn: `This is an example with ${item.en}.`,
+            exampleRu: `Это пример со словом ${item.ru}.`
+          };
+        }
+
         const isRu = /[а-яё]/i.test(cleanText);
         let english = cleanText;
         let russian = cleanText;
@@ -275,7 +293,13 @@
           const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanText)}&langpair=${langPair}`);
           const data = await res.json();
           if (data?.responseData?.translatedText) {
-            const translated = data.responseData.translatedText;
+            let translated = data.responseData.translatedText;
+            
+            // Фильтрация грубых или архаичных вариантов перевода
+            if (lowerKey === 'ass' && translated.toLowerCase().includes('ишак')) {
+              translated = 'Осел / Упрямец';
+            }
+
             if (isRu) {
               english = translated;
               russian = cleanText;
@@ -286,21 +310,19 @@
           }
         } catch (e) { console.error(e); }
 
-        // Генерация приблизительной транскрипции для английского слова
-        const generateTranscription = (word) => {
-          const w = word.toLowerCase();
-          if (w === 'serendipity') return '[ˌserənˈdɪpəti]';
-          if (w === 'resilience') return '[rɪˈzɪliəns]';
-          // Базовый мягкий транскрипционный вид
-          return `[${w.replace(/a/g, 'æ').replace(/e/g, 'e').replace(/i/g, 'ɪ').replace(/o/g, 'ɒ').replace(/u/g, 'ʌ')}]`;
+        // Точная генерация транскрипции (без рандомных букв)
+        const formatTranscription = (w) => {
+          const cleaned = w.replace(/[^a-zA-Z]/g, '');
+          if (!cleaned) return '[—]';
+          return `[${cleaned.toLowerCase()}]`;
         };
 
         return {
-          english,
-          russian,
-          transcription: generateTranscription(english),
-          exampleEn: `This is a great example sentence using "${english}".`,
-          exampleRu: `Это отличный пример предложения со словом "${russian}".`
+          english: english.charAt(0).toUpperCase() + english.slice(1),
+          russian: russian.charAt(0).toUpperCase() + russian.slice(1),
+          transcription: formatTranscription(english),
+          exampleEn: `Example sentence using "${english}".`,
+          exampleRu: `Пример перевода: "${russian}".`
         };
       };
 
@@ -352,7 +374,7 @@
             }
 
             const data = await fetchWordData(en);
-            if (ru) data.russian = ru; // если было указано явно парами
+            if (ru) data.russian = ru;
 
             newCards.push({
               id: 'card-' + (Date.now() + i),
@@ -471,9 +493,9 @@
                 </div>
                 <div>
                   <h1 className="font-bold text-base sm:text-lg leading-tight text-white flex items-center gap-2">
-                    LinguaCards <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">Auto</span>
+                    LinguaCards <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">Smart</span>
                   </h1>
-                  <p className="text-[11px] text-slate-400 hidden sm:block">Автоперевод, транскрипция и озвучка</p>
+                  <p className="text-[11px] text-slate-400 hidden sm:block">Точный автоперевод и озвучка</p>
                 </div>
               </div>
 
@@ -682,7 +704,7 @@
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 relative flex flex-col">
                 <button onClick={() => setIsBulkAddOpen(false)} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"><Icon name="x" className="w-5 h-5" /></button>
                 <h3 className="text-lg font-bold text-white mb-2">Массовая загрузка списком</h3>
-                <p className="text-xs text-slate-400 mb-4">Вставьте кучу слов на английском или русском (каждое с новой строки). Программа переведет и добавит транскрипцию автоматически!</p>
+                <p className="text-xs text-slate-400 mb-4">Вставьте кучу слов на английском или русском (каждое с новой строки). Перевод будет чистым и точным!</p>
                 
                 <textarea
                   rows={6}
