@@ -161,8 +161,6 @@
       const [isBulkAddOpen, setIsBulkAddOpen] = useState(false);
       const [bulkInput, setBulkInput] = useState('');
       const [isBulkProcessing, setIsBulkProcessing] = useState(false);
-
-      // Состояние для редактирования карточки (по ключу)
       const [editingCard, setEditingCard] = useState(null);
 
       useEffect(() => {
@@ -275,40 +273,69 @@
         return `[${cleaned.toLowerCase()}]`;
       };
 
-      const fetchWordData = async (text) => {
-        const cleanText = text.trim();
-        const lowerKey = cleanText.toLowerCase();
+      // Универсальная функция обработки строки ввода (поддерживает "word - перевод" или одиночное слово)
+      const processInputLine = async (rawInput) => {
+        const line = rawInput.trim();
+        if (!line) return null;
 
-        if (SMART_DICTIONARY[lowerKey]) {
-          const item = SMART_DICTIONARY[lowerKey];
-          return {
-            english: item.en,
-            russian: item.ru,
-            transcription: item.tr,
-            exampleEn: `This is an example with ${item.en}.`,
-            exampleRu: `Это пример со словом ${item.ru}.`
-          };
+        // Проверяем разделитель (тире, дефис, двоеточие) для формата "car - машина" или "машина - car"
+        const delimiterMatch = line.match(/\s*[-—=:|\t]\s*/);
+        let part1 = line;
+        let part2 = '';
+
+        if (delimiterMatch) {
+          const parts = line.split(delimiterMatch[0]);
+          part1 = parts[0]?.trim() || '';
+          part2 = parts.slice(1).join(' ').trim() || '';
         }
 
-        const isRu = /[а-яё]/i.test(cleanText);
-        let english = cleanText;
-        let russian = cleanText;
+        let english = '';
+        let russian = '';
 
-        try {
-          const langPair = isRu ? 'ru|en' : 'en|ru';
-          const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanText)}&langpair=${langPair}`);
-          const data = await res.json();
-          if (data?.responseData?.translatedText) {
-            let translated = data.responseData.translatedText;
-            if (isRu) {
-              english = translated;
-              russian = cleanText;
-            } else {
-              english = cleanText;
-              russian = translated;
-            }
+        if (part2) {
+          // Если пара задана вручную ("car - машина" или "машина - car")
+          const isPart1Ru = /[а-яё]/i.test(part1);
+          if (isPart1Ru) {
+            russian = part1;
+            english = part2;
+          } else {
+            english = part1;
+            russian = part2;
           }
-        } catch (e) { console.error(e); }
+        } else {
+          // Если введено только одно слово/фразу — используем словарь или автоперевод
+          const lowerKey = part1.toLowerCase();
+          if (SMART_DICTIONARY[lowerKey]) {
+            const item = SMART_DICTIONARY[lowerKey];
+            return {
+              english: item.en,
+              russian: item.ru,
+              transcription: item.tr,
+              exampleEn: `This is an example with ${item.en}.`,
+              exampleRu: `Это пример со словом ${item.ru}.`
+            };
+          }
+
+          const isRu = /[а-яё]/i.test(part1);
+          english = part1;
+          russian = part1;
+
+          try {
+            const langPair = isRu ? 'ru|en' : 'en|ru';
+            const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(part1)}&langpair=${langPair}`);
+            const data = await res.json();
+            if (data?.responseData?.translatedText) {
+              const translated = data.responseData.translatedText;
+              if (isRu) {
+                english = translated;
+                russian = part1;
+              } else {
+                english = part1;
+                russian = translated;
+              }
+            }
+          } catch (e) { console.error(e); }
+        }
 
         return {
           english: english.charAt(0).toUpperCase() + english.slice(1),
@@ -326,7 +353,9 @@
 
         setIsGenerating(true);
         try {
-          const data = await fetchWordData(query);
+          const data = await processInputLine(query);
+          if (!data) return;
+
           const newCard = {
             id: 'card-' + Date.now(),
             ...data,
@@ -345,7 +374,7 @@
       };
 
       const handleBulkAddAuto = async () => {
-        const rawLines = bulkInput.split(/[\n,;]+/).map(s => s.trim()).filter(Boolean);
+        const rawLines = bulkInput.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
         if (rawLines.length === 0) {
           showToast('Введите список слов', 'error');
           return;
@@ -355,32 +384,21 @@
         try {
           const newCards = [];
           for (let i = 0; i < rawLines.length; i++) {
-            let line = rawLines[i];
-            let en = line;
-            let ru = '';
-
-            const delimiterMatch = line.match(/\s*[-—=:|\t]\s*/);
-            if (delimiterMatch) {
-              const parts = line.split(delimiterMatch[0]);
-              en = parts[0]?.trim() || line;
-              ru = parts.slice(1).join(' ').trim() || '';
+            const data = await processInputLine(rawLines[i]);
+            if (data) {
+              newCards.push({
+                id: 'card-' + (Date.now() + i),
+                ...data,
+                createdAt: Date.now() + i
+              });
             }
-
-            const data = await fetchWordData(en);
-            if (ru) data.russian = ru;
-
-            newCards.push({
-              id: 'card-' + (Date.now() + i),
-              ...data,
-              createdAt: Date.now() + i
-            });
           }
 
           setDeck(prev => [...newCards, ...prev]);
           setSessionQueue(prev => [...newCards.map(c => c.id), ...prev]);
           setBulkInput('');
           setIsBulkAddOpen(false);
-          showToast(`Загружено и переведено ${newCards.length} слов! 🚀`, 'success');
+          showToast(`Успешно загружено ${newCards.length} слов! 🚀`, 'success');
         } catch (err) {
           showToast('Ошибка при массовой загрузке', 'error');
         } finally {
@@ -405,17 +423,12 @@
         showToast('Карточка пройдена! 👍', 'info');
       };
 
-      // «Выучил» теперь НЕ удаляет из основной колоды, а добавляет в выученные
       const handleMastered = (cardToMaster = currentCard) => {
         if (!cardToMaster) return;
         setIsFlipped(false);
-        
-        // Добавляем в выученные, если там еще нет
         if (!masteredCards.some(c => c.id === cardToMaster.id)) {
           setMasteredCards(prev => [cardToMaster, ...prev]);
         }
-
-        // Убираем из текущей сессии изучения
         setSessionQueue(prev => prev.filter(id => id !== cardToMaster.id));
         showToast(`Слово "${cardToMaster.english}" перенесено в выученные! 🎉`, 'success');
       };
@@ -441,7 +454,6 @@
         window.speechSynthesis.speak(utterance);
       };
 
-      // Сохранение отредактированной карточки
       const handleSaveEditedCard = (e) => {
         e.preventDefault();
         if (!editingCard) return;
@@ -512,9 +524,9 @@
                 </div>
                 <div>
                   <h1 className="font-bold text-base sm:text-lg leading-tight text-white flex items-center gap-2">
-                    LinguaCards <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">Smart</span>
+                    LinguaCards <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">Pro</span>
                   </h1>
-                  <p className="text-[11px] text-slate-400 hidden sm:block">Редактирование и синхронизация</p>
+                  <p className="text-[11px] text-slate-400 hidden sm:block">Формат «Слово - Перевод»</p>
                 </div>
               </div>
 
@@ -542,7 +554,7 @@
                     type="text"
                     value={newWordInput}
                     onChange={(e) => setNewWordInput(e.target.value)}
-                    placeholder="Введите слово (на английском или русском)..."
+                    placeholder="Слово или пара (например: car - машина)..."
                     className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500"
                   />
                 </div>
@@ -672,7 +684,7 @@
                             <button onClick={() => handleMastered(card)} className={`${isMastered ? 'text-emerald-400 font-semibold' : 'text-indigo-400 hover:text-indigo-300'}`}>
                               {isMastered ? '✓ Выучено' : 'В выученные'}
                             </button>
-                            <button onClick={() => setEditingCard({ ...card })} className="text-slate-400 hover:text-blue-400 flex items-center gap-1" title="Редактировать ключ">
+                            <button onClick={() => setEditingCard({ ...card })} className="text-slate-400 hover:text-blue-400 flex items-center gap-1" title="Редактировать">
                               <Icon name="key" className="w-3.5 h-3.5" /> Изменить
                             </button>
                           </div>
@@ -715,7 +727,6 @@
 
           </main>
 
-          {/* Модальное окно редактирования слова через иконку ключа */}
           {editingCard && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 relative">
@@ -783,14 +794,14 @@
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 relative flex flex-col">
                 <button onClick={() => setIsBulkAddOpen(false)} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"><Icon name="x" className="w-5 h-5" /></button>
                 <h3 className="text-lg font-bold text-white mb-2">Массовая загрузка списком</h3>
-                <p className="text-xs text-slate-400 mb-4">Вставьте кучу слов на английском или русском (каждое с новой строки). Перевод будет чистым и точным!</p>
+                <p className="text-xs text-slate-400 mb-4">Вставляйте слова по одному в строчку (или парами через дефис, например: <code className="text-indigo-300">car - машина</code>). Транскрипция добавится автоматически!</p>
                 
                 <textarea
                   rows={6}
                   value={bulkInput}
                   onChange={(e) => setBulkInput(e.target.value)}
-                  placeholder="Apples&#10;Running&#10;Beautiful&#10;Собака&#10;Книга"
-                  className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 mb-4 resize-none"
+                  placeholder="car - машина&#10;house - дом&#10;running&#10;собака"
+                  className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-100 mb-4 resize-none"
                 />
 
                 <div className="flex justify-end gap-2">
@@ -801,7 +812,7 @@
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl disabled:opacity-50 flex items-center gap-2"
                   >
                     {isBulkProcessing && <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>}
-                    <span>{isBulkProcessing ? 'Переводим список...' : 'Запустить авто-импорт'}</span>
+                    <span>{isBulkProcessing ? 'Обрабатываем список...' : 'Запустить авто-импорт'}</span>
                   </button>
                 </div>
               </div>
