@@ -467,8 +467,8 @@
       const [customSyncInput, setCustomSyncInput] = useState('');
       const [isCloudActive, setIsCloudActive] = useState(false);
 
-      // 🔑 Вставьте ваш бесплатный ключ Gemini API между кавычками ниже, чтобы он работат у вас и ваших друзей сразу:
-      const DEFAULT_API_KEY = "AQ.Ab8RN6ISBSPyMyTiUgv4LC9ZFNYBQu82KgCPHX2w6gH9KSKpow";
+      // Встроенный ключ пользователя по умолчанию
+      const DEFAULT_API_KEY = "AQ.Ab8RN6JCK5porlaS0XnFmchwtiSn5GbedpJsr5XdUtCRIjdKZQ";
 
       // Flashcards state
       const [deck, setDeck] = useState(() => {
@@ -490,7 +490,12 @@
       const [isFlipped, setIsFlipped] = useState(false);
 
       // Navigation & Modals
-      const [activeTab, setActiveTab] = useState('study');
+      const [activeTab, useStateTab] = useState('study');
+      
+      const setActiveTab = (tab) => {
+        useStateTab(tab);
+      };
+      
       const [newWordInput, setNewWordInput] = useState('');
       const [isGenerating, setIsGenerating] = useState(false);
       const [toast, setToast] = useState(null);
@@ -807,7 +812,7 @@
         } catch (err) {
           console.error('Ошибка добавления:', err);
           if (err.message === 'API_KEY_REQUIRED') {
-            showToast('Для работы AI нужен ваш ключ Gemini API. Укажите его в ⚙️ Настройки!', 'error');
+            showToast('Ключ API недействителен (ошибка 400/403). Укажите верный ключ в ⚙️ Настройки!', 'error');
             setTempApiKeyInput(apiKey);
             setIsSettingsOpen(true);
           } else {
@@ -824,7 +829,7 @@
              setDeck(prev => [fallbackCard, ...prev]);
              setSessionQueue(prev => [...prev, fallbackCard.id]);
              setNewWordInput('');
-             showToast(`Добавлено без перевода (AI не ответил должным образом).`, 'info');
+             showToast(`Добавлено без перевода (Ошибка доступа к AI или неверный ключ).`, 'info');
           }
         } finally {
           setIsGenerating(false);
@@ -921,11 +926,12 @@
         } catch (err) {
           console.error('Bulk AI error:', err);
           if (err.message === 'API_KEY_REQUIRED') {
-            showToast('Для работы AI нужен ваш ключ Gemini API. Укажите его в ⚙️ Настройки!', 'error');
+            showToast('Ключ API недействителен. Укажите верный ключ в ⚙️ Настройки!', 'error');
             setTempApiKeyInput(apiKey);
             setIsSettingsOpen(true);
           } else {
              // Fallback если AI не ответил массивом — делаем быстрый импорт
+             showToast('Сработал быстрый импорт (Ошибка доступа к AI или неверный ключ).', 'info');
              handleBulkAddFast();
           }
         } finally {
