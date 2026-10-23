@@ -78,10 +78,9 @@
         case 'trash-2': return <svg {...iconProps}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>;
         case 'shuffle': return <svg {...iconProps}><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4"/><path d="M2 6h1.4c1.3 0 2.5.6 3.3 1.7l.8 1.1"/><path d="M14.4 14.2l.8 1.1c.8 1.1 2 1.7 3.3 1.7H22"/><path d="m18 18 4 4-4 4"/></svg>;
         case 'users': return <svg {...iconProps}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
-        case 'share-2': return <svg {...iconProps}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>;
+        case 'download': return <svg {...iconProps}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>;
+        case 'upload': return <svg {...iconProps}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>;
         case 'help-circle': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>;
-        case 'copy': return <svg {...iconProps}><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>;
-        case 'user-plus': return <svg {...iconProps}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="16" x2="22" y1="11" y2="11"/></svg>;
         case 'alert-circle': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>;
         case 'check-circle-2': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>;
         case 'info': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>;
@@ -91,7 +90,6 @@
         case 'volume-2': return <svg {...iconProps}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>;
         case 'x': return <svg {...iconProps}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>;
         case 'list-plus': return <svg {...iconProps}><path d="M11 12H3"/><path d="M16 6H3"/><path d="M16 18H3"/><path d="M18 9v6"/><path d="M21 12h-6"/></svg>;
-        case 'clipboard': return <svg {...iconProps}><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>;
         default: return null;
       }
     };
@@ -117,21 +115,6 @@
       "egg": { en: "Egg", ru: "Яйцо", tr: "[eɡ]" }
     };
 
-    // Сжатие данных в компактный текстовый код
-    const encodeToCompactCode = (data) => {
-      try {
-        const jsonStr = JSON.stringify(data);
-        return btoa(encodeURIComponent(jsonStr));
-      } catch (e) { return ''; }
-    };
-
-    const decodeFromCompactCode = (code) => {
-      try {
-        const jsonStr = decodeURIComponent(atob(code.trim()));
-        return JSON.parse(jsonStr);
-      } catch (e) { return null; }
-    };
-
     function App() {
       const [username, setUsername] = useState(() => localStorage.getItem('lingua_username') || 'Сергей');
       
@@ -151,8 +134,7 @@
       });
 
       const [selectedFriend, setSelectedFriend] = useState(null);
-      const [importCodeInput, setImportCodeInput] = useState('');
-      const [generatedCode, setGeneratedCode] = useState('');
+      const fileInputRef = useRef(null);
 
       const [sessionQueue, setSessionQueue] = useState([]);
       const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -186,9 +168,9 @@
         setTimeout(() => setToast(null), 4000);
       };
 
-      // Генерация короткого кода для друга
-      const handleGenerateCode = () => {
-        const myPayload = {
+      // Скачать файл с колодой для друга
+      const handleExportDeckFile = () => {
+        const payload = {
           username: username || 'Сергей',
           deckCount: deck.length,
           masteredCount: masteredCards.length,
@@ -196,31 +178,41 @@
           mastered: masteredCards,
           updatedAt: Date.now()
         };
-        const code = encodeToCompactCode(myPayload);
-        setGeneratedCode(code);
-        navigator.clipboard.writeText(code);
-        showToast('Код скопирован в буфер обмена! Отправьте его другу 📋', 'success');
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `LinguaCards_${username}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+        showToast('Файл колоды скачан! Отправьте его другу в мессенджер 📁', 'success');
       };
 
-      // Импорт друга по текстовому коду
-      const handleImportFriendCode = (e) => {
-        e.preventDefault();
-        const decoded = decodeFromCompactCode(importCodeInput);
-        if (!decoded || !decoded.username || !Array.isArray(decoded.deck)) {
-          showToast('Неверный код друга. Проверьте правильность!', 'error');
-          return;
-        }
-
-        setFriends(prev => {
-          const exists = prev.some(f => f.username.toLowerCase() === decoded.username.toLowerCase());
-          if (exists) {
-            return prev.map(f => f.username.toLowerCase() === decoded.username.toLowerCase() ? decoded : f);
+      // Загрузить файл друга
+      const handleFileUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const decoded = JSON.parse(event.target.result);
+            if (!decoded || !decoded.username || !Array.isArray(decoded.deck)) {
+              throw new Error();
+            }
+            setFriends(prev => {
+              const exists = prev.some(f => f.username.toLowerCase() === decoded.username.toLowerCase());
+              if (exists) {
+                return prev.map(f => f.username.toLowerCase() === decoded.username.toLowerCase() ? decoded : f);
+              }
+              return [...prev, decoded];
+            });
+            showToast(`Друг "${decoded.username}" успешно добавлен! 🎉`, 'success');
+          } catch (err) {
+            showToast('Ошибка чтения файла. Убедитесь, что это файл LinguaCards.', 'error');
           }
-          return [...prev, decoded];
-        });
-
-        setImportCodeInput('');
-        showToast(`Друг "${decoded.username}" успешно добавлен! 🎉`, 'success');
+        };
+        reader.readAsText(file);
+        e.target.value = '';
       };
 
       const handleAddCardFromFriend = (card) => {
@@ -647,48 +639,38 @@
               </div>
             )}
 
-            {/* ВКЛАДКА: ДРУЗЬЯ И ОБМЕН КОДОВ */}
+            {/* ВКЛАДКА: ДРУЗЬЯ И ОБМЕН ФАЙЛАМИ */}
             {activeTab === 'friends' && (
               <div className="space-y-6 max-w-2xl mx-auto w-full">
-                {/* Блок отправки своего кода */}
+                {/* Блок экспорта (скачать файл) */}
                 <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
                   <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    <Icon name="share-2" className="w-5 h-5 text-blue-400" /> Поделиться своей колодой
+                    <Icon name="download" className="w-5 h-5 text-blue-400" /> Выгрузить свои слова для друга
                   </h3>
-                  <p className="text-xs text-slate-400">Нажмите кнопку ниже, чтобы сжать всю вашу базу слов в аккуратный компактный текст-код:</p>
+                  <p className="text-xs text-slate-400">Создает небольшой файл со всеми вашими словами и результатами, который можно переслать в любой мессенджер:</p>
                   
-                  <button onClick={handleGenerateCode} className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-lg transition-all">
-                    <Icon name="copy" className="w-4 h-4" /> Скопировать мой код-приглашение
+                  <button onClick={handleExportDeckFile} className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-lg transition-all">
+                    <Icon name="download" className="w-4 h-4" /> Скачать файл с колодой (.json)
                   </button>
-
-                  {generatedCode && (
-                    <div className="mt-3">
-                      <label className="block text-[11px] text-slate-400 mb-1">Ваш сгенерированный код:</label>
-                      <textarea readOnly rows={2} value={generatedCode} className="w-full p-2.5 bg-slate-950 border border-slate-800 rounded-xl text-[11px] font-mono text-slate-300 resize-none select-all" />
-                    </div>
-                  )}
                 </div>
 
-                {/* Блок добавления друга по его коду */}
+                {/* Блок импорта (загрузить файл друга) */}
                 <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
                   <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    <Icon name="user-plus" className="w-5 h-5 text-emerald-400" /> Добавить друга по коду
+                    <Icon name="upload" className="w-5 h-5 text-emerald-400" /> Загрузить файл друга
                   </h3>
-                  <p className="text-xs text-slate-400">Вставьте код, который прислал вам друг, чтобы видеть его прогресс и добавлять слова себе:</p>
+                  <p className="text-xs text-slate-400">Выберите файл, который прислал вам друг, чтобы добавить его в список друзей:</p>
 
-                  <form onSubmit={handleImportFriendCode} className="space-y-3">
-                    <textarea
-                      rows={3}
-                      required
-                      value={importCodeInput}
-                      onChange={(e) => setImportCodeInput(e.target.value)}
-                      placeholder="Вставьте код друга сюда..."
-                      className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-100 placeholder-slate-600 resize-none focus:outline-none focus:border-emerald-500"
-                    />
-                    <button type="submit" className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
-                      <Icon name="users" className="w-4 h-4" /> Добавить друга и посмотреть слова
-                    </button>
-                  </form>
+                  <input
+                    type="file"
+                    accept=".json"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <button onClick={() => fileInputRef.current?.click()} className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+                    <Icon name="upload" className="w-4 h-4" /> Выбрать файл друга на устройстве
+                  </button>
                 </div>
 
                 <h3 className="text-lg font-bold text-white pt-2">Ваши друзья ({friends.length})</h3>
@@ -696,7 +678,7 @@
                 {friends.length === 0 ? (
                   <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-8 text-center">
                     <Icon name="users" className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                    <p className="text-xs text-slate-400">Список друзей пуст. Скопируйте свой код или попросите код у друга!</p>
+                    <p className="text-xs text-slate-400">Список друзей пуст. Скачайте свой файл или загрузите файл друга!</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 gap-3">
@@ -727,31 +709,31 @@
               <div className="max-w-2xl mx-auto w-full space-y-6 py-2">
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
                   <h2 className="text-xl font-extrabold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
-                    <Icon name="help-circle" className="w-6 h-6 text-blue-400" /> Инструкция по работе с кодами
+                    <Icon name="help-circle" className="w-6 h-6 text-blue-400" /> Инструкция по обмену через файлы
                   </h2>
 
                   <div className="space-y-4 text-xs leading-relaxed text-slate-300">
                     <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                      <h3 className="font-bold text-sm text-blue-400 mb-1">1. Как отправлять свой прогресс другу?</h3>
+                      <h3 className="font-bold text-sm text-blue-400 mb-1">1. Как поделиться своей колодой?</h3>
                       <ol className="list-decimal list-inside space-y-1 text-slate-400">
                         <li>Зайдите во вкладку <strong>«Друзья»</strong>.</li>
-                        <li>Нажмите <strong>«Скопировать мой код-приглашение»</strong>.</li>
-                        <li>Отправьте этот короткий текст другу в Telegram, WhatsApp или SMS.</li>
+                        <li>Нажмите <strong>«Скачать файл с колодой (.json)»</strong>.</li>
+                        <li>Перешлите скачанный файл другу в Telegram, WhatsApp или почту.</li>
                       </ol>
                     </div>
 
                     <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                      <h3 className="font-bold text-sm text-emerald-400 mb-1">2. Как добавить друга по его коду?</h3>
+                      <h3 className="font-bold text-sm text-emerald-400 mb-1">2. Как добавить друга?</h3>
                       <ol className="list-decimal list-inside space-y-1 text-slate-400">
-                        <li>Скопируйте текст-код, который прислал вам друг.</li>
-                        <li>Вставьте его в поле во вкладке <strong>«Друзья»</strong> в блоке «Добавить друга по коду».</li>
-                        <li>Нажмите кнопку добавления. Теперь вы видите его статистику и можете переносить любые его слова к себе в 1 клик!</li>
+                        <li>Сохраните файл, который прислал вам друг, на свое устройство.</li>
+                        <li>Нажмите кнопку <strong>«Выбрать файл друга на устройстве»</strong> во вкладке «Друзья».</li>
+                        <li>Вы увидите его статистику и сможете переносить любые слова к себе!</li>
                       </ol>
                     </div>
 
                     <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
                       <h3 className="font-bold text-sm text-indigo-400 mb-1">3. Добавление слов</h3>
-                      <p className="text-slate-400">Вводите слова по одному (например: <code className="text-indigo-300">car - машина</code>) или используйте кнопку <strong>«Списком»</strong> для массовой загрузки.</p>
+                      <p className="text-slate-400">Добавляйте слова по одному или используйте кнопку <strong>«Списком»</strong> для массового добавления.</p>
                     </div>
                   </div>
                 </div>
