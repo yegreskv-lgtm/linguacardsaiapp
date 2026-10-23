@@ -89,6 +89,7 @@
         case 'trophy': return <svg {...iconProps}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2z"/></svg>;
         case 'plus-circle': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>;
         case 'wand-2': return <svg {...iconProps}><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.21 1.21 0 0 0 1.72 0L21.64 5.36a1.21 1.21 0 0 0 0-1.72z"/><path d="m14 7 3 3"/><path d="M5 6v1"/><path d="M19 17v1"/><path d="M10 2v1"/><path d="M7 8H6"/><path d="M21 12h-1"/></svg>;
+        case 'key': return <svg {...iconProps}><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.778-7.778zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>;
         case 'alert-circle': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>;
         case 'check-circle-2': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>;
         case 'info': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>;
@@ -117,16 +118,14 @@
       }
     ];
 
-    // Эталонный словарь для популярных слов, чтобы переводы всегда были идеальными и без глупых архаизмов
     const SMART_DICTIONARY = {
-      "ass": { en: "Ass", ru: "Осел / Обязанность (или упрямец)", tr: "[æs]" },
+      "ass": { en: "Ass", ru: "Осел / Упрямец", tr: "[æs]" },
       "talk": { en: "Talk", ru: "Разговаривать", tr: "[tɔːk]" },
       "say": { en: "Say", ru: "Говорить, сказать", tr: "[seɪ]" },
       "speak": { en: "Speak", ru: "Говорить", tr: "[spiːk]" },
       "teacher": { en: "Teacher", ru: "Учитель", tr: "[ˈtiːtʃər]" },
       "egg": { en: "Egg", ru: "Яйцо", tr: "[eɡ]" },
       "opportunity": { en: "Opportunity", ru: "Возможность", tr: "[ˌɒpəˈtjuːnəti]" },
-      "possibility": { en: "Possibility", ru: "Возможность", tr: "[ˌpɒsəˈbɪləti]" },
       "success": { en: "Success", ru: "Успех", tr: "[səkˈses]" }
     };
 
@@ -162,6 +161,9 @@
       const [isBulkAddOpen, setIsBulkAddOpen] = useState(false);
       const [bulkInput, setBulkInput] = useState('');
       const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+
+      // Состояние для редактирования карточки (по ключу)
+      const [editingCard, setEditingCard] = useState(null);
 
       useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -267,12 +269,16 @@
         return deck.find(c => c.id === cardId) || null;
       }, [sessionQueue, currentCardIndex, deck]);
 
-      // Умная очистка и нормализация переводов для исключения архаизмов
+      const formatTranscription = (w) => {
+        const cleaned = w.replace(/[^a-zA-Z]/g, '');
+        if (!cleaned) return '[—]';
+        return `[${cleaned.toLowerCase()}]`;
+      };
+
       const fetchWordData = async (text) => {
         const cleanText = text.trim();
         const lowerKey = cleanText.toLowerCase();
 
-        // Проверяем по встроенному чистому словарю
         if (SMART_DICTIONARY[lowerKey]) {
           const item = SMART_DICTIONARY[lowerKey];
           return {
@@ -294,12 +300,6 @@
           const data = await res.json();
           if (data?.responseData?.translatedText) {
             let translated = data.responseData.translatedText;
-            
-            // Фильтрация грубых или архаичных вариантов перевода
-            if (lowerKey === 'ass' && translated.toLowerCase().includes('ишак')) {
-              translated = 'Осел / Упрямец';
-            }
-
             if (isRu) {
               english = translated;
               russian = cleanText;
@@ -309,13 +309,6 @@
             }
           }
         } catch (e) { console.error(e); }
-
-        // Точная генерация транскрипции (без рандомных букв)
-        const formatTranscription = (w) => {
-          const cleaned = w.replace(/[^a-zA-Z]/g, '');
-          if (!cleaned) return '[—]';
-          return `[${cleaned.toLowerCase()}]`;
-        };
 
         return {
           english: english.charAt(0).toUpperCase() + english.slice(1),
@@ -412,20 +405,24 @@
         showToast('Карточка пройдена! 👍', 'info');
       };
 
+      // «Выучил» теперь НЕ удаляет из основной колоды, а добавляет в выученные
       const handleMastered = (cardToMaster = currentCard) => {
         if (!cardToMaster) return;
         setIsFlipped(false);
-        setDeck(prev => prev.filter(c => c.id !== cardToMaster.id));
-        setMasteredCards(prev => [cardToMaster, ...prev]);
+        
+        // Добавляем в выученные, если там еще нет
+        if (!masteredCards.some(c => c.id === cardToMaster.id)) {
+          setMasteredCards(prev => [cardToMaster, ...prev]);
+        }
+
+        // Убираем из текущей сессии изучения
         setSessionQueue(prev => prev.filter(id => id !== cardToMaster.id));
-        showToast(`Слово "${cardToMaster.english}" выучено! 🎉`, 'success');
+        showToast(`Слово "${cardToMaster.english}" перенесено в выученные! 🎉`, 'success');
       };
 
       const handleRestoreCard = (card) => {
         setMasteredCards(prev => prev.filter(c => c.id !== card.id));
-        setDeck(prev => [card, ...prev]);
-        setSessionQueue(prev => [...prev, card.id]);
-        showToast('Слово возвращено в колоду', 'info');
+        showToast('Слово убрано из выученных', 'info');
       };
 
       const handleResetSession = () => {
@@ -442,6 +439,28 @@
         utterance.lang = 'en-US';
         utterance.rate = 0.88;
         window.speechSynthesis.speak(utterance);
+      };
+
+      // Сохранение отредактированной карточки
+      const handleSaveEditedCard = (e) => {
+        e.preventDefault();
+        if (!editingCard) return;
+
+        const updatedEnglish = editingCard.english.trim();
+        const updatedRussian = editingCard.russian.trim();
+        const updatedTranscription = formatTranscription(updatedEnglish);
+
+        const updatedCard = {
+          ...editingCard,
+          english: updatedEnglish,
+          russian: updatedRussian,
+          transcription: updatedTranscription
+        };
+
+        setDeck(prev => prev.map(c => c.id === updatedCard.id ? updatedCard : c));
+        setMasteredCards(prev => prev.map(c => c.id === updatedCard.id ? updatedCard : c));
+        setEditingCard(null);
+        showToast('Карточка успешно обновлена! ✏️', 'success');
       };
 
       const handleExportDeck = () => {
@@ -495,7 +514,7 @@
                   <h1 className="font-bold text-base sm:text-lg leading-tight text-white flex items-center gap-2">
                     LinguaCards <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">Smart</span>
                   </h1>
-                  <p className="text-[11px] text-slate-400 hidden sm:block">Точный автоперевод и озвучка</p>
+                  <p className="text-[11px] text-slate-400 hidden sm:block">Редактирование и синхронизация</p>
                 </div>
               </div>
 
@@ -632,26 +651,39 @@
                   />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {filteredDeck.map((card) => (
-                    <div key={card.id} className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="text-base font-bold text-white flex items-center gap-2">
-                            {card.english}
-                            <button onClick={() => handleSpeak(card.english)} className="text-slate-500 hover:text-indigo-400">
-                              <Icon name="volume-2" className="w-3.5 h-3.5" />
-                            </button>
-                          </h3>
-                          <span className="text-xs font-mono text-slate-400">{card.transcription}</span>
+                  {filteredDeck.map((card) => {
+                    const isMastered = masteredCards.some(m => m.id === card.id);
+                    return (
+                      <div key={card.id} className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h3 className="text-base font-bold text-white flex items-center gap-2">
+                              {card.english}
+                              <button onClick={() => handleSpeak(card.english)} className="text-slate-500 hover:text-indigo-400">
+                                <Icon name="volume-2" className="w-3.5 h-3.5" />
+                              </button>
+                            </h3>
+                            <span className="text-xs font-mono text-slate-400">{card.transcription}</span>
+                          </div>
+                          <span className="text-sm font-medium text-blue-400">{card.russian}</span>
                         </div>
-                        <span className="text-sm font-medium text-blue-400">{card.russian}</span>
+                        <div className="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center text-xs">
+                          <div className="flex items-center gap-3">
+                            <button onClick={() => handleMastered(card)} className={`${isMastered ? 'text-emerald-400 font-semibold' : 'text-indigo-400 hover:text-indigo-300'}`}>
+                              {isMastered ? '✓ Выучено' : 'В выученные'}
+                            </button>
+                            <button onClick={() => setEditingCard({ ...card })} className="text-slate-400 hover:text-blue-400 flex items-center gap-1" title="Редактировать ключ">
+                              <Icon name="key" className="w-3.5 h-3.5" /> Изменить
+                            </button>
+                          </div>
+                          <button onClick={() => {
+                            setDeck(prev => prev.filter(c => c.id !== card.id));
+                            setMasteredCards(prev => prev.filter(c => c.id !== card.id));
+                          }} className="text-red-400 hover:text-red-300">Удалить</button>
+                        </div>
                       </div>
-                      <div className="mt-4 pt-3 border-t border-slate-800 flex justify-between text-xs">
-                        <button onClick={() => handleMastered(card)} className="text-indigo-400">В выученные</button>
-                        <button onClick={() => setDeck(prev => prev.filter(c => c.id !== card.id))} className="text-red-400">Удалить</button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -674,7 +706,7 @@
                         <span className="text-xs font-mono text-slate-400">{card.transcription}</span>
                         <span className="text-xs text-emerald-400 block mt-1">{card.russian}</span>
                       </div>
-                      <button onClick={() => handleRestoreCard(card)} className="text-blue-400 text-xs">Вернуть</button>
+                      <button onClick={() => handleRestoreCard(card)} className="text-slate-400 hover:text-slate-200 text-xs">Убрать из выученных</button>
                     </div>
                   ))}
                 </div>
@@ -682,6 +714,53 @@
             )}
 
           </main>
+
+          {/* Модальное окно редактирования слова через иконку ключа */}
+          {editingCard && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 relative">
+                <button onClick={() => setEditingCard(null)} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"><Icon name="x" className="w-5 h-5" /></button>
+                <div className="flex items-center gap-2.5 mb-4">
+                  <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20">
+                    <Icon name="key" className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white">Редактировать слово</h3>
+                    <p className="text-[11px] text-slate-400">Транскрипция обновится автоматически</p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleSaveEditedCard} className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1">Слово на английском:</label>
+                    <input
+                      type="text"
+                      required
+                      value={editingCard.english}
+                      onChange={(e) => setEditingCard({ ...editingCard, english: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1">Перевод на русский:</label>
+                    <input
+                      type="text"
+                      required
+                      value={editingCard.russian}
+                      onChange={(e) => setEditingCard({ ...editingCard, russian: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div className="pt-2 flex justify-end gap-2">
+                    <button type="button" onClick={() => setEditingCard(null)} className="px-3 py-2 text-xs text-slate-400">Отмена</button>
+                    <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl">Сохранить</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
 
           {isSettingsOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
