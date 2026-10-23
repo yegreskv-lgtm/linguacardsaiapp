@@ -24,6 +24,7 @@
           },
           animation: {
             'bounce-short': 'bounceShort 0.5s ease-in-out',
+            'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
           },
           keyframes: {
             bounceShort: {
@@ -46,8 +47,9 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Децентрализованная сеть для синхронизации без серверов (Gun.js) -->
+  <!-- Библиотеки для децентрализованной синхронизации и QR-кодов -->
   <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 
   <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
@@ -83,7 +85,6 @@
         case 'user': return <svg {...iconProps}><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
         case 'log-out': return <svg {...iconProps}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>;
         case 'cloud': return <svg {...iconProps}><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>;
-        case 'clipboard': return <svg {...iconProps}><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>;
         case 'alert-circle': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>;
         case 'check-circle-2': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>;
         case 'info': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>;
@@ -93,8 +94,6 @@
         case 'volume-2': return <svg {...iconProps}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>;
         case 'search': return <svg {...iconProps}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>;
         case 'x': return <svg {...iconProps}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>;
-        case 'download': return <svg {...iconProps}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>;
-        case 'upload': return <svg {...iconProps}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>;
         case 'list-plus': return <svg {...iconProps}><path d="M11 12H3"/><path d="M16 6H3"/><path d="M16 18H3"/><path d="M18 9v6"/><path d="M21 12h-6"/></svg>;
         case 'refresh-cw': return <svg {...iconProps}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>;
         default: return null;
@@ -104,12 +103,12 @@
     const INITIAL_CARDS = [
       {
         id: "card-1",
-        english: "Serendipity",
-        russian: "Счастливая случайность",
-        transcription: "[ˌserənˈdɪpəti]",
-        exampleEn: "Finding this rare book was pure serendipity.",
-        exampleRu: "Находка этой редкой книги была чистой случайностью.",
-        createdAt: Date.now() - 500000
+        english: "Welcome!",
+        russian: "Добро пожаловать!",
+        transcription: "[ˈwɛlkəm]",
+        exampleEn: "Welcome to your new synchronized dictionary.",
+        exampleRu: "Добро пожаловать в ваш новый синхронизированный словарь.",
+        createdAt: Date.now()
       }
     ];
 
@@ -119,18 +118,25 @@
       "say": { en: "Say", ru: "Говорить, сказать", tr: "[seɪ]" },
       "speak": { en: "Speak", ru: "Говорить", tr: "[spiːk]" },
       "teacher": { en: "Teacher", ru: "Учитель", tr: "[ˈtiːtʃər]" },
-      "egg": { en: "Egg", ru: "Яйцо", tr: "[eɡ]" },
-      "opportunity": { en: "Opportunity", ru: "Возможность", tr: "[ˌɒpəˈtjuːnəti]" },
-      "success": { en: "Success", ru: "Успех", tr: "[səkˈses]" }
+      "egg": { en: "Egg", ru: "Яйцо", tr: "[eɡ]" }
     };
 
     function App() {
-      // Инициализируем пиринговую сеть Gun.js (подключаемся к надежным открытым узлам)
+      // Инициализируем 2 надежных сервера для децентрализованной сети
       const gun = useMemo(() => window.Gun(['https://gun-manhattan.herokuapp.com/gun', 'https://relay.peer.ooo/gun']), []);
-      const lastUpdateRef = useRef(0);
+      const lastSyncTime = useRef(0);
 
-      // Логин пользователя (уникальная папка в пиринговой сети)
-      const [username, setUsername] = useState(() => localStorage.getItem('lingua_username') || '');
+      // Проверяем, не перешли ли мы по ссылке из QR кода (с параметром ?user=логин)
+      const [username, setUsername] = useState(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const userFromUrl = urlParams.get('user');
+        if (userFromUrl) {
+          localStorage.setItem('lingua_username', userFromUrl);
+          return userFromUrl;
+        }
+        return localStorage.getItem('lingua_username') || '';
+      });
+
       const [loginInput, setLoginInput] = useState('');
       const [isLoggedIn, setIsLoggedIn] = useState(!!username);
 
@@ -158,91 +164,126 @@
       const [bulkInput, setBulkInput] = useState('');
       const [isBulkProcessing, setIsBulkProcessing] = useState(false);
       const [editingCard, setEditingCard] = useState(null);
+      
       const [isSyncing, setIsSyncing] = useState(false);
+      const [qrSvgHtml, setQrSvgHtml] = useState('');
 
-      // --- МАГИЯ СИНХРОНИЗАЦИИ ---
-      // Слушаем изменения в децентрализованной сети по логину пользователя
+      // Очищаем URL, если вошли через QR код, чтобы ссылка оставалась чистой
+      useEffect(() => {
+        if (window.location.search.includes('user=')) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      }, []);
+
+      // --- ГЛАВНАЯ МАГИЯ АВТО-СИНХРОНИЗАЦИИ ---
       useEffect(() => {
         if (!username) return;
         const cleanUser = username.trim().toLowerCase();
-        const dbNode = gun.get('linguacards_pro_user_' + cleanUser);
+        const dbNode = gun.get('linguacards_auto_sync_' + cleanUser);
 
+        // 1. Слушаем сеть. Если телефон/другой комп обновил слова — скачиваем мгновенно
         const listener = dbNode.on((data) => {
           if (data && data.payload) {
             try {
               const parsed = JSON.parse(data.payload);
-              // Обновляем только если данные в сети новее наших (предотвращает зацикливание)
-              if (parsed.updatedAt > lastUpdateRef.current) {
-                lastUpdateRef.current = parsed.updatedAt;
-                if (parsed.deck) {
-                  setDeck(parsed.deck);
-                  localStorage.setItem('lingua_deck', JSON.stringify(parsed.deck));
-                }
-                if (parsed.mastered) {
-                  setMasteredCards(parsed.mastered);
-                  localStorage.setItem('lingua_mastered', JSON.stringify(parsed.mastered));
-                }
+              if (parsed.timestamp > lastSyncTime.current) {
+                lastSyncTime.current = parsed.timestamp;
+                setDeck(parsed.deck);
+                setMasteredCards(parsed.mastered);
+                localStorage.setItem('lingua_deck', JSON.stringify(parsed.deck));
+                localStorage.setItem('lingua_mastered', JSON.stringify(parsed.mastered));
+                
                 setIsSyncing(true);
-                setTimeout(() => setIsSyncing(false), 1500);
+                setTimeout(() => setIsSyncing(false), 1000);
               }
-            } catch (e) { console.error("Ошибка расшифровки данных:", e); }
+            } catch (e) { console.error("Sync error:", e); }
           }
         });
+
+        // 2. АВТО-ВЫГРУЗКА: Если вы зашли с компьютера (где уже 307 слов), 
+        // программа сразу сама пушит эти слова в сеть для телефона.
+        const localDeck = JSON.parse(localStorage.getItem('lingua_deck') || '[]');
+        if (localDeck.length > 1) {
+          const now = Date.now();
+          const payload = {
+            deck: localDeck,
+            mastered: JSON.parse(localStorage.getItem('lingua_mastered') || '[]'),
+            timestamp: now
+          };
+          dbNode.put({ payload: JSON.stringify(payload) });
+          lastSyncTime.current = now;
+        }
 
         return () => dbNode.off();
       }, [username, gun]);
 
-      // Функция отправки изменений в пиринговую сеть всем устройствам
-      const saveToCloud = (currentUser, currentDeck, currentMastered) => {
-        if (!currentUser) return;
-        const cleanUser = currentUser.trim().toLowerCase();
+      // Отправка любых изменений (добавление, редактирование, удаление) в сеть
+      const pushUpdateToNetwork = (newDeck, newMastered) => {
+        if (!username) return;
+        const cleanUser = username.trim().toLowerCase();
         const now = Date.now();
-        lastUpdateRef.current = now; // Обновляем локальное время, чтобы не читать свои же изменения
+        lastSyncTime.current = now; // Запоминаем, чтобы не скачивать свое же обновление
         
         setIsSyncing(true);
-        gun.get('linguacards_pro_user_' + cleanUser).put({
+        gun.get('linguacards_auto_sync_' + cleanUser).put({
           payload: JSON.stringify({
-            deck: currentDeck,
-            mastered: currentMastered,
-            updatedAt: now
+            deck: newDeck,
+            mastered: newMastered,
+            timestamp: now
           })
-        }, ack => {
-          setTimeout(() => setIsSyncing(false), 800);
+        }, () => {
+          setTimeout(() => setIsSyncing(false), 500);
         });
       };
 
-      // Сохраняем локально и отправляем в сеть при каждом изменении колоды
+      // Сохраняем локально и пушим в сеть при любых изменениях колоды
       useEffect(() => {
         localStorage.setItem('lingua_deck', JSON.stringify(deck));
-        if (username) saveToCloud(username, deck, masteredCards);
+        // Пушим только если инициализация завершена (чтобы не спамить при старте)
+        if (username && lastSyncTime.current > 0) {
+          pushUpdateToNetwork(deck, masteredCards);
+        }
       }, [deck]);
 
       useEffect(() => {
         localStorage.setItem('lingua_mastered', JSON.stringify(masteredCards));
-        if (username) saveToCloud(username, deck, masteredCards);
+        if (username && lastSyncTime.current > 0) {
+          pushUpdateToNetwork(deck, masteredCards);
+        }
       }, [masteredCards]);
+
+      // Генерация умного QR-кода для мгновенной привязки телефона
+      useEffect(() => {
+        if (activeTab === 'settings' && username) {
+          try {
+            // QR код содержит ту же ссылку на ваш файл + ваш логин
+            const magicLink = `${window.location.origin}${window.location.pathname}?user=${username}`;
+            const qr = qrcode(0, 'M');
+            qr.addData(magicLink);
+            qr.make();
+            setQrSvgHtml(qr.createSvgTag({ scalable: true, margin: 2 }));
+          } catch (e) { console.error(e); }
+        }
+      }, [activeTab, username]);
 
 
       const handleLogin = (e) => {
         e.preventDefault();
         const clean = loginInput.trim();
-        if (!clean) {
-          showToast('Введите логин', 'error');
-          return;
-        }
+        if (!clean) return;
+        
         setUsername(clean);
         localStorage.setItem('lingua_username', clean);
         setIsLoggedIn(true);
         setLoginInput('');
-        showToast(`Добро пожаловать, ${clean}! Ищем ваши слова в сети... 🚀`, 'success');
+        showToast(`Успешный вход: ${clean}! Ваши слова в сети ☁️`, 'success');
       };
 
       const handleLogout = () => {
-        if (window.confirm('Сменить аккаунт? Текущий логин будет отключен на этом устройстве.')) {
+        if (window.confirm('Выйти из аккаунта? Синхронизация остановится.')) {
           setUsername('');
           setIsLoggedIn(false);
           localStorage.removeItem('lingua_username');
-          showToast('Вы вышли из аккаунта', 'info');
         }
       };
 
@@ -282,53 +323,36 @@
 
         if (part2) {
           const isPart1Ru = /[а-яё]/i.test(part1);
-          if (isPart1Ru) {
-            russian = part1;
-            english = part2;
-          } else {
-            english = part1;
-            russian = part2;
-          }
+          if (isPart1Ru) { russian = part1; english = part2; } 
+          else { english = part1; russian = part2; }
         } else {
           const lowerKey = part1.toLowerCase();
           if (SMART_DICTIONARY[lowerKey]) {
             const item = SMART_DICTIONARY[lowerKey];
             return {
-              english: item.en,
-              russian: item.ru,
-              transcription: item.tr,
-              exampleEn: `This is an example with ${item.en}.`,
-              exampleRu: `Это пример со словом ${item.ru}.`
+              english: item.en, russian: item.ru, transcription: item.tr,
+              exampleEn: `This is an example with ${item.en}.`, exampleRu: `Это пример со словом ${item.ru}.`
             };
           }
-
           const isRu = /[а-яё]/i.test(part1);
-          english = part1;
-          russian = part1;
-
+          english = part1; russian = part1;
           try {
             const langPair = isRu ? 'ru|en' : 'en|ru';
             const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(part1)}&langpair=${langPair}`);
             const data = await res.json();
             if (data?.responseData?.translatedText) {
               const translated = data.responseData.translatedText;
-              if (isRu) {
-                english = translated;
-                russian = part1;
-              } else {
-                english = part1;
-                russian = translated;
-              }
+              if (isRu) { english = translated; russian = part1; } 
+              else { english = part1; russian = translated; }
             }
-          } catch (e) { console.error(e); }
+          } catch (e) {}
         }
 
         return {
           english: english.charAt(0).toUpperCase() + english.slice(1),
           russian: russian.charAt(0).toUpperCase() + russian.slice(1),
           transcription: formatTranscription(english),
-          exampleEn: `Example sentence using "${english}".`,
-          exampleRu: `Пример перевода: "${russian}".`
+          exampleEn: `Example sentence using "${english}".`, exampleRu: `Пример перевода: "${russian}".`
         };
       };
 
@@ -336,58 +360,36 @@
         e?.preventDefault();
         const query = newWordInput.trim();
         if (!query) return;
-
         setIsGenerating(true);
         try {
           const data = await processInputLine(query);
           if (!data) return;
-
-          const newCard = {
-            id: 'card-' + Date.now(),
-            ...data,
-            createdAt: Date.now()
-          };
-
+          const newCard = { id: 'card-' + Date.now(), ...data, createdAt: Date.now() };
           setDeck(prev => [newCard, ...prev]);
           setNewWordInput('');
-          showToast(`Слово "${newCard.english}" добавлено! 🎉`, 'success');
+          showToast(`Добавлено: ${newCard.english}! Синхронизируем... ☁️`, 'success');
         } catch (err) {
           showToast('Не удалось добавить слово', 'error');
-        } finally {
-          setIsGenerating(false);
-        }
+        } finally { setIsGenerating(false); }
       };
 
       const handleBulkAddAuto = async () => {
         const rawLines = bulkInput.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-        if (rawLines.length === 0) {
-          showToast('Введите список слов', 'error');
-          return;
-        }
-
+        if (rawLines.length === 0) return;
         setIsBulkProcessing(true);
         try {
           const newCards = [];
           for (let i = 0; i < rawLines.length; i++) {
             const data = await processInputLine(rawLines[i]);
-            if (data) {
-              newCards.push({
-                id: 'card-' + (Date.now() + i),
-                ...data,
-                createdAt: Date.now() + i
-              });
-            }
+            if (data) newCards.push({ id: 'card-' + (Date.now() + i), ...data, createdAt: Date.now() + i });
           }
-
           setDeck(prev => [...newCards, ...prev]);
           setBulkInput('');
           setIsBulkAddOpen(false);
-          showToast(`Успешно загружено ${newCards.length} слов! 🚀`, 'success');
+          showToast(`Успешно загружено ${newCards.length} слов! Синхронизируем... ☁️`, 'success');
         } catch (err) {
           showToast('Ошибка при массовой загрузке', 'error');
-        } finally {
-          setIsBulkProcessing(false);
-        }
+        } finally { setIsBulkProcessing(false); }
       };
 
       const handleSkip = () => {
@@ -404,7 +406,6 @@
         if (sessionQueue.length === 0) return;
         setIsFlipped(false);
         setSessionQueue(prev => prev.filter((_, idx) => idx !== currentCardIndex));
-        showToast('Карточка пройдена! 👍', 'info');
       };
 
       const handleMastered = (cardToMaster = currentCard) => {
@@ -413,13 +414,12 @@
         if (!masteredCards.some(c => c.id === cardToMaster.id)) {
           setMasteredCards(prev => [cardToMaster, ...prev]);
         }
-        showToast(`Слово "${cardToMaster.english}" перенесено в выученные и скрыто из учебы! 🎉`, 'success');
+        showToast(`Выучено: ${cardToMaster.english}!`, 'success');
       };
 
       const handleRestoreCard = (card) => {
         setMasteredCards(prev => prev.filter(c => c.id !== card.id));
         setSessionQueue(prev => [...prev, card.id]);
-        showToast('Слово возвращено в активную колоду учебы', 'info');
       };
 
       const handleResetSession = () => {
@@ -428,7 +428,6 @@
         setSessionQueue(activeIds);
         setCurrentCardIndex(0);
         setIsFlipped(false);
-        showToast('Сессия перезапущена!', 'info');
       };
 
       const handleShuffleSession = () => {
@@ -442,7 +441,6 @@
           }
           return shuffled;
         });
-        showToast('Карточки перемешаны! 🔀', 'info');
       };
 
       const handleSpeak = (text) => {
@@ -457,48 +455,20 @@
       const handleSaveEditedCard = (e) => {
         e.preventDefault();
         if (!editingCard) return;
-
-        const updatedEnglish = editingCard.english.trim();
-        const updatedRussian = editingCard.russian.trim();
-        const updatedTranscription = formatTranscription(updatedEnglish);
-
         const updatedCard = {
           ...editingCard,
-          english: updatedEnglish,
-          russian: updatedRussian,
-          transcription: updatedTranscription
+          english: editingCard.english.trim(),
+          russian: editingCard.russian.trim(),
+          transcription: formatTranscription(editingCard.english.trim())
         };
-
         setDeck(prev => prev.map(c => c.id === updatedCard.id ? updatedCard : c));
         setMasteredCards(prev => prev.map(c => c.id === updatedCard.id ? updatedCard : c));
         setEditingCard(null);
-        showToast('Карточка успешно обновлена! ✏️', 'success');
-      };
-
-      const handleClearAllWords = () => {
-        if (window.confirm('Вы уверены, что хотите удалить ВСЕ слова? Это действие нельзя отменить.')) {
-          setDeck([]);
-          setMasteredCards([]);
-          setSessionQueue([]);
-          showToast('Все слова удалены', 'info');
-        }
-      };
-
-      const handleExportDeck = () => {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ deck, masteredCards }, null, 2));
-        const downloadAnchor = document.createElement('a');
-        downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", `lingua_cards_${username}.json`);
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        downloadAnchor.remove();
-        showToast('Колода экспортирована в файл!', 'success');
       };
 
       useEffect(() => {
         const masteredIds = new Set(masteredCards.map(m => m.id));
         const activeDeck = deck.filter(c => !masteredIds.has(c.id));
-        
         setSessionQueue(prev => {
           const validIds = new Set(activeDeck.map(c => c.id));
           const filtered = prev.filter(id => validIds.has(id));
@@ -510,23 +480,22 @@
       const filteredDeck = deck.filter(c => (c.english || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.russian || '').toLowerCase().includes(searchTerm.toLowerCase()));
       const filteredMastered = masteredCards.filter(c => (c.english || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.russian || '').toLowerCase().includes(searchTerm.toLowerCase()));
 
-      // Экран авторизации (если пользователь не ввел логин)
+      // ----------------------------------------------------------------------
+      // ЭКРАН ВХОДА (Если не авторизован)
+      // ----------------------------------------------------------------------
       if (!isLoggedIn) {
         return (
           <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 p-4 relative overflow-hidden">
-            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
-            <div className="w-full max-w-md bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl text-center space-y-6 relative z-10">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-500 flex items-center justify-center mx-auto shadow-lg shadow-blue-500/20">
-                <Icon name="sparkles" className="w-8 h-8 text-white" />
+            <div className="w-full max-w-md bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl text-center relative z-10">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-500 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/20">
+                <Icon name="cloud" className="w-8 h-8 text-white" />
               </div>
-              <div>
-                <h1 className="text-2xl font-black text-white mb-2">LinguaCards Sync</h1>
-                <p className="text-xs text-slate-400">Синхронизация между устройствами теперь работает через открытую сеть (GunJS). Сервер не нужен!</p>
-              </div>
+              <h1 className="text-2xl font-black text-white mb-2">LinguaCards AutoSync</h1>
+              <p className="text-xs text-slate-400 mb-8">Без скачивания файлов! Придумайте логин на компьютере, а затем просто отсканируйте QR-код телефоном.</p>
 
               <form onSubmit={handleLogin} className="space-y-4 text-left">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1.5">Ваш уникальный логин (например: ivan_eng123):</label>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1.5">Придумайте ваш уникальный логин:</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                       <Icon name="user" className="w-4 h-4" />
@@ -536,28 +505,25 @@
                       required
                       value={loginInput}
                       onChange={(e) => setLoginInput(e.target.value.replace(/\s+/g, ''))}
-                      placeholder="Придумайте любой логин..."
+                      placeholder="Например: alex_english123"
                       className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500"
                     />
                   </div>
                 </div>
 
-                <button
-                  type="submit"
-                  className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white font-semibold text-sm rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
-                >
-                  <Icon name="cloud" className="w-4 h-4" />
-                  <span>Войти и подключить сеть</span>
+                <button type="submit" className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-xl transition-all shadow-lg flex items-center justify-center gap-2">
+                  <Icon name="sparkles" className="w-4 h-4" />
+                  <span>Создать сеть и войти</span>
                 </button>
               </form>
-              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                <p className="text-[11px] text-emerald-400 font-medium">💡 Просто введите этот же логин в приложении на телефоне, и слова перенесутся автоматически!</p>
-              </div>
             </div>
           </div>
         );
       }
 
+      // ----------------------------------------------------------------------
+      // ОСНОВНОЕ ПРИЛОЖЕНИЕ
+      // ----------------------------------------------------------------------
       return (
         <div className="flex flex-col min-h-screen bg-slate-950 text-slate-100 pt-safe pb-24 sm:pb-0">
           
@@ -580,12 +546,16 @@
                 </div>
                 <div>
                   <h1 className="font-bold text-base sm:text-lg leading-tight text-white flex items-center gap-2">
-                    LinguaCards <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">Pro</span>
+                    LinguaCards
                   </h1>
-                  <p className="text-[11px] flex items-center gap-1 font-medium transition-colors duration-300">
-                    <Icon name={isSyncing ? "refresh-cw" : "cloud"} className={`w-3 h-3 ${isSyncing ? 'text-blue-400 animate-spin' : 'text-emerald-400'}`} /> 
-                    <span className={isSyncing ? 'text-blue-400' : 'text-slate-400'}>Синхр: <span className="font-bold text-slate-200">{username}</span></span>
-                  </p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    {isSyncing ? (
+                      <Icon name="refresh-cw" className="w-3 h-3 text-blue-400 animate-spin" />
+                    ) : (
+                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse-fast"></div>
+                    )}
+                    <p className="text-[11px] text-slate-400 font-medium">Синхронизация: <span className="text-slate-200">{username}</span></p>
+                  </div>
                 </div>
               </div>
 
@@ -618,22 +588,12 @@
                   </div>
                   
                   <div className="flex items-center gap-2">
-                    <button
-                      type="submit"
-                      disabled={isGenerating || !newWordInput.trim()}
-                      className="flex-1 sm:flex-none px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white font-medium text-sm rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
+                    <button type="submit" disabled={isGenerating || !newWordInput.trim()} className="flex-1 sm:flex-none px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white font-medium text-sm rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50">
                       {isGenerating ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Icon name="wand-2" className="w-4 h-4" />}
                       <span>Добавить</span>
                     </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setIsBulkAddOpen(true)}
-                      className="px-3.5 py-2.5 bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 font-medium text-sm rounded-xl border border-indigo-800/60 transition-all flex items-center gap-1.5"
-                    >
-                      <Icon name="list-plus" className="w-4 h-4" />
-                      <span>Списком</span>
+                    <button type="button" onClick={() => setIsBulkAddOpen(true)} className="px-3.5 py-2.5 bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 font-medium text-sm rounded-xl border border-indigo-800/60 transition-all flex items-center gap-1.5">
+                      <Icon name="list-plus" className="w-4 h-4" /> <span>Списком</span>
                     </button>
                   </div>
                 </form>
@@ -647,13 +607,12 @@
               <div className="flex flex-col items-center justify-center max-w-lg mx-auto w-full py-2">
                 <div className="w-full flex items-center justify-between mb-4 px-2">
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-slate-700">
-                    Осталось в сессии: <strong className="text-blue-400">{sessionQueue.length}</strong>
+                    Осталось: <strong className="text-blue-400">{sessionQueue.length}</strong>
                   </span>
-                  
                   <div className="flex items-center gap-3">
                     {sessionQueue.length > 1 && (
                       <button onClick={handleShuffleSession} className="text-xs text-slate-300 hover:text-indigo-400 flex items-center gap-1 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
-                        <Icon name="shuffle" className="w-3.5 h-3.5 text-indigo-400" /> Перемешать
+                        <Icon name="shuffle" className="w-3.5 h-3.5" /> Перемешать
                       </button>
                     )}
                     {sessionQueue.length < deck.length && (
@@ -670,8 +629,7 @@
                       <Icon name="party-popper" className="w-8 h-8" />
                     </div>
                     <h3 className="text-xl font-bold text-slate-100 mb-2">Все активные карточки пройдены!</h3>
-                    <p className="text-xs text-slate-400 mb-4">Выученные слова скрыты из сессии. Можете повторить или добавить новые.</p>
-                    <button onClick={handleResetSession} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium">Повторить сессию</button>
+                    <button onClick={handleResetSession} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium mt-4">Повторить сессию</button>
                   </div>
                 ) : (
                   currentCard && (
@@ -755,9 +713,9 @@
                         <div className="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center text-xs">
                           <div className="flex items-center gap-3">
                             <button onClick={() => handleMastered(card)} className={`${isMastered ? 'text-emerald-400 font-semibold' : 'text-indigo-400 hover:text-indigo-300'}`}>
-                              {isMastered ? '✓ Выучено (скрыто)' : 'В выученные'}
+                              {isMastered ? '✓ Выучено' : 'В выученные'}
                             </button>
-                            <button onClick={() => setEditingCard({ ...card })} className="text-slate-400 hover:text-blue-400 flex items-center gap-1" title="Редактировать">
+                            <button onClick={() => setEditingCard({ ...card })} className="text-slate-400 hover:text-blue-400 flex items-center gap-1">
                               <Icon name="key" className="w-3.5 h-3.5" /> Изменить
                             </button>
                           </div>
@@ -784,11 +742,7 @@
                       <div>
                         <h3 className="text-base font-bold text-white flex items-center gap-2">
                           {card.english}
-                          <button onClick={() => handleSpeak(card.english)} className="text-slate-500 hover:text-indigo-400">
-                            <Icon name="volume-2" className="w-3.5 h-3.5" />
-                          </button>
                         </h3>
-                        <span className="text-xs font-mono text-slate-400">{card.transcription}</span>
                         <span className="text-xs text-emerald-400 block mt-1">{card.russian}</span>
                       </div>
                       <button onClick={() => handleRestoreCard(card)} className="text-blue-400 hover:text-blue-300 text-xs font-medium">Вернуть в учебу</button>
@@ -801,30 +755,28 @@
             {activeTab === 'settings' && (
               <div className="max-w-md mx-auto w-full space-y-4 py-2">
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
-                  <div>
-                    <h3 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
-                      <Icon name="cloud" className="w-5 h-5 text-blue-400" /> Сетевой аккаунт
-                    </h3>
-                    <p className="text-xs text-slate-400">Синхронизация происходит через сеть узлов GunJS. Ваш текущий логин: <strong className="text-emerald-400">{username}</strong>.</p>
+                  
+                  <div className="text-center mb-6">
+                    <h3 className="text-lg font-bold text-white mb-2">Привязать телефон (Магия 🪄)</h3>
+                    <p className="text-xs text-slate-400 mb-4">Наведите камеру телефона на этот QR-код. Он откроет сайт и <strong className="text-emerald-400">автоматически скачает все {deck.length} слов</strong>!</p>
+                    
+                    <div className="flex justify-center bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                      <div className="bg-white p-3 rounded-xl shadow-md" dangerouslySetInnerHTML={{ __html: qrSvgHtml }}></div>
+                    </div>
                   </div>
 
-                  <button
-                    onClick={handleLogout}
-                    className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center justify-center gap-2 transition-all"
-                  >
-                    <Icon name="log-out" className="w-4 h-4 text-red-400" /> Выйти / Сменить логин
-                  </button>
-
-                  <div className="pt-2 border-t border-slate-800 flex gap-2">
-                    <button onClick={handleExportDeck} className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl text-slate-200 flex items-center justify-center gap-2">
-                      <Icon name="download" className="w-4 h-4" /> Скачать JSON файл
-                    </button>
-                  </div>
-
-                  <div className="pt-2">
-                    <button onClick={handleClearAllWords} className="w-full py-2.5 bg-red-950/50 hover:bg-red-900/60 border border-red-800/60 text-red-300 text-xs rounded-xl flex items-center justify-center gap-2 font-medium transition-all">
-                      <Icon name="trash-2" className="w-4 h-4" /> Удалить все слова
-                    </button>
+                  <div className="pt-4 border-t border-slate-800">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h4 className="text-sm font-bold text-white flex items-center gap-1">
+                          <Icon name="cloud" className="w-4 h-4 text-blue-400" /> Текущий аккаунт
+                        </h4>
+                        <p className="text-xs text-emerald-400 font-mono mt-1">{username}</p>
+                      </div>
+                      <button onClick={handleLogout} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg flex items-center gap-2 transition-all">
+                        <Icon name="log-out" className="w-3.5 h-3.5 text-red-400" /> Выйти
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -836,42 +788,13 @@
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 relative">
                 <button onClick={() => setEditingCard(null)} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"><Icon name="x" className="w-5 h-5" /></button>
-                <div className="flex items-center gap-2.5 mb-4">
-                  <div className="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20">
-                    <Icon name="key" className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-white">Редактировать слово</h3>
-                    <p className="text-[11px] text-slate-400">Транскрипция обновится автоматически</p>
-                  </div>
-                </div>
-
+                <h3 className="text-base font-bold text-white mb-4">Редактировать слово</h3>
                 <form onSubmit={handleSaveEditedCard} className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1">Слово на английском:</label>
-                    <input
-                      type="text"
-                      required
-                      value={editingCard.english}
-                      onChange={(e) => setEditingCard({ ...editingCard, english: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1">Перевод на русский:</label>
-                    <input
-                      type="text"
-                      required
-                      value={editingCard.russian}
-                      onChange={(e) => setEditingCard({ ...editingCard, russian: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div className="pt-2 flex justify-end gap-2">
+                  <input type="text" required value={editingCard.english} onChange={(e) => setEditingCard({ ...editingCard, english: e.target.value })} className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100" />
+                  <input type="text" required value={editingCard.russian} onChange={(e) => setEditingCard({ ...editingCard, russian: e.target.value })} className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100" />
+                  <div className="flex justify-end gap-2 pt-2">
                     <button type="button" onClick={() => setEditingCard(null)} className="px-3 py-2 text-xs text-slate-400">Отмена</button>
-                    <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl">Сохранить</button>
+                    <button type="submit" className="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl">Сохранить</button>
                   </div>
                 </form>
               </div>
@@ -882,27 +805,11 @@
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 relative flex flex-col">
                 <button onClick={() => setIsBulkAddOpen(false)} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"><Icon name="x" className="w-5 h-5" /></button>
-                <h3 className="text-lg font-bold text-white mb-2">Массовая загрузка списком</h3>
-                <p className="text-xs text-slate-400 mb-4">Вставляйте слова по одному в строчку (или парами через дефис, например: <code className="text-indigo-300">car - машина</code>). Транскрипция добавится автоматически!</p>
-                
-                <textarea
-                  rows={6}
-                  value={bulkInput}
-                  onChange={(e) => setBulkInput(e.target.value)}
-                  placeholder="car - машина&#10;house - дом&#10;running&#10;собака"
-                  className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-100 mb-4 resize-none"
-                />
-
+                <h3 className="text-lg font-bold text-white mb-2">Массовая загрузка</h3>
+                <textarea rows={6} value={bulkInput} onChange={(e) => setBulkInput(e.target.value)} placeholder="car - машина" className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-100 mb-4 resize-none" />
                 <div className="flex justify-end gap-2">
                   <button onClick={() => setIsBulkAddOpen(false)} className="px-4 py-2 text-xs text-slate-400">Отмена</button>
-                  <button
-                    onClick={handleBulkAddAuto}
-                    disabled={isBulkProcessing || !bulkInput.trim()}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl disabled:opacity-50 flex items-center gap-2"
-                  >
-                    {isBulkProcessing && <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>}
-                    <span>{isBulkProcessing ? 'Обрабатываем список...' : 'Запустить авто-импорт'}</span>
-                  </button>
+                  <button onClick={handleBulkAddAuto} disabled={isBulkProcessing || !bulkInput.trim()} className="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl flex items-center gap-2">Загрузить</button>
                 </div>
               </div>
             </div>
