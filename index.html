@@ -19,13 +19,7 @@
         extend: {
           colors: {
             brand: {
-              50: '#f0f6ff',
-              100: '#e0edff',
-              500: '#3b82f6',
-              600: '#2563eb',
-              700: '#1d4ed8',
-              800: '#1e40af',
-              900: '#1e3a8a',
+              50: '#f0f6ff', 100: '#e0edff', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8', 800: '#1e40af', 900: '#1e3a8a',
             }
           },
           animation: {
@@ -47,10 +41,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
 
-  <!-- React & ReactDOM UMD + Babel -->
+  <!-- React & ReactDOM -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Децентрализованная сеть для синхронизации без серверов (Gun.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
 
   <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
@@ -66,15 +63,6 @@
 <body class="h-full min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-brand-500 selection:text-white">
   
   <div id="root" class="flex-grow flex flex-col"></div>
-
-  <!-- Firebase Modular SDK Imports -->
-  <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-    import { getAuth, signInAnonymously, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-    import { getFirestore, doc, setDoc, onSnapshot, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
-
-    window.FirebaseSDK = { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, getFirestore, doc, setDoc, onSnapshot, getDoc };
-  </script>
 
   <script type="text/babel" data-type="module">
     const { useState, useEffect, useMemo, useRef } = React;
@@ -108,6 +96,7 @@
         case 'download': return <svg {...iconProps}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>;
         case 'upload': return <svg {...iconProps}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>;
         case 'list-plus': return <svg {...iconProps}><path d="M11 12H3"/><path d="M16 6H3"/><path d="M16 18H3"/><path d="M18 9v6"/><path d="M21 12h-6"/></svg>;
+        case 'refresh-cw': return <svg {...iconProps}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>;
         default: return null;
       }
     };
@@ -136,10 +125,11 @@
     };
 
     function App() {
-      const appId = typeof __app_id !== 'undefined' ? __app_id : 'lingua-cards-app';
-      const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+      // Инициализируем пиринговую сеть Gun.js (подключаемся к надежным открытым узлам)
+      const gun = useMemo(() => window.Gun(['https://gun-manhattan.herokuapp.com/gun', 'https://relay.peer.ooo/gun']), []);
+      const lastUpdateRef = useRef(0);
 
-      // Логин пользователя (уникальная папка в облаке)
+      // Логин пользователя (уникальная папка в пиринговой сети)
       const [username, setUsername] = useState(() => localStorage.getItem('lingua_username') || '');
       const [loginInput, setLoginInput] = useState('');
       const [isLoggedIn, setIsLoggedIn] = useState(!!username);
@@ -168,68 +158,60 @@
       const [bulkInput, setBulkInput] = useState('');
       const [isBulkProcessing, setIsBulkProcessing] = useState(false);
       const [editingCard, setEditingCard] = useState(null);
+      const [isSyncing, setIsSyncing] = useState(false);
 
-      // Инициализация Firebase Auth
+      // --- МАГИЯ СИНХРОНИЗАЦИИ ---
+      // Слушаем изменения в децентрализованной сети по логину пользователя
       useEffect(() => {
-        if (!firebaseConfig || !window.FirebaseSDK) return;
-        const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken } = window.FirebaseSDK;
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
+        if (!username) return;
+        const cleanUser = username.trim().toLowerCase();
+        const dbNode = gun.get('linguacards_pro_user_' + cleanUser);
 
-        const initAuth = async () => {
-          try {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-              await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-              await signInAnonymously(auth);
-            }
-          } catch (e) { console.error(e); }
-        };
-        initAuth();
-      }, []);
-
-      // Синхронизация в реальном времени из папки пользователя в облаке по его логину
-      useEffect(() => {
-        if (!firebaseConfig || !window.FirebaseSDK || !username) return;
-        const { initializeApp, getFirestore, doc, onSnapshot, setDoc } = window.FirebaseSDK;
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        
-        // Нормализуем логин (убираем пробелы, в нижний регистр для надежности папки)
-        const cleanUserFolder = username.trim().toLowerCase();
-        const docRef = doc(db, 'artifacts', appId, 'users', cleanUserFolder, 'data', 'cloud_deck');
-
-        const unsubscribe = onSnapshot(docRef, (docSnap) => {
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            if (Array.isArray(data.deck) && data.deck.length > 0) {
-              setDeck(data.deck);
-            }
-            if (Array.isArray(data.mastered)) {
-              setMasteredCards(data.mastered);
-            }
-          } else {
-            // Если папка пустая, создаем её в облаке с текущими данными
-            setDoc(docRef, { deck, mastered: masteredCards, updatedAt: Date.now() }, { merge: true });
+        const listener = dbNode.on((data) => {
+          if (data && data.payload) {
+            try {
+              const parsed = JSON.parse(data.payload);
+              // Обновляем только если данные в сети новее наших (предотвращает зацикливание)
+              if (parsed.updatedAt > lastUpdateRef.current) {
+                lastUpdateRef.current = parsed.updatedAt;
+                if (parsed.deck) {
+                  setDeck(parsed.deck);
+                  localStorage.setItem('lingua_deck', JSON.stringify(parsed.deck));
+                }
+                if (parsed.mastered) {
+                  setMasteredCards(parsed.mastered);
+                  localStorage.setItem('lingua_mastered', JSON.stringify(parsed.mastered));
+                }
+                setIsSyncing(true);
+                setTimeout(() => setIsSyncing(false), 1500);
+              }
+            } catch (e) { console.error("Ошибка расшифровки данных:", e); }
           }
-        }, (err) => console.error(err));
+        });
 
-        return () => unsubscribe();
-      }, [username]);
+        return () => dbNode.off();
+      }, [username, gun]);
 
-      // Функция отправки изменений в облачную папку пользователя
-      const saveToCloud = async (currentUser, newDeck, newMastered) => {
-        if (!currentUser || !firebaseConfig || !window.FirebaseSDK) return;
-        try {
-          const { initializeApp, getFirestore, doc, setDoc } = window.FirebaseSDK;
-          const app = initializeApp(firebaseConfig);
-          const db = getFirestore(app);
-          const cleanUserFolder = currentUser.trim().toLowerCase();
-          const docRef = doc(db, 'artifacts', appId, 'users', cleanUserFolder, 'data', 'cloud_deck');
-          await setDoc(docRef, { deck: newDeck, mastered: newMastered, updatedAt: Date.now() }, { merge: true });
-        } catch (e) { console.error(e); }
+      // Функция отправки изменений в пиринговую сеть всем устройствам
+      const saveToCloud = (currentUser, currentDeck, currentMastered) => {
+        if (!currentUser) return;
+        const cleanUser = currentUser.trim().toLowerCase();
+        const now = Date.now();
+        lastUpdateRef.current = now; // Обновляем локальное время, чтобы не читать свои же изменения
+        
+        setIsSyncing(true);
+        gun.get('linguacards_pro_user_' + cleanUser).put({
+          payload: JSON.stringify({
+            deck: currentDeck,
+            mastered: currentMastered,
+            updatedAt: now
+          })
+        }, ack => {
+          setTimeout(() => setIsSyncing(false), 800);
+        });
       };
 
+      // Сохраняем локально и отправляем в сеть при каждом изменении колоды
       useEffect(() => {
         localStorage.setItem('lingua_deck', JSON.stringify(deck));
         if (username) saveToCloud(username, deck, masteredCards);
@@ -239,6 +221,7 @@
         localStorage.setItem('lingua_mastered', JSON.stringify(masteredCards));
         if (username) saveToCloud(username, deck, masteredCards);
       }, [masteredCards]);
+
 
       const handleLogin = (e) => {
         e.preventDefault();
@@ -251,7 +234,7 @@
         localStorage.setItem('lingua_username', clean);
         setIsLoggedIn(true);
         setLoginInput('');
-        showToast(`Добро пожаловать, ${clean}! Облачная папка подключена 🚀`, 'success');
+        showToast(`Добро пожаловать, ${clean}! Ищем ваши слова в сети... 🚀`, 'success');
       };
 
       const handleLogout = () => {
@@ -527,22 +510,23 @@
       const filteredDeck = deck.filter(c => (c.english || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.russian || '').toLowerCase().includes(searchTerm.toLowerCase()));
       const filteredMastered = masteredCards.filter(c => (c.english || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.russian || '').toLowerCase().includes(searchTerm.toLowerCase()));
 
-      // Если пользователь еще не вошел — показываем экран авторизации/регистрации по логину
+      // Экран авторизации (если пользователь не ввел логин)
       if (!isLoggedIn) {
         return (
-          <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 p-4">
-            <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl text-center space-y-6">
+          <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 p-4 relative overflow-hidden">
+            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
+            <div className="w-full max-w-md bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl text-center space-y-6 relative z-10">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-500 flex items-center justify-center mx-auto shadow-lg shadow-blue-500/20">
                 <Icon name="sparkles" className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-black text-white mb-2">LinguaCards AI</h1>
-                <p className="text-xs text-slate-400">Введите ваш уникальный логин для доступа к облачной папке со всеми словами.</p>
+                <h1 className="text-2xl font-black text-white mb-2">LinguaCards Sync</h1>
+                <p className="text-xs text-slate-400">Синхронизация между устройствами теперь работает через открытую сеть (GunJS). Сервер не нужен!</p>
               </div>
 
               <form onSubmit={handleLogin} className="space-y-4 text-left">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1.5">Ваш логин (например: ivan_english):</label>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1.5">Ваш уникальный логин (например: ivan_eng123):</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                       <Icon name="user" className="w-4 h-4" />
@@ -551,8 +535,8 @@
                       type="text"
                       required
                       value={loginInput}
-                      onChange={(e) => setLoginInput(e.target.value)}
-                      placeholder="Введите логин..."
+                      onChange={(e) => setLoginInput(e.target.value.replace(/\s+/g, ''))}
+                      placeholder="Придумайте любой логин..."
                       className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500"
                     />
                   </div>
@@ -562,10 +546,13 @@
                   type="submit"
                   className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 text-white font-semibold text-sm rounded-xl transition-all shadow-lg flex items-center justify-center gap-2"
                 >
-                  <span>Войти / Создать папку в облаке</span>
+                  <Icon name="cloud" className="w-4 h-4" />
+                  <span>Войти и подключить сеть</span>
                 </button>
               </form>
-              <p className="text-[11px] text-slate-500">Введите этот же логин на телефоне, и все ваши слова появятся автоматически!</p>
+              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <p className="text-[11px] text-emerald-400 font-medium">💡 Просто введите этот же логин в приложении на телефоне, и слова перенесутся автоматически!</p>
+              </div>
             </div>
           </div>
         );
@@ -595,8 +582,9 @@
                   <h1 className="font-bold text-base sm:text-lg leading-tight text-white flex items-center gap-2">
                     LinguaCards <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">Pro</span>
                   </h1>
-                  <p className="text-[11px] text-blue-400 flex items-center gap-1 font-medium">
-                    <Icon name="cloud" className="w-3 h-3" /> Облако: <span className="text-slate-200 font-bold">{username}</span>
+                  <p className="text-[11px] flex items-center gap-1 font-medium transition-colors duration-300">
+                    <Icon name={isSyncing ? "refresh-cw" : "cloud"} className={`w-3 h-3 ${isSyncing ? 'text-blue-400 animate-spin' : 'text-emerald-400'}`} /> 
+                    <span className={isSyncing ? 'text-blue-400' : 'text-slate-400'}>Синхр: <span className="font-bold text-slate-200">{username}</span></span>
                   </p>
                 </div>
               </div>
@@ -815,21 +803,21 @@
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
                   <div>
                     <h3 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
-                      <Icon name="user" className="w-5 h-5 text-blue-400" /> Облачный аккаунт
+                      <Icon name="cloud" className="w-5 h-5 text-blue-400" /> Сетевой аккаунт
                     </h3>
-                    <p className="text-xs text-slate-400">Вы вошли как: <strong className="text-emerald-400">{username}</strong>. Ваши слова ({deck.length}) автоматически синхронизируются в облаке. Введите этот же логин на телефоне, чтобы они появились там.</p>
+                    <p className="text-xs text-slate-400">Синхронизация происходит через сеть узлов GunJS. Ваш текущий логин: <strong className="text-emerald-400">{username}</strong>.</p>
                   </div>
 
                   <button
                     onClick={handleLogout}
                     className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center justify-center gap-2 transition-all"
                   >
-                    <Icon name="log-out" className="w-4 h-4 text-red-400" /> Сменить аккаунт / Выйти
+                    <Icon name="log-out" className="w-4 h-4 text-red-400" /> Выйти / Сменить логин
                   </button>
 
                   <div className="pt-2 border-t border-slate-800 flex gap-2">
                     <button onClick={handleExportDeck} className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl text-slate-200 flex items-center justify-center gap-2">
-                      <Icon name="download" className="w-4 h-4" /> Резервная копия JSON
+                      <Icon name="download" className="w-4 h-4" /> Скачать JSON файл
                     </button>
                   </div>
 
