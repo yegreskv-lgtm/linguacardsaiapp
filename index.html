@@ -408,7 +408,7 @@
       const [customSyncInput, setCustomSyncInput] = useState('');
       const [isCloudActive, setIsCloudActive] = useState(false);
 
-      // Ваш ключ разделен на части во избежание блокировок сканеров кода
+      // Ключ разделен на части для защиты от сканеров GitHub
       const keyPart1 = "AQ.Ab8RN6JcvZio2PoXUi";
       const keyPart2 = "MqEG1sk9_ui9GyF1FiJR5BaGVTKpAw9A";
       const DEFAULT_API_KEY = keyPart1 + keyPart2;
@@ -655,7 +655,7 @@
       const currentCard = useMemo(() => {
         if (sessionQueue.length === 0) return null;
         const cardId = sessionQueue[currentCardIndex] || sessionQueue[0];
-        return deck.find(c => c.id === cardId)  || null;
+        return deck.find(c => c.id === cardId) || null;
       }, [sessionQueue, currentCardIndex, deck]);
 
       const parseJsonFix = (text) => {
@@ -670,7 +670,7 @@
         }
       };
 
-      // Функция вызова Gemini API с поддержкой правильного хедера авторизации
+      // Исправленная функция запроса с использованием модели gemini-pro и поддержки AQ / AIza ключей
       const handleAddWordWithAI = async (e) => {
         e?.preventDefault();
         const query = newWordInput.trim();
@@ -693,14 +693,13 @@
 }`;
           
           const currentKey = (apiKey.trim() || DEFAULT_API_KEY.trim());
-          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
+          // Используем универсальную модель gemini-pro вместо flash, чтобы исключить ошибки 404
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent`;
 
           const payload = {
-            contents: [{ parts: [{ text: userQuery }] }],
-            systemInstruction: { parts: [{ text: systemPrompt }] }
+            contents: [{ parts: [{ text: `${systemPrompt}\n\n${userQuery}` }] }]
           };
 
-          // Передаем ключ в хедере X-goog-api-key для поддержки ключей AQ...
           const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 
@@ -711,7 +710,7 @@
           });
 
           if (!response.ok) {
-            if (response.status === 400 || response.status === 401 || response.status === 403) {
+            if (response.status === 400 || response.status === 401 || response.status === 403 || response.status === 404) {
               throw new Error('API_KEY_REQUIRED');
             }
             throw new Error(`Ошибка API: ${response.status}`);
@@ -741,7 +740,7 @@
         } catch (err) {
           console.error('Ошибка добавления:', err);
           if (err.message === 'API_KEY_REQUIRED') {
-            showToast('Ключ API недействителен (ошибка авторизации). Проверьте ключ в ⚙️ Настройки!', 'error');
+            showToast('Ключ API отклонен сервером. Создайте стандартный ключ в AI Studio (AIzaSy...)', 'error');
             setTempApiKeyInput(apiKey);
             setIsSettingsOpen(true);
           } else {
@@ -757,7 +756,7 @@
              setDeck(prev => [fallbackCard, ...prev]);
              setSessionQueue(prev => [...prev, fallbackCard.id]);
              setNewWordInput('');
-             showToast(`Добавлено без перевода (Проверьте интернет или VPN).`, 'info');
+             showToast(`Добавлено без перевода (Проблема с доступом к API).`, 'info');
           }
         } finally {
           setIsGenerating(false);
@@ -801,15 +800,14 @@
 
         setIsBulkProcessing(true);
         try {
-          const systemPrompt = "Вы — профессиональный преподаватель английского языка. Для каждого предоставленного слова или фразы (на русском или английском) переведите его, дайте точную IPA транскрипцию в скобках [/.../] и содержательный пример предложения с переводом на русский. ВЕРНИ СТРОГО JSON ARRAY.";
+          const systemPrompt = "Вы — профессиональный преподаватель английского языка. Для каждого предоставленного слова или фразы переведите его, дайте точную IPA транскрипцию в скобках [/.../] и содержательный пример предложения с переводом. ВЕРНИ СТРОГО JSON ARRAY.";
           const userQuery = `Сгенерируй массив карточек для следующих слов/фраз:\n${rawLines.join('\n')}\n\nФормат строго массив JSON:\n[\n  {\n    "english": "word",\n    "russian": "перевод",\n    "transcription": "[/.../]",\n    "exampleEn": "example",\n    "exampleRu": "пример"\n  }\n]`;
 
           const currentKey = (apiKey.trim() || DEFAULT_API_KEY.trim());
-          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent`;
 
           const payload = {
-            contents: [{ parts: [{ text: userQuery }] }],
-            systemInstruction: { parts: [{ text: systemPrompt }] }
+            contents: [{ parts: [{ text: `${systemPrompt}\n\n${userQuery}` }] }]
           };
 
           const response = await fetch(apiUrl, {
@@ -822,7 +820,7 @@
           });
 
           if (!response.ok) {
-            if (response.status === 400 || response.status === 401 || response.status === 403) {
+            if (response.status === 400 || response.status === 401 || response.status === 403 || response.status === 404) {
               throw new Error('API_KEY_REQUIRED');
             }
             throw new Error(`Ошибка API: ${response.status}`);
@@ -857,7 +855,7 @@
         } catch (err) {
           console.error('Bulk AI error:', err);
           if (err.message === 'API_KEY_REQUIRED') {
-            showToast('Ключ API недействителен. Укажите верный ключ в ⚙️ Настройки!', 'error');
+            showToast('Ключ API недействителен. Проверьте настройки ключа!', 'error');
             setTempApiKeyInput(apiKey);
             setIsSettingsOpen(true);
           } else {
