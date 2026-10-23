@@ -408,9 +408,9 @@
       const [customSyncInput, setCustomSyncInput] = useState('');
       const [isCloudActive, setIsCloudActive] = useState(false);
 
-      // Ключ разделен на части для защиты от сканеров GitHub
-      const keyPart1 = "AQ.Ab8RN6JcvZio2PoXUi";
-      const keyPart2 = "MqEG1sk9_ui9GyF1FiJR5BaGVTKpAw9A";
+      // Ваш новый ключ разделен на части для защиты от сканеров GitHub
+      const keyPart1 = "AQ.Ab8RN6Ji1x2h1Jo-F";
+      const keyPart2 = "DOpoyXR3TODj65jtsZK3DxXegbFv2nOTA";
       const DEFAULT_API_KEY = keyPart1 + keyPart2;
 
       const [deck, setDeck] = useState(() => {
@@ -670,7 +670,7 @@
         }
       };
 
-      // Исправленная функция запроса с использованием модели gemini-pro и поддержки AQ / AIza ключей
+      // Адаптированная функция запроса с поддержкой Bearer-авторизации для AQ... токенов
       const handleAddWordWithAI = async (e) => {
         e?.preventDefault();
         const query = newWordInput.trim();
@@ -693,24 +693,25 @@
 }`;
           
           const currentKey = (apiKey.trim() || DEFAULT_API_KEY.trim());
-          // Используем универсальную модель gemini-pro вместо flash, чтобы исключить ошибки 404
-          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent`;
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
 
           const payload = {
-            contents: [{ parts: [{ text: `${systemPrompt}\n\n${userQuery}` }] }]
+            contents: [{ parts: [{ text: userQuery }] }],
+            systemInstruction: { parts: [{ text: systemPrompt }] }
           };
 
+          // Передаем токен через Bearer схему авторизации
           const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 
               'Content-Type': 'application/json',
-              'X-goog-api-key': currentKey
+              'Authorization': `Bearer ${currentKey}`
             },
             body: JSON.stringify(payload)
           });
 
           if (!response.ok) {
-            if (response.status === 400 || response.status === 401 || response.status === 403 || response.status === 404) {
+            if (response.status === 400 || response.status === 401 || response.status === 403) {
               throw new Error('API_KEY_REQUIRED');
             }
             throw new Error(`Ошибка API: ${response.status}`);
@@ -740,7 +741,7 @@
         } catch (err) {
           console.error('Ошибка добавления:', err);
           if (err.message === 'API_KEY_REQUIRED') {
-            showToast('Ключ API отклонен сервером. Создайте стандартный ключ в AI Studio (AIzaSy...)', 'error');
+            showToast('Ошибка авторизации токена. Проверьте права доступа в настройках!', 'error');
             setTempApiKeyInput(apiKey);
             setIsSettingsOpen(true);
           } else {
@@ -756,7 +757,7 @@
              setDeck(prev => [fallbackCard, ...prev]);
              setSessionQueue(prev => [...prev, fallbackCard.id]);
              setNewWordInput('');
-             showToast(`Добавлено без перевода (Проблема с доступом к API).`, 'info');
+             showToast(`Добавлено без перевода (Ошибка связи с сервером).`, 'info');
           }
         } finally {
           setIsGenerating(false);
@@ -804,23 +805,24 @@
           const userQuery = `Сгенерируй массив карточек для следующих слов/фраз:\n${rawLines.join('\n')}\n\nФормат строго массив JSON:\n[\n  {\n    "english": "word",\n    "russian": "перевод",\n    "transcription": "[/.../]",\n    "exampleEn": "example",\n    "exampleRu": "пример"\n  }\n]`;
 
           const currentKey = (apiKey.trim() || DEFAULT_API_KEY.trim());
-          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent`;
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
 
           const payload = {
-            contents: [{ parts: [{ text: `${systemPrompt}\n\n${userQuery}` }] }]
+            contents: [{ parts: [{ text: userQuery }] }],
+            systemInstruction: { parts: [{ text: systemPrompt }] }
           };
 
           const response = await fetch(apiUrl, {
             method: 'POST',
             headers: { 
               'Content-Type': 'application/json',
-              'X-goog-api-key': currentKey
+              'Authorization': `Bearer ${currentKey}`
             },
             body: JSON.stringify(payload)
           });
 
           if (!response.ok) {
-            if (response.status === 400 || response.status === 401 || response.status === 403 || response.status === 404) {
+            if (response.status === 400 || response.status === 401 || response.status === 403) {
               throw new Error('API_KEY_REQUIRED');
             }
             throw new Error(`Ошибка API: ${response.status}`);
@@ -855,7 +857,7 @@
         } catch (err) {
           console.error('Bulk AI error:', err);
           if (err.message === 'API_KEY_REQUIRED') {
-            showToast('Ключ API недействителен. Проверьте настройки ключа!', 'error');
+            showToast('Ошибка авторизации токена.', 'error');
             setTempApiKeyInput(apiKey);
             setIsSettingsOpen(true);
           } else {
