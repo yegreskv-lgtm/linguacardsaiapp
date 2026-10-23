@@ -727,6 +727,20 @@
         return deck.find(c => c.id === cardId) || null;
       }, [sessionQueue, currentCardIndex, deck]);
 
+      // Вспомогательная функция для ручного разбора JSON
+      const parseJsonFix = (text) => {
+        try {
+           return JSON.parse(text);
+        } catch(e) {
+           // Если стандартный парсер упал, пробуем вытащить через регулярку
+           const match = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+           if (match) {
+             return JSON.parse(match[0]);
+           }
+           throw e;
+        }
+      };
+
       const handleAddWordWithAI = async (e) => {
         e?.preventDefault();
         const query = newWordInput.trim();
@@ -737,29 +751,23 @@
 
         setIsGenerating(true);
         try {
-          const systemPrompt = "Вы — профессиональный преподаватель английского языка. Переведите введенное слово или фразу, предоставьте точную транскрипцию IPA и качественный пример предложения с переводом.";
-          const userQuery = `Сгенерируй карточку для слова/фразы: "${query}". Если ввод на русском, переведи на английский. Если ввод на английском, переведи на русский.`;
+          const systemPrompt = "Вы — профессиональный преподаватель английского языка. Переведите введенное слово или фразу, предоставьте точную транскрипцию IPA и качественный пример предложения с переводом. Верни ТОЛЬКО валидный JSON.";
+          const userQuery = `Сгенерируй карточку для слова/фразы: "${query}". Если ввод на русском, переведи на английский. Если ввод на английском, переведи на русский. 
+Формат строго JSON (никакого markdown):
+{
+  "english": "word in english",
+  "russian": "translation",
+  "transcription": "[/transcription/]",
+  "exampleEn": "example sentence",
+  "exampleRu": "example translation"
+}`;
           
           const currentKey = (apiKey.trim() || DEFAULT_API_KEY.trim());
-          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${currentKey}`;
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${currentKey}`;
 
           const payload = {
             contents: [{ parts: [{ text: userQuery }] }],
-            systemInstruction: { parts: [{ text: systemPrompt }] },
-            generationConfig: {
-              responseMimeType: "application/json",
-              responseSchema: {
-                type: "OBJECT",
-                properties: {
-                  english: { type: "STRING", description: "The word or phrase in English" },
-                  russian: { type: "STRING", description: "The Russian translation" },
-                  transcription: { type: "STRING", description: "IPA phonetic transcription enclosed in slashes, e.g. [/ˈwʌndəfʊl/]" },
-                  exampleEn: { type: "STRING", description: "An engaging example sentence in English" },
-                  exampleRu: { type: "STRING", description: "Russian translation of the example sentence" }
-                },
-                required: ["english", "russian", "transcription", "exampleEn", "exampleRu"]
-              }
-            }
+            systemInstruction: { parts: [{ text: systemPrompt }] }
           };
 
           const response = await fetch(apiUrl, {
@@ -780,7 +788,7 @@
 
           if (!jsonText) throw new Error('Не удалось получить ответ от AI');
 
-          const parsed = JSON.parse(jsonText);
+          const parsed = parseJsonFix(jsonText);
 
           const newCard = {
             id: 'card-' + Date.now(),
@@ -803,7 +811,20 @@
             setTempApiKeyInput(apiKey);
             setIsSettingsOpen(true);
           } else {
-            showToast('Не удалось сгенерировать карточку. Воспользуйтесь ручным вводом!', 'error');
+             // Fallback если AI не вернул нужный формат
+             const fallbackCard = {
+                id: 'card-' + Date.now(),
+                english: query,
+                russian: '—',
+                transcription: '[]',
+                exampleEn: '',
+                exampleRu: '',
+                createdAt: Date.now()
+             };
+             setDeck(prev => [fallbackCard, ...prev]);
+             setSessionQueue(prev => [...prev, fallbackCard.id]);
+             setNewWordInput('');
+             showToast(`Добавлено без перевода (AI не ответил должным образом).`, 'info');
           }
         } finally {
           setIsGenerating(false);
@@ -847,33 +868,15 @@
 
         setIsBulkProcessing(true);
         try {
-          const systemPrompt = "Вы — профессиональный преподаватель английского языка. Для каждого предоставленного слова или фразы (на русском или английском) переведите его, дайте точную IPA транскрипцию в скобках [/.../] и содержательный пример предложения с переводом на русский.";
-          const userQuery = `Сгенерируй массив карточек для следующих слов/фраз:\n${rawLines.join('\n')}`;
+          const systemPrompt = "Вы — профессиональный преподаватель английского языка. Для каждого предоставленного слова или фразы (на русском или английском) переведите его, дайте точную IPA транскрипцию в скобках [/.../] и содержательный пример предложения с переводом на русский. ВЕРНИ СТРОГО JSON ARRAY.";
+          const userQuery = `Сгенерируй массив карточек для следующих слов/фраз:\n${rawLines.join('\n')}\n\nФормат строго массив JSON:\n[\n  {\n    "english": "word",\n    "russian": "перевод",\n    "transcription": "[/.../]",\n    "exampleEn": "example",\n    "exampleRu": "пример"\n  }\n]`;
 
           const currentKey = (apiKey.trim() || DEFAULT_API_KEY.trim());
-          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${currentKey}`;
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${currentKey}`;
 
           const payload = {
             contents: [{ parts: [{ text: userQuery }] }],
-            systemInstruction: { parts: [{ text: systemPrompt }] },
-            generationConfig: {
-              responseMimeType: "application/json",
-              responseSchema: {
-                type: "ARRAY",
-                description: "Array of generated language learning cards",
-                items: {
-                  type: "OBJECT",
-                  properties: {
-                    english: { type: "STRING", description: "English word or phrase" },
-                    russian: { type: "STRING", description: "Russian translation" },
-                    transcription: { type: "STRING", description: "IPA transcription enclosed in slashes" },
-                    exampleEn: { type: "STRING", description: "Example sentence in English" },
-                    exampleRu: { type: "STRING", description: "Example sentence translation in Russian" }
-                  },
-                  required: ["english", "russian", "transcription", "exampleEn", "exampleRu"]
-                }
-              }
-            }
+            systemInstruction: { parts: [{ text: systemPrompt }] }
           };
 
           const response = await fetch(apiUrl, {
@@ -894,7 +897,8 @@
 
           if (!jsonText) throw new Error('Не удалось получить ответ от AI');
 
-          const parsedArray = JSON.parse(jsonText);
+          const parsedArray = parseJsonFix(jsonText);
+          
           if (!Array.isArray(parsedArray) || parsedArray.length === 0) {
             throw new Error('Пустой ответ от AI');
           }
@@ -921,7 +925,8 @@
             setTempApiKeyInput(apiKey);
             setIsSettingsOpen(true);
           } else {
-            showToast('Ошибка массовой генерации. Попробуйте быстрый импорт (без AI)!', 'error');
+             // Fallback если AI не ответил массивом — делаем быстрый импорт
+             handleBulkAddFast();
           }
         } finally {
           setIsBulkProcessing(false);
