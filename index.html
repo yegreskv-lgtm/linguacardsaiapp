@@ -8,7 +8,7 @@
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="LinguaCards" />
-  <title>LinguaCards AI — Изучение английских слов</title>
+  <title>LinguaCards AI — Автоматический тренажер слов</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -309,14 +309,6 @@
               <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
             </svg>
           );
-        case 'external-link':
-          return (
-            <svg {...iconProps}>
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-              <polyline points="15 3 21 3 21 9"/>
-              <line x1="10" x2="21" y1="14" y2="3"/>
-            </svg>
-          );
         case 'download':
           return (
             <svg {...iconProps}>
@@ -338,16 +330,6 @@
             <svg {...iconProps}>
               <rect width="14" height="14" x="8" y="8" rx="2" ry="2"/>
               <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>
-            </svg>
-          );
-        case 'share-2':
-          return (
-            <svg {...iconProps}>
-              <circle cx="18" cy="5" r="3"/>
-              <circle cx="6" cy="12" r="3"/>
-              <circle cx="18" cy="19" r="3"/>
-              <line x1="8.59" x2="15.42" y1="10.51" y2="6.49"/>
-              <line x1="15.41" x2="8.59" y1="17.51" y2="13.49"/>
             </svg>
           );
         case 'smartphone':
@@ -408,11 +390,6 @@
       const [customSyncInput, setCustomSyncInput] = useState('');
       const [isCloudActive, setIsCloudActive] = useState(false);
 
-      // Ваш новый ключ разделен на части для защиты от сканеров GitHub
-      const keyPart1 = "AQ.Ab8RN6Ji1x2h1Jo-F";
-      const keyPart2 = "DOpoyXR3TODj65jtsZK3DxXegbFv2nOTA";
-      const DEFAULT_API_KEY = keyPart1 + keyPart2;
-
       const [deck, setDeck] = useState(() => {
         const saved = localStorage.getItem('lingua_deck');
         return saved ? JSON.parse(saved) : INITIAL_CARDS;
@@ -422,8 +399,6 @@
         const saved = localStorage.getItem('lingua_mastered');
         return saved ? JSON.parse(saved) : [];
       });
-
-      const [apiKey, setApiKey] = useState(() => localStorage.getItem('lingua_gemini_api_key') || DEFAULT_API_KEY);
 
       const [sessionQueue, setSessionQueue] = useState([]);
       const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -442,7 +417,6 @@
       const [isBulkAddOpen, setIsBulkAddOpen] = useState(false);
       const [bulkInput, setBulkInput] = useState('');
       const [isBulkProcessing, setIsBulkProcessing] = useState(false);
-      const [tempApiKeyInput, setTempApiKeyInput] = useState('');
 
       const [deferredPrompt, setDeferredPrompt] = useState(null);
       const [isInstallable, setIsInstallable] = useState(false);
@@ -459,7 +433,7 @@
         const manifest = {
           name: "LinguaCards AI — Тренажер слов",
           short_name: "LinguaCards",
-          description: "Умный тренажер английских слов с AI и синхронизацией",
+          description: "Умный тренажер английских слов с автопереводом и синхронизацией",
           start_url: "./",
           display: "standalone",
           background_color: "#020617",
@@ -507,30 +481,15 @@
       useEffect(() => {
         const params = new URLSearchParams(window.location.search);
         const urlSyncId = params.get('syncId') || params.get('sync');
-        const urlApiKey = params.get('apiKey');
 
         if (urlSyncId) {
           setSyncId(urlSyncId);
           localStorage.setItem('lingua_sync_id', urlSyncId);
           showToast('Облачная синхронизация подключена! 📱', 'success');
-        }
-
-        if (urlApiKey) {
-          setApiKey(urlApiKey);
-          localStorage.setItem('lingua_gemini_api_key', urlApiKey);
-        }
-
-        if (urlSyncId || urlApiKey) {
           const cleanUrl = window.location.origin + window.location.pathname;
           window.history.replaceState({}, document.title, cleanUrl);
         }
       }, []);
-
-      const shareableUrl = useMemo(() => {
-        if (!syncId) return '';
-        const baseUrl = window.location.origin + window.location.pathname;
-        return `${baseUrl}?syncId=${encodeURIComponent(syncId)}`;
-      }, [syncId]);
 
       useEffect(() => {
         if (!firebaseConfig || !window.FirebaseSDK) return;
@@ -627,10 +586,6 @@
       }, [masteredCards]);
 
       useEffect(() => {
-        localStorage.setItem('lingua_gemini_api_key', apiKey);
-      }, [apiKey]);
-
-      useEffect(() => {
         setSessionQueue(prev => {
           const validIds = new Set(deck.map(c => c.id));
           const filtered = prev.filter(id => validIds.has(id));
@@ -658,107 +613,62 @@
         return deck.find(c => c.id === cardId) || null;
       }, [sessionQueue, currentCardIndex, deck]);
 
-      const parseJsonFix = (text) => {
+      // Автоматический перевод через публичный бесперебойный API переводчика
+      const autoTranslate = async (text) => {
         try {
-           return JSON.parse(text);
-        } catch(e) {
-           const match = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
-           if (match) {
-             return JSON.parse(match[0]);
-           }
-           throw e;
+          // Определяем направление: если есть кириллица, то с ру на ен, иначе с ен на ру
+          const isRu = /[а-яё]/i.test(text);
+          const langPair = isRu ? 'ru|en' : 'en|ru';
+          
+          const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langPair}`);
+          const data = await res.json();
+          
+          if (data && data.responseData && data.responseData.translatedText) {
+            const translated = data.responseData.translatedText;
+            if (isRu) {
+              return { english: translated, russian: text };
+            } else {
+              return { english: text, russian: translated };
+            }
+          }
+        } catch (e) {
+          console.error("Translation error:", e);
         }
+        
+        // Фолбэк, если сеть недоступна
+        return { english: text, russian: text };
       };
 
-      // Адаптированная функция запроса с поддержкой Bearer-авторизации для AQ... токенов
-      const handleAddWordWithAI = async (e) => {
+      // Автоматическое добавление слова
+      const handleAddWordAutomatic = async (e) => {
         e?.preventDefault();
         const query = newWordInput.trim();
         if (!query) {
-          showToast('Введите слово или фразу для добавления', 'error');
+          showToast('Введите слово или фразу', 'error');
           return;
         }
 
         setIsGenerating(true);
         try {
-          const systemPrompt = "Вы — профессиональный преподаватель английского языка. Переведите введенное слово или фразу, предоставьте точную транскрипцию IPA и качественный пример предложения с переводом. Верни ТОЛЬКО валидный JSON.";
-          const userQuery = `Сгенерируй карточку для слова/фразы: "${query}". Если ввод на русском, переведи на английский. Если ввод на английском, переведи на русский. 
-Формат строго JSON (никакого markdown):
-{
-  "english": "word in english",
-  "russian": "translation",
-  "transcription": "[/transcription/]",
-  "exampleEn": "example sentence",
-  "exampleRu": "example translation"
-}`;
+          const translation = await autoTranslate(query);
           
-          const currentKey = (apiKey.trim() || DEFAULT_API_KEY.trim());
-          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
-
-          const payload = {
-            contents: [{ parts: [{ text: userQuery }] }],
-            systemInstruction: { parts: [{ text: systemPrompt }] }
-          };
-
-          // Передаем токен через Bearer схему авторизации
-          const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${currentKey}`
-            },
-            body: JSON.stringify(payload)
-          });
-
-          if (!response.ok) {
-            if (response.status === 400 || response.status === 401 || response.status === 403) {
-              throw new Error('API_KEY_REQUIRED');
-            }
-            throw new Error(`Ошибка API: ${response.status}`);
-          }
-
-          const result = await response.json();
-          const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-          if (!jsonText) throw new Error('Не удалось получить ответ от AI');
-
-          const parsed = parseJsonFix(jsonText);
-
           const newCard = {
             id: 'card-' + Date.now(),
-            english: parsed.english || query,
-            russian: parsed.russian || '—',
-            transcription: parsed.transcription?.startsWith('[') ? parsed.transcription : `[${parsed.transcription || ''}]`,
-            exampleEn: parsed.exampleEn || '',
-            exampleRu: parsed.exampleRu || '',
+            english: translation.english,
+            russian: translation.russian,
+            transcription: '[—]',
+            exampleEn: `Example with ${translation.english}.`,
+            exampleRu: `Пример с переводом: ${translation.russian}.`,
             createdAt: Date.now()
           };
 
           setDeck(prev => [newCard, ...prev]);
           setSessionQueue(prev => [...prev, newCard.id]);
           setNewWordInput('');
-          showToast(`Слово "${newCard.english}" успешно добавлено через AI! 🎉`, 'success');
+          showToast(`Слово "${newCard.english}" успешно добавлено! 🎉`, 'success');
         } catch (err) {
           console.error('Ошибка добавления:', err);
-          if (err.message === 'API_KEY_REQUIRED') {
-            showToast('Ошибка авторизации токена. Проверьте права доступа в настройках!', 'error');
-            setTempApiKeyInput(apiKey);
-            setIsSettingsOpen(true);
-          } else {
-             const fallbackCard = {
-                id: 'card-' + Date.now(),
-                english: query,
-                russian: '—',
-                transcription: '[]',
-                exampleEn: '',
-                exampleRu: '',
-                createdAt: Date.now()
-             };
-             setDeck(prev => [fallbackCard, ...prev]);
-             setSessionQueue(prev => [...prev, fallbackCard.id]);
-             setNewWordInput('');
-             showToast(`Добавлено без перевода (Ошибка связи с сервером).`, 'info');
-          }
+          showToast('Не удалось добавить слово', 'error');
         } finally {
           setIsGenerating(false);
         }
@@ -767,7 +677,7 @@
       const handleAddManualCard = (e) => {
         e.preventDefault();
         if (!manualForm.english.trim() || !manualForm.russian.trim()) {
-          showToast('Заполните обязательные поля: Слово и Перевод', 'error');
+          showToast('Заполните обязательные поля', 'error');
           return;
         }
 
@@ -785,128 +695,62 @@
         setSessionQueue(prev => [...prev, newCard.id]);
         setManualForm({ english: '', russian: '', transcription: '', exampleEn: '', exampleRu: '' });
         setIsManualAddOpen(false);
-        showToast(`Слово "${newCard.english}" добавлено вручную!`, 'success');
+        showToast(`Слово добавлено вручную!`, 'success');
       };
 
-      const handleBulkAddAI = async () => {
+      const handleBulkAddAuto = async () => {
         const rawLines = bulkInput
-          .split(/\n|,|;/)
+          .split(/[\n,;]+/)
           .map(s => s.trim())
           .filter(Boolean);
 
         if (rawLines.length === 0) {
-          showToast('Введите список слов или текст для импорта', 'error');
+          showToast('Введите список слов', 'error');
           return;
         }
 
         setIsBulkProcessing(true);
         try {
-          const systemPrompt = "Вы — профессиональный преподаватель английского языка. Для каждого предоставленного слова или фразы переведите его, дайте точную IPA транскрипцию в скобках [/.../] и содержательный пример предложения с переводом. ВЕРНИ СТРОГО JSON ARRAY.";
-          const userQuery = `Сгенерируй массив карточек для следующих слов/фраз:\n${rawLines.join('\n')}\n\nФормат строго массив JSON:\n[\n  {\n    "english": "word",\n    "russian": "перевод",\n    "transcription": "[/.../]",\n    "exampleEn": "example",\n    "exampleRu": "пример"\n  }\n]`;
+          const newCards = [];
+          for (let i = 0; i < rawLines.length; i++) {
+            const line = rawLines[i];
+            const delimiterMatch = line.match(/\s*[-—=:|\t]\s*/);
+            let en = line;
+            let ru = '';
 
-          const currentKey = (apiKey.trim() || DEFAULT_API_KEY.trim());
-          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
-
-          const payload = {
-            contents: [{ parts: [{ text: userQuery }] }],
-            systemInstruction: { parts: [{ text: systemPrompt }] }
-          };
-
-          const response = await fetch(apiUrl, {
-            method: 'POST',
-            headers: { 
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${currentKey}`
-            },
-            body: JSON.stringify(payload)
-          });
-
-          if (!response.ok) {
-            if (response.status === 400 || response.status === 401 || response.status === 403) {
-              throw new Error('API_KEY_REQUIRED');
+            if (delimiterMatch) {
+              const parts = line.split(delimiterMatch[0]);
+              en = parts[0]?.trim() || line;
+              ru = parts.slice(1).join(' ').trim() || '';
             }
-            throw new Error(`Ошибка API: ${response.status}`);
-          }
 
-          const result = await response.json();
-          const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!ru) {
+              const tr = await autoTranslate(en);
+              en = tr.english;
+              ru = tr.russian;
+            }
 
-          if (!jsonText) throw new Error('Не удалось получить ответ от AI');
-
-          const parsedArray = parseJsonFix(jsonText);
-          
-          if (!Array.isArray(parsedArray) || parsedArray.length === 0) {
-            throw new Error('Пустой ответ от AI');
-          }
-
-          const newCards = parsedArray.map((item, index) => ({
-            id: 'card-' + (Date.now() + index),
-            english: item.english || 'Word',
-            russian: item.russian || '—',
-            transcription: item.transcription?.startsWith('[') ? item.transcription : `[${item.transcription || ''}]`,
-            exampleEn: item.exampleEn || '',
-            exampleRu: item.exampleRu || '',
-            createdAt: Date.now() + index
-          }));
-
-          setDeck(prev => [...newCards, ...prev]);
-          setSessionQueue(prev => [...newCards.map(c => c.id), ...prev]);
-          setBulkInput('');
-          setIsBulkAddOpen(false);
-          showToast(`Успешно создано ${newCards.length} карточек через AI! 🎉`, 'success');
-        } catch (err) {
-          console.error('Bulk AI error:', err);
-          if (err.message === 'API_KEY_REQUIRED') {
-            showToast('Ошибка авторизации токена.', 'error');
-            setTempApiKeyInput(apiKey);
-            setIsSettingsOpen(true);
-          } else {
-             showToast('Сработал быстрый импорт (Ошибка доступа к AI).', 'info');
-             handleBulkAddFast();
-          }
-        } finally {
-          setIsBulkProcessing(false);
-        }
-      };
-
-      const handleBulkAddFast = () => {
-        const lines = bulkInput.split(/[\n,;]+/).map(l => l.trim()).filter(Boolean);
-        if (lines.length === 0) {
-          showToast('Введите хотя бы одну строку со словами', 'error');
-          return;
-        }
-
-        const createdCards = [];
-        lines.forEach((line, index) => {
-          const delimiterMatch = line.match(/\s*[-—=:|\t]\s*/);
-          let en = line;
-          let ru = '—';
-
-          if (delimiterMatch) {
-            const parts = line.split(delimiterMatch[0]);
-            en = parts[0]?.trim() || line;
-            ru = parts.slice(1).join(' ').trim() || '—';
-          }
-
-          if (en) {
-            createdCards.push({
-              id: 'card-' + (Date.now() + index),
+            newCards.push({
+              id: 'card-' + (Date.now() + i),
               english: en,
               russian: ru,
               transcription: '[—]',
               exampleEn: '',
               exampleRu: '',
-              createdAt: Date.now() + index
+              createdAt: Date.now() + i
             });
           }
-        });
 
-        if (createdCards.length > 0) {
-          setDeck(prev => [...createdCards, ...prev]);
-          setSessionQueue(prev => [...createdCards.map(c => c.id), ...prev]);
+          setDeck(prev => [...newCards, ...prev]);
+          setSessionQueue(prev => [...newCards.map(c => c.id), ...prev]);
           setBulkInput('');
           setIsBulkAddOpen(false);
-          showToast(`Загружено ${createdCards.length} карточек напрямую! 🚀`, 'success');
+          showToast(`Успешно загружено ${newCards.length} слов! 🚀`, 'success');
+        } catch (err) {
+          console.error('Bulk error:', err);
+          showToast('Ошибка при массовой загрузке', 'error');
+        } finally {
+          setIsBulkProcessing(false);
         }
       };
 
@@ -924,7 +768,7 @@
         if (sessionQueue.length === 0) return;
         setIsFlipped(false);
         setSessionQueue(prev => prev.filter((_, idx) => idx !== currentCardIndex));
-        showToast('Карточка пройдена в этой сессии! 👍', 'info');
+        showToast('Карточка пройдена! 👍', 'info');
       };
 
       const handleMastered = (cardToMaster = currentCard) => {
@@ -933,37 +777,29 @@
         setDeck(prev => prev.filter(c => c.id !== cardToMaster.id));
         setMasteredCards(prev => [cardToMaster, ...prev]);
         setSessionQueue(prev => prev.filter(id => id !== cardToMaster.id));
-        showToast(`Слово "${cardToMaster.english}" перенесено в выученные! 🎉`, 'success');
+        showToast(`Слово "${cardToMaster.english}" выучено! 🎉`, 'success');
       };
 
       const handleRestoreCard = (card) => {
         setMasteredCards(prev => prev.filter(c => c.id !== card.id));
         setDeck(prev => [card, ...prev]);
         setSessionQueue(prev => [...prev, card.id]);
-        showToast(`Слово "${card.english}" возвращено в колоду`, 'info');
+        showToast(`Слово возвращено в колоду`, 'info');
       };
 
       const handleResetSession = () => {
         setSessionQueue(deck.map(c => c.id));
         setCurrentCardIndex(0);
         setIsFlipped(false);
-        showToast('Сессия обучения перезапущена!', 'info');
+        showToast('Сессия перезапущена!', 'info');
       };
 
       const handleSpeak = (text) => {
-        if (!('speechSynthesis' in window)) {
-          showToast('Синтез речи не поддерживается браузером', 'error');
-          return;
-        }
+        if (!('speechSynthesis' in window)) return;
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = 'en-US';
         utterance.rate = 0.88;
-
-        const voices = window.speechSynthesis.getVoices();
-        const englishVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Samantha')));
-        if (englishVoice) utterance.voice = englishVoice;
-
         window.speechSynthesis.speak(utterance);
       };
 
@@ -971,11 +807,11 @@
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ deck, masteredCards }, null, 2));
         const downloadAnchor = document.createElement('a');
         downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", `lingua_cards_backup_${new Date().toISOString().slice(0,10)}.json`);
+        downloadAnchor.setAttribute("download", `lingua_cards_backup.json`);
         document.body.appendChild(downloadAnchor);
         downloadAnchor.click();
         downloadAnchor.remove();
-        showToast('Колода успешно экспортирована в файл!', 'success');
+        showToast('Колода экспортирована!', 'success');
       };
 
       const handleImportDeck = (e) => {
@@ -986,53 +822,21 @@
             const parsed = JSON.parse(event.target.result);
             if (Array.isArray(parsed.deck)) setDeck(parsed.deck);
             if (Array.isArray(parsed.masteredCards)) setMasteredCards(parsed.masteredCards);
-            showToast('Колода успешно импортирована!', 'success');
+            showToast('Колода импортирована!', 'success');
           } catch (err) {
-            showToast('Ошибка при прочтении файла импорта', 'error');
+            showToast('Ошибка импорта файла', 'error');
           }
         };
       };
 
-      useEffect(() => {
-        const handleKeyDown = (e) => {
-          if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
-          if (isSettingsOpen || isManualAddOpen) return;
-          if (activeTab !== 'study' || !currentCard) return;
-
-          if (e.code === 'Space') {
-            e.preventDefault();
-            setIsFlipped(prev => !prev);
-          } else if (e.code === 'ArrowRight') {
-            e.preventDefault();
-            handleDone();
-          } else if (e.code === 'ArrowLeft') {
-            e.preventDefault();
-            handleSkip();
-          } else if (e.code === 'KeyM' || e.code === 'Delete') {
-            e.preventDefault();
-            handleMastered();
-          } else if (e.code === 'KeyS') {
-            e.preventDefault();
-            handleSpeak(currentCard.english);
-          }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-      }, [activeTab, currentCard, sessionQueue, currentCardIndex, isSettingsOpen, isManualAddOpen]);
-
       const filteredDeck = deck.filter(c => {
         const searchLower = (searchTerm || '').toLowerCase();
-        const enLower = (c.english || '').toLowerCase();
-        const ruLower = (c.russian || '').toLowerCase();
-        return enLower.includes(searchLower) || ruLower.includes(searchLower);
+        return (c.english || '').toLowerCase().includes(searchLower) || (c.russian || '').toLowerCase().includes(searchLower);
       });
 
       const filteredMastered = masteredCards.filter(c => {
         const searchLower = (searchTerm || '').toLowerCase();
-        const enLower = (c.english || '').toLowerCase();
-        const ruLower = (c.russian || '').toLowerCase();
-        return enLower.includes(searchLower) || ruLower.includes(searchLower);
+        return (c.english || '').toLowerCase().includes(searchLower) || (c.russian || '').toLowerCase().includes(searchLower);
       });
 
       return (
@@ -1058,9 +862,9 @@
                 </div>
                 <div>
                   <h1 className="font-bold text-base sm:text-lg leading-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent flex items-center gap-2">
-                    LinguaCards <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-semibold uppercase tracking-wider">AI</span>
+                    LinguaCards <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold uppercase tracking-wider">Auto</span>
                   </h1>
-                  <p className="text-[11px] text-slate-400 hidden sm:block">Синхронизация между устройствами</p>
+                  <p className="text-[11px] text-slate-400 hidden sm:block">Автоматический перевод и синхронизация</p>
                 </div>
               </div>
 
@@ -1069,63 +873,43 @@
                   <button
                     onClick={() => setActiveTab('study')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      activeTab === 'study'
-                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                      activeTab === 'study' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
                     }`}
                   >
                     <Icon name="layers" className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Учеба</span>
-                    {sessionQueue.length > 0 && (
-                      <span className="px-1.5 py-0.2 text-[10px] bg-white/20 rounded-full text-white">
-                        {sessionQueue.length}
-                      </span>
-                    )}
+                    <span>Учеба</span>
+                    {sessionQueue.length > 0 && <span className="px-1.5 py-0.2 text-[10px] bg-white/20 rounded-full">{sessionQueue.length}</span>}
                   </button>
 
                   <button
                     onClick={() => setActiveTab('deck')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      activeTab === 'deck'
-                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                      activeTab === 'deck' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
                     }`}
                   >
                     <Icon name="book-open" className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Слова</span>
-                    <span className="px-1.5 py-0.2 text-[10px] bg-slate-800 rounded-full text-slate-300">
-                      {deck.length}
-                    </span>
+                    <span>Слова ({deck.length})</span>
                   </button>
 
                   <button
                     onClick={() => setActiveTab('mastered')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      activeTab === 'mastered'
-                        ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                      activeTab === 'mastered' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-200'
                     }`}
                   >
                     <Icon name="trophy" className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Выучено</span>
-                    <span className="px-1.5 py-0.2 text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800/50 rounded-full">
-                      {masteredCards.length}
-                    </span>
+                    <span>Выучено ({masteredCards.length})</span>
                   </button>
                 </nav>
 
                 <button
-                  onClick={() => {
-                    setTempApiKeyInput(apiKey);
-                    setIsSettingsOpen(true);
-                  }}
+                  onClick={() => setIsSettingsOpen(true)}
                   className={`p-2 rounded-xl border transition-all flex items-center gap-1.5 ${
-                    isCloudActive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'
+                    isCloudActive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-slate-800 text-slate-300 border-slate-700'
                   }`}
-                  title="Настройки API и Облачной Синхронизации"
+                  title="Настройки"
                 >
                   <Icon name="settings" className="w-4 h-4" />
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse hidden sm:inline-block"></span>
                 </button>
               </div>
 
@@ -1134,7 +918,7 @@
 
           <div className="bg-slate-900/40 border-b border-slate-800/60 py-4 px-4 sm:px-6">
             <div className="max-w-3xl mx-auto flex flex-col gap-3">
-              <form onSubmit={handleAddWordWithAI} className="flex flex-col sm:flex-row gap-2.5">
+              <form onSubmit={handleAddWordAutomatic} className="flex flex-col sm:flex-row gap-2.5">
                 <div className="relative flex-grow">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                     <Icon name="plus-circle" className="w-5 h-5" />
@@ -1143,8 +927,8 @@
                     type="text"
                     value={newWordInput}
                     onChange={(e) => setNewWordInput(e.target.value)}
-                    placeholder="Введите слово на русском или английском (например: Gratitude)..."
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all shadow-inner"
+                    placeholder="Введите слово на любом языке, автоперевод сработает сам..."
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500"
                   />
                 </div>
                 
@@ -1152,38 +936,28 @@
                   <button
                     type="submit"
                     disabled={isGenerating || !newWordInput.trim()}
-                    className="flex-1 sm:flex-none px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium text-sm rounded-xl transition-all shadow-lg shadow-blue-600/25 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                    className="flex-1 sm:flex-none px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium text-sm rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     {isGenerating ? (
                       <>
                         <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                        <span>Генерация...</span>
+                        <span>Перевод...</span>
                       </>
                     ) : (
                       <>
                         <Icon name="wand-2" className="w-4 h-4" />
-                        <span>AI Добавить</span>
+                        <span>Авто-добавить</span>
                       </>
                     )}
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => setIsManualAddOpen(true)}
-                    className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm rounded-xl border border-slate-700 transition-all flex items-center justify-center gap-1.5 shrink-0"
-                  >
-                    <Icon name="edit-3" className="w-4 h-4" />
-                    <span className="hidden sm:inline">Вручную</span>
-                  </button>
-
-                  <button
-                    type="button"
                     onClick={() => setIsBulkAddOpen(true)}
-                    className="px-3.5 py-2.5 bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 hover:text-white font-medium text-sm rounded-xl border border-indigo-800/60 transition-all flex items-center justify-center gap-1.5 shrink-0"
-                    title="Загрузить много слов одновременно"
+                    className="px-3.5 py-2.5 bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 font-medium text-sm rounded-xl border border-indigo-800/60 transition-all flex items-center gap-1.5"
                   >
                     <Icon name="list-plus" className="w-4 h-4" />
-                    <span className="hidden sm:inline">Массово</span>
+                    <span>Списком</span>
                   </button>
                 </div>
               </form>
@@ -1196,19 +970,12 @@
               <div className="flex flex-col items-center justify-center max-w-lg mx-auto w-full py-2">
                 
                 <div className="w-full flex items-center justify-between mb-4 px-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-slate-700/50">
-                      Осталось в сессии: <strong className="text-blue-400">{sessionQueue.length}</strong>
-                    </span>
-                  </div>
-
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-slate-700/50">
+                    Осталось в сессии: <strong className="text-blue-400">{sessionQueue.length}</strong>
+                  </span>
                   {sessionQueue.length < deck.length && (
-                    <button
-                      onClick={handleResetSession}
-                      className="text-xs text-slate-400 hover:text-blue-400 flex items-center gap-1 transition-colors"
-                    >
-                      <Icon name="rotate-ccw" className="w-3.5 h-3.5" />
-                      <span>Сбросить сессию</span>
+                    <button onClick={handleResetSession} className="text-xs text-slate-400 hover:text-blue-400 flex items-center gap-1">
+                      <Icon name="rotate-ccw" className="w-3.5 h-3.5" /> Сбросить
                     </button>
                   )}
                 </div>
@@ -1218,144 +985,53 @@
                     <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
                       <Icon name="party-popper" className="w-8 h-8" />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-100 mb-2">Сессия завершена!</h3>
-                    <p className="text-slate-400 text-sm mb-6 max-w-sm mx-auto">
-                      {deck.length === 0 
-                        ? 'Вы изучили все слова из вашей колоды. Добавьте новые слова выше!' 
-                        : 'Вы отлично повторили все карточки в этой сессии!'}
-                    </p>
-                    
-                    <div className="flex flex-wrap items-center justify-center gap-3">
-                      {deck.length > 0 && (
-                        <button
-                          onClick={handleResetSession}
-                          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium transition-all shadow-lg shadow-blue-600/20 flex items-center gap-2"
-                        >
-                          <Icon name="refresh-cw" className="w-4 h-4" />
-                          <span>Повторить колоду заново</span>
-                        </button>
-                      )}
-                    </div>
+                    <h3 className="text-xl font-bold text-slate-100 mb-2">Все карточки пройдены!</h3>
+                    <button onClick={handleResetSession} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium">
+                      Повторить снова
+                    </button>
                   </div>
                 ) : (
                   currentCard && (
                     <div className="w-full flex flex-col items-center">
-                      
-                      <div 
-                        onClick={() => setIsFlipped(!isFlipped)}
-                        className="w-full h-80 sm:h-96 perspective-1000 cursor-pointer group select-none"
-                      >
+                      <div onClick={() => setIsFlipped(!isFlipped)} className="w-full h-80 sm:h-96 perspective-1000 cursor-pointer group select-none">
                         <div className={`relative w-full h-full duration-500 transform-style-3d transition-transform ${isFlipped ? 'rotate-y-180' : ''}`}>
                           
-                          <div className="absolute inset-0 w-full h-full rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-700/60 p-6 sm:p-8 flex flex-col justify-between backface-hidden shadow-2xl group-hover:border-blue-500/40 transition-all">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 bg-slate-800/80 px-3 py-1 rounded-full border border-slate-700/50">
-                                Русский (Лицевая сторона)
-                              </span>
-                              <span className="text-xs text-slate-500 flex items-center gap-1">
-                                <Icon name="mouse-pointer-click" className="w-3.5 h-3.5" />
-                                Нажмите для переворота
-                              </span>
-                            </div>
-
+                          <div className="absolute inset-0 w-full h-full rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-700/60 p-6 sm:p-8 flex flex-col justify-between backface-hidden shadow-2xl">
+                            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 bg-slate-800/80 px-3 py-1 rounded-full w-max">Русский</span>
                             <div className="my-auto text-center px-4">
-                              <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight leading-snug">
-                                {currentCard.russian}
-                              </h2>
+                              <h2 className="text-2xl sm:text-4xl font-extrabold text-white">{currentCard.russian}</h2>
                             </div>
-
-                            <div className="text-center text-xs text-slate-400 bg-slate-950/40 py-2.5 px-4 rounded-xl border border-slate-800">
-                              💡 Переверните карточку, чтобы проверить знание английского слова
-                            </div>
+                            <div className="text-center text-xs text-slate-400">Нажмите для переворота</div>
                           </div>
 
-                          <div className="absolute inset-0 w-full h-full rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 border border-indigo-500/40 p-6 sm:p-8 flex flex-col justify-between rotate-y-180 backface-hidden shadow-2xl shadow-indigo-950/50">
-                            
+                          <div className="absolute inset-0 w-full h-full rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 border border-indigo-500/40 p-6 sm:p-8 flex flex-col justify-between rotate-y-180 backface-hidden shadow-2xl">
                             <div className="flex items-center justify-between">
-                              <span className="text-xs font-semibold uppercase tracking-wider text-indigo-300 bg-indigo-950/80 px-3 py-1 rounded-full border border-indigo-800/50">
-                                English
-                              </span>
-
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleSpeak(currentCard.english);
-                                }}
-                                className="p-2.5 rounded-full bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 hover:text-white transition-all border border-indigo-500/30"
-                                title="Прослушать произношение (Hotkey: S)"
-                              >
+                              <span className="text-xs font-semibold uppercase tracking-wider text-indigo-300 bg-indigo-950/80 px-3 py-1 rounded-full">English</span>
+                              <button onClick={(e) => { e.stopPropagation(); handleSpeak(currentCard.english); }} className="p-2 rounded-full bg-indigo-600/20 text-indigo-300">
                                 <Icon name="volume-2" className="w-5 h-5" />
                               </button>
                             </div>
-
                             <div className="my-auto text-center px-2">
-                              <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-2">
-                                {currentCard.english}
-                              </h2>
-                              
-                              <p className="text-sm font-mono text-indigo-300 bg-indigo-950/60 px-3 py-1 rounded-lg inline-block border border-indigo-800/40">
-                                {currentCard.transcription}
-                              </p>
-
-                              {currentCard.exampleEn && (
-                                <div className="mt-4 p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 text-left">
-                                  <p className="text-xs sm:text-sm text-slate-200 italic font-serif">
-                                    "{currentCard.exampleEn}"
-                                  </p>
-                                  {currentCard.exampleRu && (
-                                    <p className="text-[11px] sm:text-xs text-slate-400 mt-1">
-                                      — {currentCard.exampleRu}
-                                    </p>
-                                  )}
-                                </div>
-                              )}
+                              <h2 className="text-3xl sm:text-4xl font-black text-white mb-2">{currentCard.english}</h2>
+                              <p className="text-xs text-slate-300 italic">{currentCard.exampleEn}</p>
                             </div>
-
-                            <div className="text-center text-xs text-indigo-300/70">
-                              Нажмите, чтобы перевернуть обратно
-                            </div>
+                            <div className="text-center text-xs text-indigo-300/70">Нажмите обратно</div>
                           </div>
 
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-3 gap-2.5 sm:gap-3 w-full mt-6">
-                        
-                        <button
-                          onClick={handleSkip}
-                          className="flex flex-col items-center justify-center p-3 rounded-2xl bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700/60 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg group"
-                        >
-                          <div className="flex items-center gap-1.5 mb-1 text-slate-300 font-semibold text-xs sm:text-sm">
-                            <Icon name="rotate-cw" className="w-4 h-4 text-slate-400" />
-                            <span>Пропустить</span>
-                          </div>
-                          <span className="text-[10px] text-slate-400 font-mono">← Лево</span>
+                      <div className="grid grid-cols-3 gap-3 w-full mt-6">
+                        <button onClick={handleSkip} className="p-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex flex-col items-center">
+                          <span>Пропустить</span>
                         </button>
-
-                        <button
-                          onClick={handleDone}
-                          className="flex flex-col items-center justify-center p-3 rounded-2xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg group"
-                        >
-                          <div className="flex items-center gap-1.5 mb-1 font-semibold text-xs sm:text-sm">
-                            <Icon name="check" className="w-4 h-4" />
-                            <span>Готово</span>
-                          </div>
-                          <span className="text-[10px] text-emerald-400/80 font-mono">Право →</span>
+                        <button onClick={handleDone} className="p-3 rounded-2xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white text-xs font-semibold flex flex-col items-center">
+                          <span>Готово</span>
                         </button>
-
-                        <button
-                          onClick={() => handleMastered(currentCard)}
-                          className="flex flex-col items-center justify-center p-3 rounded-2xl bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg group"
-                        >
-                          <div className="flex items-center gap-1.5 mb-1 font-semibold text-xs sm:text-sm">
-                            <Icon name="award" className="w-4 h-4" />
-                            <span>Выучил</span>
-                          </div>
-                          <span className="text-[10px] text-indigo-400/80 font-mono">Клавиша M</span>
+                        <button onClick={() => handleMastered(currentCard)} className="p-3 rounded-2xl bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white text-xs font-semibold flex flex-col items-center">
+                          <span>Выучил</span>
                         </button>
-
                       </div>
-
                     </div>
                   )
                 )}
@@ -1366,574 +1042,126 @@
             {activeTab === 'deck' && (
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
-                  <div>
-                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                      <span>Активная колода</span>
-                      <span className="text-xs font-normal px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-full border border-blue-500/20">
-                        {deck.length} слов
-                      </span>
-                    </h2>
-                    <p className="text-xs text-slate-400">Слова в вашей тренировочной сессии</p>
-                  </div>
-
-                  <div className="relative w-full sm:w-64">
-                    <input
-                      type="text"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Поиск по слову..."
-                      className="w-full pl-9 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-blue-500"
-                    />
-                    <Icon name="search" className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
-                  </div>
+                  <h2 className="text-lg font-bold text-white">Все слова ({deck.length})</h2>
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Поиск..."
+                    className="w-full sm:w-64 px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200"
+                  />
                 </div>
-
-                {filteredDeck.length === 0 ? (
-                  <div className="text-center py-12 bg-slate-900/30 rounded-2xl border border-slate-800/50">
-                    <Icon name="inbox" className="w-10 h-10 text-slate-600 mx-auto mb-2" />
-                    <p className="text-slate-400 text-sm">Слова не найдены</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {filteredDeck.map((card) => (
-                      <div 
-                        key={card.id} 
-                        className="bg-slate-900/80 hover:bg-slate-800/80 border border-slate-800/80 rounded-xl p-4 transition-all flex flex-col justify-between group"
-                      >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {filteredDeck.map((card) => (
+                    <div key={card.id} className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
+                      <div className="flex justify-between items-start">
                         <div>
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <div>
-                              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                                {card.english}
-                                <button 
-                                  onClick={() => handleSpeak(card.english)}
-                                  className="text-slate-500 hover:text-indigo-400 transition-colors"
-                                >
-                                  <Icon name="volume-2" className="w-3.5 h-3.5" />
-                                </button>
-                              </h3>
-                              <span className="text-xs font-mono text-slate-400">{card.transcription}</span>
-                            </div>
-                            <span className="text-sm font-medium text-blue-400 text-right bg-blue-950/40 px-2.5 py-1 rounded-lg border border-blue-900/30">
-                              {card.russian}
-                            </span>
-                          </div>
-
-                          {card.exampleEn && (
-                            <p className="text-xs text-slate-400 italic mt-2 border-l-2 border-slate-700 pl-2">
-                              "{card.exampleEn}"
-                            </p>
-                          )}
+                          <h3 className="text-base font-bold text-white flex items-center gap-2">
+                            {card.english}
+                            <button onClick={() => handleSpeak(card.english)} className="text-slate-500 hover:text-indigo-400">
+                              <Icon name="volume-2" className="w-3.5 h-3.5" />
+                            </button>
+                          </h3>
                         </div>
-
-                        <div className="mt-4 pt-3 border-t border-slate-800/60 flex items-center justify-between text-xs">
-                          <button
-                            onClick={() => handleMastered(card)}
-                            className="text-indigo-400 hover:text-indigo-300 flex items-center gap-1 transition-colors"
-                          >
-                            <Icon name="check-circle" className="w-3.5 h-3.5" />
-                            <span>Отметить как выученное</span>
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              setDeck(prev => prev.filter(c => c.id !== card.id));
-                              setSessionQueue(prev => prev.filter(id => id !== card.id));
-                              showToast('Слово удалено из колоды', 'info');
-                            }}
-                            className="text-slate-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
-                          >
-                            <Icon name="trash-2" className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                        <span className="text-sm font-medium text-blue-400">{card.russian}</span>
                       </div>
-                    ))}
-                  </div>
-                )}
+                      <div className="mt-4 pt-3 border-t border-slate-800 flex justify-between text-xs">
+                        <button onClick={() => handleMastered(card)} className="text-indigo-400">В выученные</button>
+                        <button onClick={() => setDeck(prev => prev.filter(c => c.id !== card.id))} className="text-red-400">Удалить</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
             {activeTab === 'mastered' && (
               <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
-                  <div>
-                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                      <span className="text-emerald-400">Выученные слова</span>
-                      <span className="text-xs font-normal px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-full border border-emerald-500/20">
-                        {masteredCards.length} слов
-                      </span>
-                    </h2>
-                    <p className="text-xs text-slate-400">Слова, которые вы успешно освоили</p>
-                  </div>
-
-                  <div className="relative w-full sm:w-64">
-                    <input
-                      type="text"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Поиск в выученных..."
-                      className="w-full pl-9 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500"
-                    />
-                    <Icon name="search" className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
-                  </div>
+                <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+                  <h2 className="text-lg font-bold text-emerald-400">Выученные слова ({masteredCards.length})</h2>
                 </div>
-
-                {filteredMastered.length === 0 ? (
-                  <div className="text-center py-12 bg-slate-900/30 rounded-2xl border border-slate-800/50">
-                    <Icon name="award" className="w-10 h-10 text-slate-600 mx-auto mb-2" />
-                    <p className="text-slate-400 text-sm">В списке выученных пока нет слов</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {filteredMastered.map((card) => (
-                      <div 
-                        key={card.id} 
-                        className="bg-slate-900/60 border border-emerald-950/60 rounded-xl p-4 transition-all flex flex-col justify-between"
-                      >
-                        <div>
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <div>
-                              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                                {card.english}
-                                <button 
-                                  onClick={() => handleSpeak(card.english)}
-                                  className="text-slate-500 hover:text-indigo-400 transition-colors"
-                                >
-                                  <Icon name="volume-2" className="w-3.5 h-3.5" />
-                                </button>
-                              </h3>
-                              <span className="text-xs font-mono text-slate-400">{card.transcription}</span>
-                            </div>
-                            <span className="text-sm font-medium text-emerald-400 text-right bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-900/30">
-                              {card.russian}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="mt-4 pt-3 border-t border-slate-800/60 flex items-center justify-between text-xs">
-                          <button
-                            onClick={() => handleRestoreCard(card)}
-                            className="text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
-                          >
-                            <Icon name="undo-2" className="w-3.5 h-3.5" />
-                            <span>Вернуть в колоду</span>
-                          </button>
-                          <span className="text-[10px] text-slate-500">Выучено</span>
-                        </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {filteredMastered.map((card) => (
+                    <div key={card.id} className="bg-slate-900/60 border border-emerald-950 rounded-xl p-4 flex justify-between items-center">
+                      <div>
+                        <h3 className="text-base font-bold text-white">{card.english}</h3>
+                        <span className="text-xs text-emerald-400">{card.russian}</span>
                       </div>
-                    ))}
-                  </div>
-                )}
+                      <button onClick={() => handleRestoreCard(card)} className="text-blue-400 text-xs">Вернуть</button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
           </main>
 
           {isSettingsOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-                <button
-                  onClick={() => setIsSettingsOpen(false)}
-                  className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"
-                >
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 relative">
+                <button onClick={() => setIsSettingsOpen(false)} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300">
                   <Icon name="x" className="w-5 h-5" />
                 </button>
-
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20">
-                    <Icon name="settings" className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white">Настройки и Синхронизация</h3>
-                    <p className="text-xs text-slate-400">Управление ключами и устройствами</p>
-                  </div>
-                </div>
-
-                <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl mb-6 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                      Ваш Код Синхронизации (Sync ID)
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      readOnly
-                      value={syncId || 'Загрузка...'}
-                      className="flex-1 px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs font-mono text-slate-300 focus:outline-none"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(syncId);
-                        showToast('Код синхронизации скопирован!', 'success');
-                      }}
-                      className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-lg flex items-center gap-1 border border-slate-700"
-                    >
-                      <Icon name="copy" className="w-3.5 h-3.5" />
-                      <span>Копировать</span>
-                    </button>
-                  </div>
-
-                  <div className="pt-3 border-t border-slate-800/80">
-                    <button
-                      type="button"
-                      onClick={handleInstallApp}
-                      className="w-full py-2.5 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-medium text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
-                    >
-                      <Icon name="smartphone" className="w-4 h-4" />
-                      <span>{isInstallable ? "📲 Установить как приложение на смартфон / ПК" : "📲 Установить иконку приложения"}</span>
-                    </button>
-                  </div>
-
-                  <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
-                    <input
-                      type="text"
-                      value={customSyncInput}
-                      onChange={(e) => setCustomSyncInput(e.target.value)}
-                      placeholder="Вставьте Sync ID с другого устройства..."
-                      className="flex-1 px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!customSyncInput.trim()) return;
-                        let extractedId = customSyncInput.trim();
-                        if (extractedId.includes('syncId=')) {
-                          try {
-                            const urlObj = new URL(extractedId);
-                            extractedId = urlObj.searchParams.get('syncId') || extractedId;
-                          } catch(e) {}
-                        }
-                        setSyncId(extractedId);
-                        localStorage.setItem('lingua_sync_id', extractedId);
-                        setCustomSyncInput('');
-                        showToast('Код синхронизации обновлен!', 'success');
-                      }}
-                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg transition-all"
-                    >
-                      Подключить
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-semibold text-slate-300">Ключ Google Gemini API</h4>
-                    <span className="text-[10px] text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800/50">
-                      Встроен общий ключ
-                    </span>
-                  </div>
-                  <input
-                    type="password"
-                    value={tempApiKeyInput}
-                    onChange={(e) => setTempApiKeyInput(e.target.value)}
-                    placeholder="AQ..."
-                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500"
-                  />
-                  
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-500">Системный ключ установлен</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setApiKey(tempApiKeyInput.trim());
-                        setIsSettingsOpen(false);
-                        showToast('API Ключ сохранен!', 'success');
-                      }}
-                      className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition-all"
-                    >
-                      Сохранить ключ
-                    </button>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3">
-                  <button
-                    type="button"
-                    onClick={handleExportDeck}
-                    className="w-full sm:w-auto px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-xl flex items-center justify-center gap-2 border border-slate-700"
-                  >
-                    <Icon name="download" className="w-4 h-4" />
-                    <span>Скачать файл колоды</span>
+                <h3 className="text-lg font-bold text-white mb-4">Настройки и Управление</h3>
+                
+                <div className="space-y-3">
+                  <button onClick={handleExportDeck} className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl text-slate-200">
+                    📥 Экспортировать бэкап колоды
                   </button>
-
-                  <label className="w-full sm:w-auto px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium rounded-xl flex items-center justify-center gap-2 border border-slate-700 cursor-pointer">
-                    <Icon name="upload" className="w-4 h-4" />
-                    <span>Импортировать файл</span>
+                  <label className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl text-slate-200 flex items-center justify-center cursor-pointer">
+                    📤 Импортировать файл
                     <input type="file" accept=".json" onChange={handleImportDeck} className="hidden" />
                   </label>
                 </div>
-
-              </div>
-            </div>
-          )}
-
-          {isManualAddOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
-                <button
-                  onClick={() => setIsManualAddOpen(false)}
-                  className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"
-                >
-                  <Icon name="x" className="w-5 h-5" />
-                </button>
-
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20">
-                    <Icon name="edit-3" className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white">Добавить карточку вручную</h3>
-                    <p className="text-xs text-slate-400">Без использования AI-генерации</p>
-                  </div>
-                </div>
-
-                <form onSubmit={handleAddManualCard} className="space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-400 mb-1">
-                        Слово на английском <span className="text-red-400">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={manualForm.english}
-                        onChange={(e) => setManualForm(f => ({ ...f, english: e.target.value }))}
-                        placeholder="e.g. Opportunity"
-                        className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-400 mb-1">
-                        Перевод на русский <span className="text-red-400">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={manualForm.russian}
-                        onChange={(e) => setManualForm(f => ({ ...f, russian: e.target.value }))}
-                        placeholder="e.g. Возможность"
-                        className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-blue-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1">
-                      Транскрипция (опционально)
-                    </label>
-                    <input
-                      type="text"
-                      value={manualForm.transcription}
-                      onChange={(e) => setManualForm(f => ({ ...f, transcription: e.target.value }))}
-                      placeholder="e.g. [/ˌɒpəˈtjuːnəti/]"
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1">
-                      Пример на английском (опционально)
-                    </label>
-                    <input
-                      type="text"
-                      value={manualForm.exampleEn}
-                      onChange={(e) => setManualForm(f => ({ ...f, exampleEn: e.target.value }))}
-                      placeholder="e.g. Take every opportunity to learn."
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1">
-                      Перевод примера (опционально)
-                    </label>
-                    <input
-                      type="text"
-                      value={manualForm.exampleRu}
-                      onChange={(e) => setManualForm(f => ({ ...f, exampleRu: e.target.value }))}
-                      placeholder="e.g. Используй любую возможность учиться."
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-blue-500"
-                    />
-                  </div>
-
-                  <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-800/80">
-                    <button
-                      type="button"
-                      onClick={() => setIsManualAddOpen(false)}
-                      className="px-3 py-2 text-xs text-slate-400 hover:text-slate-200"
-                    >
-                      Отмена
-                    </button>
-
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium text-xs rounded-xl transition-all shadow-md"
-                    >
-                      Создать карточку
-                    </button>
-                  </div>
-                </form>
               </div>
             </div>
           )}
 
           {isBulkAddOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl relative max-h-[90vh] flex flex-col justify-between">
-                
-                <button
-                  onClick={() => setIsBulkAddOpen(false)}
-                  className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"
-                >
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 relative flex flex-col">
+                <button onClick={() => setIsBulkAddOpen(false)} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300">
                   <Icon name="x" className="w-5 h-5" />
                 </button>
+                <h3 className="text-lg font-bold text-white mb-2">Массовая авто-загрузка</h3>
+                <p className="text-xs text-slate-400 mb-4">Вставьте список слов (каждое с новой строки). Приложение само их переведет!</p>
+                
+                <textarea
+                  rows={6}
+                  value={bulkInput}
+                  onChange={(e) => setBulkInput(e.target.value)}
+                  placeholder="Apples&#10;Running&#10;Beautiful&#10;Собака&#10;Книга"
+                  className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 mb-4 resize-none"
+                />
 
-                <div>
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20">
-                      <Icon name="list-plus" className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-white">Массовая загрузка слов</h3>
-                      <p className="text-xs text-slate-400">Вставьте список слов или готовых пар с переводом</p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2 mb-3 text-xs">
-                    <span className="text-slate-500">Примеры:</span>
-                    <button
-                      type="button"
-                      onClick={() => setBulkInput("Ambitious\nCompassion\nInevitable\nUnprecedented\nPhenomenon")}
-                      className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-blue-300 rounded-lg border border-slate-700"
-                    >
-                      Список английских слов
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setBulkInput("Adventure - Приключение\nChallenge - Вызов\nDestination - Пункт назначения\nOpportunity - Возможность")}
-                      className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-indigo-300 rounded-lg border border-slate-700"
-                    >
-                      Готовые пары (Слово - Перевод)
-                    </button>
-                  </div>
-
-                  <textarea
-                    rows={7}
-                    value={bulkInput}
-                    onChange={(e) => setBulkInput(e.target.value)}
-                    placeholder={`Вставьте список слов по одному на строку, например:\n\nSerendipity\nPerseverance\n\nили в формате:\nApple - Яблоко\nBook - Книга`}
-                    className="w-full p-3.5 bg-slate-950 border border-slate-800 rounded-xl text-xs sm:text-sm font-mono text-slate-100 placeholder-slate-600 focus:outline-none focus:border-indigo-500 resize-none shadow-inner"
-                  />
-                  
-                  <p className="text-[11px] text-slate-400 mt-2">
-                    💡 <strong>✨ AI Генерация</strong> переведет слова, создаст транскрипцию и примеры. <strong>⚡ Быстрый импорт</strong> мгновенно добавит список пар вида <code className="text-indigo-300 bg-slate-950 px-1 py-0.5 rounded">Слово - Перевод</code>.
-                  </p>
-                </div>
-
-                <div className="pt-4 mt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-2.5">
+                <div className="flex justify-end gap-2">
+                  <button onClick={() => setIsBulkAddOpen(false)} className="px-4 py-2 text-xs text-slate-400">Отмена</button>
                   <button
-                    type="button"
-                    onClick={() => setIsBulkAddOpen(false)}
-                    className="w-full sm:w-auto px-4 py-2 text-xs text-slate-400 hover:text-slate-200"
+                    onClick={handleBulkAddAuto}
+                    disabled={isBulkProcessing || !bulkInput.trim()}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl disabled:opacity-50"
                   >
-                    Отмена
+                    {isBulkProcessing ? 'Переводим список...' : 'Запустить авто-импорт'}
                   </button>
-
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <button
-                      type="button"
-                      onClick={handleBulkAddFast}
-                      disabled={isBulkProcessing || !bulkInput.trim()}
-                      className="flex-1 sm:flex-none px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition-all disabled:opacity-50"
-                    >
-                      ⚡ Быстрый импорт
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleBulkAddAI}
-                      disabled={isBulkProcessing || !bulkInput.trim()}
-                      className="flex-1 sm:flex-none px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-semibold rounded-xl transition-all shadow-lg shadow-indigo-600/25 flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
-                      {isBulkProcessing ? (
-                        <>
-                          <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                          <span>AI Обработка...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Icon name="wand-2" className="w-4 h-4" />
-                          <span>✨ AI Генерация</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
                 </div>
-
               </div>
             </div>
           )}
 
-          <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/90 backdrop-blur-xl border-t border-slate-800/80 flex items-center justify-around px-2 py-1.5 pb-[calc(env(safe-area-inset-bottom,0px)+0.375rem)]">
-            <button
-              onClick={() => setActiveTab('study')}
-              className={`flex flex-col items-center justify-center p-1.5 flex-1 rounded-xl transition-all ${
-                activeTab === 'study' ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'
-              }`}
-            >
-              <div className="relative">
-                <Icon name="layers" className="w-6 h-6 mb-1" />
-                {sessionQueue.length > 0 && (
-                  <span className="absolute -top-1 -right-2 px-1.5 py-0.5 text-[9px] bg-blue-600 rounded-full text-white leading-none shadow-md">
-                    {sessionQueue.length}
-                  </span>
-                )}
-              </div>
-              <span className="text-[10px] font-medium">Учеба</span>
+          <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/90 backdrop-blur-xl border-t border-slate-800 flex items-center justify-around px-2 py-2">
+            <button onClick={() => setActiveTab('study')} className={`flex flex-col items-center flex-1 ${activeTab === 'study' ? 'text-blue-400' : 'text-slate-500'}`}>
+              <Icon name="layers" className="w-5 h-5 mb-1" />
+              <span className="text-[10px]">Учеба</span>
             </button>
-
-            <button
-              onClick={() => setActiveTab('deck')}
-              className={`flex flex-col items-center justify-center p-1.5 flex-1 rounded-xl transition-all ${
-                activeTab === 'deck' ? 'text-blue-400' : 'text-slate-500 hover:text-slate-300'
-              }`}
-            >
-              <div className="relative">
-                <Icon name="book-open" className="w-6 h-6 mb-1" />
-                <span className="absolute -top-1 -right-2 px-1.5 py-0.5 text-[9px] bg-slate-800 rounded-full text-slate-300 leading-none border border-slate-700">
-                  {deck.length}
-                </span>
-              </div>
-              <span className="text-[10px] font-medium">Слова</span>
+            <button onClick={() => setActiveTab('deck')} className={`flex flex-col items-center flex-1 ${activeTab === 'deck' ? 'text-blue-400' : 'text-slate-500'}`}>
+              <Icon name="book-open" className="w-5 h-5 mb-1" />
+              <span className="text-[10px]">Слова</span>
             </button>
-
-            <button
-              onClick={() => setActiveTab('mastered')}
-              className={`flex flex-col items-center justify-center p-1.5 flex-1 rounded-xl transition-all ${
-                activeTab === 'mastered' ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'
-              }`}
-            >
-              <div className="relative">
-                <Icon name="trophy" className="w-6 h-6 mb-1" />
-                <span className="absolute -top-1 -right-2 px-1.5 py-0.5 text-[9px] bg-emerald-950 text-emerald-400 border border-emerald-800/50 rounded-full leading-none shadow-md">
-                  {masteredCards.length}
-                </span>
-              </div>
-              <span className="text-[10px] font-medium">Выучено</span>
+            <button onClick={() => setActiveTab('mastered')} className={`flex flex-col items-center flex-1 ${activeTab === 'mastered' ? 'text-emerald-400' : 'text-slate-500'}`}>
+              <Icon name="trophy" className="w-5 h-5 mb-1" />
+              <span className="text-[10px]">Выучено</span>
             </button>
           </nav>
-
-          <footer className="hidden sm:block border-t border-slate-800/60 py-4 px-4 text-center text-xs text-slate-500 bg-slate-950">
-            <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
-              <p>LinguaCards AI — Персональный тренажер английских слов</p>
-              <p className="text-slate-600">Синхронизировано в облаке • Gemini AI & Web Speech API</p>
-            </div>
-          </footer>
 
         </div>
       );
