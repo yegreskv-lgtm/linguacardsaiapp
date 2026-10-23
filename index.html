@@ -70,15 +70,6 @@
   
   <div id="root" class="flex-grow flex flex-col"></div>
 
-  <!-- Firebase Modular SDK Imports for React -->
-  <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-    import { getAuth, signInAnonymously, signInWithCustomToken } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-    import { getFirestore, doc, setDoc, onSnapshot, getDoc } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
-
-    window.FirebaseSDK = { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, getFirestore, doc, setDoc, onSnapshot, getDoc };
-  </script>
-
   <script type="text/babel" data-type="module">
     const { useState, useEffect, useMemo, useRef } = React;
 
@@ -95,6 +86,9 @@
         case 'key': return <svg {...iconProps}><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.778-7.778zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>;
         case 'trash-2': return <svg {...iconProps}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>;
         case 'shuffle': return <svg {...iconProps}><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4"/><path d="M2 6h1.4c1.3 0 2.5.6 3.3 1.7l.8 1.1"/><path d="M14.4 14.2l.8 1.1c.8 1.1 2 1.7 3.3 1.7H22"/><path d="m18 18 4 4-4 4"/></svg>;
+        case 'qrcode': return <svg {...iconProps}><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/></svg>;
+        case 'share-2': return <svg {...iconProps}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>;
+        case 'clipboard': return <svg {...iconProps}><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>;
         case 'alert-circle': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>;
         case 'check-circle-2': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>;
         case 'info': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>;
@@ -135,21 +129,6 @@
     };
 
     function App() {
-      const appId = typeof __app_id !== 'undefined' ? __app_id : 'lingua-cards-app';
-      const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-
-      // Главный ID синхронизации: если на компьютере его нет, генерируем мастер-ключ
-      const [syncId, setSyncId] = useState(() => {
-        const params = new URLSearchParams(window.location.search);
-        const urlSync = params.get('syncId') || params.get('sync');
-        if (urlSync) return urlSync;
-        const saved = localStorage.getItem('lingua_sync_id');
-        if (saved) return saved;
-        const generated = 'master_' + Math.random().toString(36).substring(2, 11);
-        localStorage.setItem('lingua_sync_id', generated);
-        return generated;
-      });
-
       const [deck, setDeck] = useState(() => {
         const saved = localStorage.getItem('lingua_deck');
         return saved ? JSON.parse(saved) : INITIAL_CARDS;
@@ -174,92 +153,45 @@
       const [bulkInput, setBulkInput] = useState('');
       const [isBulkProcessing, setIsBulkProcessing] = useState(false);
       const [editingCard, setEditingCard] = useState(null);
+
+      // Данные для прямого переноса через QR-код и текстовый код
+      const [transferString, setTransferString] = useState('');
+      const [importTransferInput, setImportTransferInput] = useState('');
       const [qrSvgHtml, setQrSvgHtml] = useState('');
 
-      // При открытии по QR-коду с телефона сохраняем этот syncId и сразу загружаем данные
+      // При загрузке страницы проверяем, не передан ли код переноса прямо в URL (например через сканирование QR-кода)
       useEffect(() => {
         const params = new URLSearchParams(window.location.search);
-        const urlSyncId = params.get('syncId') || params.get('sync');
-        if (urlSyncId) {
-          setSyncId(urlSyncId);
-          localStorage.setItem('lingua_sync_id', urlSyncId);
-          showToast('Синхронизация по QR-коду успешна! Загрузка слов...', 'success');
-          window.history.replaceState({}, document.title, window.location.origin + window.location.pathname);
+        const urlData = params.get('data') || params.get('d');
+        if (urlData) {
+          try {
+            const jsonString = decodeURIComponent(escape(atob(urlData)));
+            const parsed = JSON.parse(jsonString);
+            if (Array.isArray(parsed.deck)) {
+              setDeck(parsed.deck);
+              if (Array.isArray(parsed.masteredCards)) {
+                setMasteredCards(parsed.masteredCards);
+              }
+              showToast('Все слова и достижения успешно загружены с телефона/компьютера! 🎉', 'success');
+              window.history.replaceState({}, document.title, window.location.origin + window.location.pathname);
+            }
+          } catch (e) {
+            console.error(e);
+            showToast('Не удалось импортировать данные из QR-кода', 'error');
+          }
         }
       }, []);
 
-      // Инициализация Firebase Auth
-      useEffect(() => {
-        if (!firebaseConfig || !window.FirebaseSDK) return;
-        const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken } = window.FirebaseSDK;
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-
-        const initAuth = async () => {
-          try {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-              await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-              await signInAnonymously(auth);
-            }
-          } catch (e) { console.error(e); }
-        };
-        initAuth();
-      }, []);
-
-      // Синхронизация в реальном времени (слушаем изменения в облаке по syncId)
-      useEffect(() => {
-        if (!firebaseConfig || !window.FirebaseSDK) return;
-        const { initializeApp, getFirestore, doc, onSnapshot, setDoc } = window.FirebaseSDK;
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const docRef = doc(db, 'artifacts', appId, 'users', syncId, 'data', 'user_deck');
-
-        const unsubscribe = onSnapshot(docRef, (docSnap) => {
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            if (Array.isArray(data.deck) && data.deck.length > 0) {
-              setDeck(data.deck);
-            }
-            if (Array.isArray(data.mastered)) {
-              setMasteredCards(data.mastered);
-            }
-          } else {
-            // Если документ пустой, записываем текущие данные компьютера
-            setDoc(docRef, { deck, mastered: masteredCards, updatedAt: Date.now() }, { merge: true });
-          }
-        }, () => {});
-
-        return () => unsubscribe();
-      }, [syncId]);
-
-      // Функция отправки данных в облако при изменении слов на компьютере
-      const saveToCloud = async (targetSyncId, newDeck, newMastered) => {
-        if (!targetSyncId || !firebaseConfig || !window.FirebaseSDK) return;
-        try {
-          const { initializeApp, getFirestore, doc, setDoc } = window.FirebaseSDK;
-          const app = initializeApp(firebaseConfig);
-          const db = getFirestore(app);
-          const docRef = doc(db, 'artifacts', appId, 'users', targetSyncId, 'data', 'user_deck');
-          await setDoc(docRef, { deck: newDeck, mastered: newMastered, updatedAt: Date.now() }, { merge: true });
-        } catch (e) { console.error(e); }
-      };
-
-      useEffect(() => {
-        localStorage.setItem('lingua_deck', JSON.stringify(deck));
-        if (syncId) saveToCloud(syncId, deck, masteredCards);
-      }, [deck]);
-
-      useEffect(() => {
-        localStorage.setItem('lingua_mastered', JSON.stringify(masteredCards));
-        if (syncId) saveToCloud(syncId, deck, masteredCards);
-      }, [masteredCards]);
-
-      // Генерация QR-кода в настройках (передает текущий syncId на телефон)
+      // Генерация сжатых данных и QR-кода для вкладки «Настройки»
       useEffect(() => {
         if (activeTab !== 'settings') return;
         try {
-          const currentUrl = `${window.location.origin}${window.location.pathname}?syncId=${syncId}`;
+          const payload = JSON.stringify({ deck, masteredCards });
+          const encoded = btoa(unescape(encodeURIComponent(payload)));
+          setTransferString(encoded);
+
+          // Формируем прямую ссылку с данными
+          const currentUrl = `${window.location.origin}${window.location.pathname}?data=${encoded}`;
           const qr = qrcode(0, 'M');
           qr.addData(currentUrl);
           qr.make();
@@ -267,7 +199,46 @@
         } catch (e) {
           console.error(e);
         }
-      }, [activeTab, syncId]);
+      }, [activeTab, deck, masteredCards]);
+
+      // Ручной импорт по текстовому коду
+      const handleImportTransferCode = () => {
+        const raw = importTransferInput.trim();
+        if (!raw) {
+          showToast('Введите код переноса', 'error');
+          return;
+        }
+        try {
+          let jsonString = '';
+          try {
+            jsonString = decodeURIComponent(escape(atob(raw)));
+          } catch (err) {
+            jsonString = raw;
+          }
+          const parsed = JSON.parse(jsonString);
+          if (Array.isArray(parsed.deck)) {
+            setDeck(parsed.deck);
+            if (Array.isArray(parsed.masteredCards)) {
+              setMasteredCards(parsed.masteredCards);
+            }
+            setImportTransferInput('');
+            setActiveTab('study');
+            showToast('Все слова и достижения успешно загружены! 🎉', 'success');
+          } else {
+            showToast('Неверный формат кода', 'error');
+          }
+        } catch (e) {
+          showToast('Ошибка расшифровки кода', 'error');
+        }
+      };
+
+      useEffect(() => {
+        localStorage.setItem('lingua_deck', JSON.stringify(deck));
+      }, [deck]);
+
+      useEffect(() => {
+        localStorage.setItem('lingua_mastered', JSON.stringify(masteredCards));
+      }, [masteredCards]);
 
       useEffect(() => {
         const masteredIds = new Set(masteredCards.map(m => m.id));
@@ -570,7 +541,7 @@
                   <h1 className="font-bold text-base sm:text-lg leading-tight text-white flex items-center gap-2">
                     LinguaCards <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">Pro</span>
                   </h1>
-                  <p className="text-[11px] text-slate-400 hidden sm:block">Облачная синхронизация</p>
+                  <p className="text-[11px] text-slate-400 hidden sm:block">Прямой перенос данных</p>
                 </div>
               </div>
 
@@ -785,19 +756,67 @@
 
             {activeTab === 'settings' && (
               <div className="max-w-md mx-auto w-full space-y-4 py-2">
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center">
-                  <h3 className="text-lg font-bold text-white mb-2">Облачный QR-код сессии</h3>
-                  <p className="text-xs text-slate-400 mb-4">Отсканируйте этот QR-код камерой телефона — сайт мгновенно откроется со всеми вашими словами и выученными карточками!</p>
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center shadow-2xl">
+                  <h3 className="text-lg font-bold text-white mb-1">Перенос на телефон по QR-коду</h3>
+                  <p className="text-xs text-slate-400 mb-4">Отсканируйте этот QR-код камерой телефона — он содержит все ваши слова ({deck.length}) и достижения напрямую!</p>
                   
                   <div className="flex flex-col items-center justify-center bg-slate-950 p-4 rounded-2xl border border-slate-800 mb-5">
                     <div className="bg-white p-3 rounded-xl shadow-md w-48 h-48 flex items-center justify-center" dangerouslySetInnerHTML={{ __html: qrSvgHtml }}></div>
-                    <span className="text-[11px] text-emerald-400 mt-2 font-medium flex items-center gap-1">
-                      <Icon name="check-circle-2" className="w-3.5 h-3.5" /> Синхронизация по ID: <code className="text-slate-200">{syncId}</code>
+                    <span className="text-[11px] text-emerald-400 mt-3 font-medium flex items-center gap-1">
+                      <Icon name="check-circle-2" className="w-3.5 h-3.5" /> Все слова упакованы в код
                     </span>
                   </div>
 
-                  <div className="space-y-3 pt-2 border-t border-slate-800 text-left">
+                  <div className="space-y-3 pt-3 border-t border-slate-800 text-left">
+                    <h4 className="text-xs font-bold text-slate-200">Или перенос через текстовый код:</h4>
                     <div className="flex gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={transferString}
+                        className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-400 select-all truncate"
+                        placeholder="Код переноса"
+                      />
+                      <button
+                        onClick={() => {
+                          const textArea = document.createElement("textarea");
+                          textArea.value = transferString;
+                          document.body.appendChild(textArea);
+                          textArea.select();
+                          try {
+                            document.execCommand('copy');
+                            showToast('Код скопирован! Отправьте его на телефон', 'success');
+                          } catch (err) {
+                            showToast('Не удалось скопировать', 'error');
+                          }
+                          document.body.removeChild(textArea);
+                        }}
+                        className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl shrink-0 flex items-center gap-1"
+                      >
+                        <Icon name="clipboard" className="w-3.5 h-3.5" /> Копировать
+                      </button>
+                    </div>
+
+                    <div className="pt-2">
+                      <label className="block text-[11px] text-slate-400 mb-1">Вставьте код на телефоне и нажмите Применить:</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={importTransferInput}
+                          onChange={(e) => setImportTransferInput(e.target.value)}
+                          placeholder="Вставьте код сюда..."
+                          className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-100"
+                        />
+                        <button
+                          onClick={handleImportTransferCode}
+                          className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shrink-0"
+                        >
+                          Применить
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="pt-3 flex gap-2">
                       <button onClick={handleExportDeck} className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl text-slate-200 flex items-center justify-center gap-2">
                         <Icon name="download" className="w-4 h-4" /> Экспорт JSON
                       </button>
