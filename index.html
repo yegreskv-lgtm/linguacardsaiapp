@@ -70,15 +70,6 @@
   
   <div id="root" class="flex-grow flex flex-col"></div>
 
-  <!-- Firebase Modular SDK Imports for React -->
-  <script type="module">
-    import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
-    import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
-
-    window.FirebaseSDK = { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged, getFirestore, doc, setDoc, onSnapshot };
-  </script>
-
   <script type="text/babel" data-type="module">
     const { useState, useEffect, useMemo, useRef } = React;
 
@@ -94,7 +85,9 @@
         case 'wand-2': return <svg {...iconProps}><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.21 1.21 0 0 0 1.72 0L21.64 5.36a1.21 1.21 0 0 0 0-1.72z"/><path d="m14 7 3 3"/><path d="M5 6v1"/><path d="M19 17v1"/><path d="M10 2v1"/><path d="M7 8H6"/><path d="M21 12h-1"/></svg>;
         case 'key': return <svg {...iconProps}><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.778-7.778zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>;
         case 'trash-2': return <svg {...iconProps}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>;
-        case 'qrcode': return <svg {...iconProps}><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/></svg>;
+        case 'shuffle': return <svg {...iconProps}><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4"/><path d="M2 6h1.4c1.3 0 2.5.6 3.3 1.7l.8 1.1"/><path d="M14.4 14.2l.8 1.1c.8 1.1 2 1.7 3.3 1.7H22"/><path d="m18 18 4 4-4 4"/></svg>;
+        case 'share-2': return <svg {...iconProps}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>;
+        case 'clipboard': return <svg {...iconProps}><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>;
         case 'alert-circle': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>;
         case 'check-circle-2': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>;
         case 'info': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>;
@@ -135,23 +128,6 @@
     };
 
     function App() {
-      const appId = typeof __app_id !== 'undefined' ? __app_id : 'lingua-cards-app';
-      const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
-
-      const [authUser, setAuthUser] = useState(null);
-      const [syncId, setSyncId] = useState(() => {
-        const params = new URLSearchParams(window.location.search);
-        const urlSync = params.get('syncId') || params.get('sync');
-        if (urlSync) return urlSync;
-        const saved = localStorage.getItem('lingua_sync_id');
-        if (saved) return saved;
-        const generated = 'user_' + Math.random().toString(36).substring(2, 11);
-        localStorage.setItem('lingua_sync_id', generated);
-        return generated;
-      });
-
-      const [isCloudActive, setIsCloudActive] = useState(false);
-
       const [deck, setDeck] = useState(() => {
         const saved = localStorage.getItem('lingua_deck');
         return saved ? JSON.parse(saved) : INITIAL_CARDS;
@@ -177,109 +153,80 @@
       const [bulkInput, setBulkInput] = useState('');
       const [isBulkProcessing, setIsBulkProcessing] = useState(false);
       const [editingCard, setEditingCard] = useState(null);
+
+      // Состояния для переноса данных
+      const [transferString, setTransferString] = useState('');
+      const [importTransferInput, setImportTransferInput] = useState('');
       const [qrSvgHtml, setQrSvgHtml] = useState('');
 
-      useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const urlSyncId = params.get('syncId') || params.get('sync');
-        if (urlSyncId) {
-          setSyncId(urlSyncId);
-          localStorage.setItem('lingua_sync_id', urlSyncId);
-          showToast('Облачная синхронизация подключена! 📱', 'success');
-          window.history.replaceState({}, document.title, window.location.origin + window.location.pathname);
-        }
-      }, []);
-
-      // Генерация QR-кода для настроек
+      // Генерация строки данных для переноса (включает слова и выученные достижения)
       useEffect(() => {
         if (!isSettingsOpen) return;
         try {
-          const currentUrl = `${window.location.origin}${window.location.pathname}?syncId=${syncId}`;
+          const payload = JSON.stringify({ deck, masteredCards });
+          const encoded = btoa(unescape(encodeURIComponent(payload)));
+          setTransferString(encoded);
+
+          // Генерируем QR-код сжатых данных (чтобы камера телефона могла считать весь объем словаря напрямую)
           const qr = qrcode(0, 'M');
-          qr.addData(currentUrl);
+          qr.addData(encoded);
           qr.make();
           setQrSvgHtml(qr.createSvgTag({ scalable: true, margin: 2 }));
         } catch (e) {
           console.error(e);
         }
-      }, [isSettingsOpen, syncId]);
+      }, [isSettingsOpen, deck, masteredCards]);
 
-      useEffect(() => {
-        if (!firebaseConfig || !window.FirebaseSDK) return;
-        const { initializeApp, getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } = window.FirebaseSDK;
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-
-        const initAuth = async () => {
-          try {
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-              await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-              await signInAnonymously(auth);
-            }
-          } catch (e) { console.error(e); }
-        };
-        initAuth();
-
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-          setAuthUser(user);
-        });
-        return () => unsubscribe();
-      }, []);
-
-      useEffect(() => {
-        if (!firebaseConfig || !window.FirebaseSDK) {
-          setIsCloudActive(false);
+      // Функция импорта из текстового кода переноса
+      const handleImportTransferCode = () => {
+        const raw = importTransferInput.trim();
+        if (!raw) {
+          showToast('Введите код переноса', 'error');
           return;
         }
-        const { initializeApp, getFirestore, doc, onSnapshot } = window.FirebaseSDK;
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const docRef = doc(db, 'artifacts', appId, 'users', syncId, 'data', 'user_deck');
-
-        const unsubscribe = onSnapshot(docRef, (docSnap) => {
-          if (docSnap.exists()) {
-            const data = docSnap.data();
-            if (Array.isArray(data.deck)) setDeck(data.deck);
-            if (Array.isArray(data.mastered)) setMasteredCards(data.mastered);
-            setIsCloudActive(true);
-          } else {
-            saveToCloud(syncId, deck, masteredCards);
-            setIsCloudActive(true);
-          }
-        }, () => setIsCloudActive(false));
-        return () => unsubscribe();
-      }, [syncId]);
-
-      const saveToCloud = async (targetSyncId, newDeck, newMastered) => {
-        if (!targetSyncId || !firebaseConfig || !window.FirebaseSDK) return;
         try {
-          const { initializeApp, getFirestore, doc, setDoc } = window.FirebaseSDK;
-          const app = initializeApp(firebaseConfig);
-          const db = getFirestore(app);
-          const docRef = doc(db, 'artifacts', appId, 'users', targetSyncId, 'data', 'user_deck');
-          await setDoc(docRef, { deck: newDeck, mastered: newMastered, updatedAt: Date.now() }, { merge: true });
-        } catch (e) { console.error(e); }
+          let jsonString = '';
+          try {
+            jsonString = decodeURIComponent(escape(atob(raw)));
+          } catch (err) {
+            jsonString = raw; // Если вставили прямой JSON
+          }
+          const parsed = JSON.parse(jsonString);
+          if (Array.isArray(parsed.deck)) {
+            setDeck(parsed.deck);
+            if (Array.isArray(parsed.masteredCards)) {
+              setMasteredCards(parsed.masteredCards);
+            }
+            setImportTransferInput('');
+            setIsSettingsOpen(false);
+            showToast('Все слова и достижения успешно загружены! 🎉', 'success');
+          } else {
+            showToast('Неверный формат кода', 'error');
+          }
+        } catch (e) {
+          showToast('Ошибка расшифровки кода', 'error');
+        }
       };
 
       useEffect(() => {
         localStorage.setItem('lingua_deck', JSON.stringify(deck));
-        if (syncId) saveToCloud(syncId, deck, masteredCards);
       }, [deck]);
 
       useEffect(() => {
         localStorage.setItem('lingua_mastered', JSON.stringify(masteredCards));
-        if (syncId) saveToCloud(syncId, deck, masteredCards);
       }, [masteredCards]);
 
       useEffect(() => {
+        const masteredIds = new Set(masteredCards.map(m => m.id));
+        const activeDeck = deck.filter(c => !masteredIds.has(c.id));
+        
         setSessionQueue(prev => {
-          const validIds = new Set(deck.map(c => c.id));
+          const validIds = new Set(activeDeck.map(c => c.id));
           const filtered = prev.filter(id => validIds.has(id));
-          if (filtered.length === 0 && deck.length > 0) return deck.map(c => c.id);
+          if (filtered.length === 0 && activeDeck.length > 0) return activeDeck.map(c => c.id);
           return filtered;
         });
-      }, [deck]);
+      }, [deck, masteredCards]);
 
       const showToast = (message, type = 'info') => {
         setToast({ message, type });
@@ -384,7 +331,6 @@
           };
 
           setDeck(prev => [newCard, ...prev]);
-          setSessionQueue(prev => [...prev, newCard.id]);
           setNewWordInput('');
           showToast(`Слово "${newCard.english}" добавлено! 🎉`, 'success');
         } catch (err) {
@@ -416,7 +362,6 @@
           }
 
           setDeck(prev => [...newCards, ...prev]);
-          setSessionQueue(prev => [...newCards.map(c => c.id), ...prev]);
           setBulkInput('');
           setIsBulkAddOpen(false);
           showToast(`Успешно загружено ${newCards.length} слов! 🚀`, 'success');
@@ -450,20 +395,36 @@
         if (!masteredCards.some(c => c.id === cardToMaster.id)) {
           setMasteredCards(prev => [cardToMaster, ...prev]);
         }
-        setSessionQueue(prev => prev.filter(id => id !== cardToMaster.id));
-        showToast(`Слово "${cardToMaster.english}" перенесено в выученные! 🎉`, 'success');
+        showToast(`Слово "${cardToMaster.english}" перенесено в выученные и скрыто из учебы! 🎉`, 'success');
       };
 
       const handleRestoreCard = (card) => {
         setMasteredCards(prev => prev.filter(c => c.id !== card.id));
-        showToast('Слово убрано из выученных', 'info');
+        setSessionQueue(prev => [...prev, card.id]);
+        showToast('Слово возвращено в активную колоду учебы', 'info');
       };
 
       const handleResetSession = () => {
-        setSessionQueue(deck.map(c => c.id));
+        const masteredIds = new Set(masteredCards.map(m => m.id));
+        const activeIds = deck.filter(c => !masteredIds.has(c.id)).map(c => c.id);
+        setSessionQueue(activeIds);
         setCurrentCardIndex(0);
         setIsFlipped(false);
         showToast('Сессия перезапущена!', 'info');
+      };
+
+      const handleShuffleSession = () => {
+        if (sessionQueue.length <= 1) return;
+        setIsFlipped(false);
+        setSessionQueue(prev => {
+          const shuffled = [...prev];
+          for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+          }
+          return shuffled;
+        });
+        showToast('Карточки перемешаны! 🔀', 'info');
       };
 
       const handleSpeak = (text) => {
@@ -557,7 +518,7 @@
                   <h1 className="font-bold text-base sm:text-lg leading-tight text-white flex items-center gap-2">
                     LinguaCards <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase">Pro</span>
                   </h1>
-                  <p className="text-[11px] text-slate-400 hidden sm:block">Синхронизация по QR-коду</p>
+                  <p className="text-[11px] text-slate-400 hidden sm:block">Тренажер с автопереводом</p>
                 </div>
               </div>
 
@@ -621,11 +582,19 @@
                   <span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 border border-slate-700">
                     Осталось в сессии: <strong className="text-blue-400">{sessionQueue.length}</strong>
                   </span>
-                  {sessionQueue.length < deck.length && (
-                    <button onClick={handleResetSession} className="text-xs text-slate-400 hover:text-blue-400 flex items-center gap-1">
-                      <Icon name="rotate-ccw" className="w-3.5 h-3.5" /> Сбросить
-                    </button>
-                  )}
+                  
+                  <div className="flex items-center gap-3">
+                    {sessionQueue.length > 1 && (
+                      <button onClick={handleShuffleSession} className="text-xs text-slate-300 hover:text-indigo-400 flex items-center gap-1 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
+                        <Icon name="shuffle" className="w-3.5 h-3.5 text-indigo-400" /> Перемешать
+                      </button>
+                    )}
+                    {sessionQueue.length < deck.length && (
+                      <button onClick={handleResetSession} className="text-xs text-slate-400 hover:text-blue-400 flex items-center gap-1">
+                        <Icon name="rotate-ccw" className="w-3.5 h-3.5" /> Сбросить
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {sessionQueue.length === 0 ? (
@@ -633,8 +602,9 @@
                     <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
                       <Icon name="party-popper" className="w-8 h-8" />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-100 mb-2">Все карточки пройдены!</h3>
-                    <button onClick={handleResetSession} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium">Повторить снова</button>
+                    <h3 className="text-xl font-bold text-slate-100 mb-2">Все активные карточки пройдены!</h3>
+                    <p className="text-xs text-slate-400 mb-4">Выученные слова скрыты из сессии. Можете повторить или добавить новые.</p>
+                    <button onClick={handleResetSession} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium">Повторить сессию</button>
                   </div>
                 ) : (
                   currentCard && (
@@ -713,7 +683,7 @@
                         <div className="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center text-xs">
                           <div className="flex items-center gap-3">
                             <button onClick={() => handleMastered(card)} className={`${isMastered ? 'text-emerald-400 font-semibold' : 'text-indigo-400 hover:text-indigo-300'}`}>
-                              {isMastered ? '✓ Выучено' : 'В выученные'}
+                              {isMastered ? '✓ Выучено (скрыто)' : 'В выученные'}
                             </button>
                             <button onClick={() => setEditingCard({ ...card })} className="text-slate-400 hover:text-blue-400 flex items-center gap-1" title="Редактировать">
                               <Icon name="key" className="w-3.5 h-3.5" /> Изменить
@@ -749,7 +719,7 @@
                         <span className="text-xs font-mono text-slate-400">{card.transcription}</span>
                         <span className="text-xs text-emerald-400 block mt-1">{card.russian}</span>
                       </div>
-                      <button onClick={() => handleRestoreCard(card)} className="text-slate-400 hover:text-slate-200 text-xs">Убрать из выученных</button>
+                      <button onClick={() => handleRestoreCard(card)} className="text-blue-400 hover:text-blue-300 text-xs font-medium">Вернуть в учебу</button>
                     </div>
                   ))}
                 </div>
@@ -806,27 +776,74 @@
 
           {isSettingsOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 relative max-h-[90vh] overflow-y-auto">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 relative max-h-[90vh] overflow-y-auto">
                 <button onClick={() => setIsSettingsOpen(false)} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"><Icon name="x" className="w-5 h-5" /></button>
-                <h3 className="text-lg font-bold text-white mb-2">Настройки и Синхронизация</h3>
-                <p className="text-xs text-slate-400 mb-4">Отсканируйте QR-код камерой телефона, чтобы открыть приложение со всеми вашими словами и прогрессом:</p>
+                <h3 className="text-lg font-bold text-white mb-2">Перенос на телефон и настройки</h3>
+                <p className="text-xs text-slate-400 mb-4">Скопируйте код переноса или отсканируйте QR-код, чтобы мгновенно перенести все слова и достижения на ваш смартфон:</p>
                 
                 <div className="flex flex-col items-center justify-center bg-slate-950 p-4 rounded-2xl border border-slate-800 mb-5">
                   <div className="bg-white p-3 rounded-xl shadow-md w-44 h-44 flex items-center justify-center" dangerouslySetInnerHTML={{ __html: qrSvgHtml }}></div>
-                  <span className="text-[11px] text-slate-400 mt-2 text-center">Все слова и выученные карточки синхронизируются автоматически</span>
+                  <span className="text-[11px] text-slate-400 mt-2 text-center">QR-код содержит все ваши слова и выученные карточки</span>
                 </div>
 
-                <div className="space-y-3">
-                  <button onClick={handleExportDeck} className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl text-slate-200 flex items-center justify-center gap-2">
-                    <Icon name="download" className="w-4 h-4" /> Экспортировать колоду в JSON
-                  </button>
+                <div className="space-y-4 mb-5 bg-slate-950/60 p-4 rounded-xl border border-slate-800">
+                  <h4 className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                    <Icon name="share-2" className="w-4 h-4 text-blue-400" /> Быстрый перенос по текстовому коду:
+                  </h4>
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">1. Скопируйте этот код на компьютере:</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        readOnly
+                        value={transferString}
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-slate-300 select-all"
+                      />
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(transferString);
+                          showToast('Код скопирован в буфер обмена! 📋', 'success');
+                        }}
+                        className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl shrink-0 flex items-center gap-1.5"
+                      >
+                        <Icon name="clipboard" className="w-3.5 h-3.5" /> Копировать
+                      </button>
+                    </div>
+                  </div>
 
-                  <label className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl text-slate-200 flex items-center justify-center gap-2 cursor-pointer">
-                    <Icon name="upload" className="w-4 h-4" /> Импортировать файл
-                    <input type="file" accept=".json" onChange={handleImportDeck} className="hidden" />
-                  </label>
+                  <div className="pt-2">
+                    <label className="block text-[11px] text-slate-400 mb-1">2. Вставьте его на телефоне и нажмите кнопку:</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={importTransferInput}
+                        onChange={(e) => setImportTransferInput(e.target.value)}
+                        placeholder="Вставьте код сюда..."
+                        className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs font-mono text-slate-100"
+                      />
+                      <button
+                        onClick={handleImportTransferCode}
+                        className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shrink-0"
+                      >
+                        Применить
+                      </button>
+                    </div>
+                  </div>
+                </div>
 
-                  <div className="pt-3 border-t border-slate-800">
+                <div className="space-y-3 pt-2 border-t border-slate-800">
+                  <div className="flex gap-2">
+                    <button onClick={handleExportDeck} className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl text-slate-200 flex items-center justify-center gap-2">
+                      <Icon name="download" className="w-4 h-4" /> Экспорт файла JSON
+                    </button>
+
+                    <label className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl text-slate-200 flex items-center justify-center gap-2 cursor-pointer">
+                      <Icon name="upload" className="w-4 h-4" /> Импорт файла
+                      <input type="file" accept=".json" onChange={handleImportDeck} className="hidden" />
+                    </label>
+                  </div>
+
+                  <div className="pt-2">
                     <button onClick={handleClearAllWords} className="w-full py-2.5 bg-red-950/50 hover:bg-red-900/60 border border-red-800/60 text-red-300 text-xs rounded-xl flex items-center justify-center gap-2 font-medium transition-all">
                       <Icon name="trash-2" className="w-4 h-4" /> Удалить все слова
                     </button>
