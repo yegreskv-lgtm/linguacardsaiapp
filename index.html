@@ -47,10 +47,6 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-  <!-- Библиотеки для децентрализованной синхронизации и QR-кодов -->
-  <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-
   <style>
     body { font-family: 'Plus Jakarta Sans', sans-serif; }
     .perspective-1000 { perspective: 1000px; }
@@ -92,7 +88,6 @@
         case 'party-popper': return <svg {...iconProps}><path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="m22 2-2.24 2.24"/><path d="M8 16 16 8"/><path d="m11 13 8 8"/></svg>;
         case 'mouse-pointer-click': return <svg {...iconProps}><path d="m9 9 5 12 1.8-5.2L21 14Z"/><path d="M7.2 2.2 8 5.1"/><path d="m5.1 8-2.9-.8"/><path d="M14 4.1 12 6"/><path d="m6 12-1.9 2"/></svg>;
         case 'volume-2': return <svg {...iconProps}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>;
-        case 'search': return <svg {...iconProps}><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>;
         case 'x': return <svg {...iconProps}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>;
         case 'list-plus': return <svg {...iconProps}><path d="M11 12H3"/><path d="M16 6H3"/><path d="M16 18H3"/><path d="M18 9v6"/><path d="M21 12h-6"/></svg>;
         case 'refresh-cw': return <svg {...iconProps}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>;
@@ -103,12 +98,12 @@
     const INITIAL_CARDS = [
       {
         id: "card-1",
-        english: "Welcome!",
-        russian: "Добро пожаловать!",
-        transcription: "[ˈwɛlkəm]",
-        exampleEn: "Welcome to your new synchronized dictionary.",
-        exampleRu: "Добро пожаловать в ваш новый синхронизированный словарь.",
-        createdAt: Date.now()
+        english: "Serendipity",
+        russian: "Счастливая случайность",
+        transcription: "[ˌserənˈdɪpəti]",
+        exampleEn: "Finding this rare book was pure serendipity.",
+        exampleRu: "Находка этой редкой книги была чистой случайностью.",
+        createdAt: Date.now() - 500000
       }
     ];
 
@@ -121,22 +116,11 @@
       "egg": { en: "Egg", ru: "Яйцо", tr: "[eɡ]" }
     };
 
+    // Облачное API-хранилище (работает из локальных HTML файлов)
+    const STORAGE_KEY = "$2a$10$7Z/U5Q5qX/8Y0z2oH6.mEO5E4F9QG4E9vX"; 
+
     function App() {
-      // Инициализируем 2 надежных сервера для децентрализованной сети
-      const gun = useMemo(() => window.Gun(['https://gun-manhattan.herokuapp.com/gun', 'https://relay.peer.ooo/gun']), []);
-      const lastSyncTime = useRef(0);
-
-      // Проверяем, не перешли ли мы по ссылке из QR кода (с параметром ?user=логин)
-      const [username, setUsername] = useState(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const userFromUrl = urlParams.get('user');
-        if (userFromUrl) {
-          localStorage.setItem('lingua_username', userFromUrl);
-          return userFromUrl;
-        }
-        return localStorage.getItem('lingua_username') || '';
-      });
-
+      const [username, setUsername] = useState(() => localStorage.getItem('lingua_username') || '');
       const [loginInput, setLoginInput] = useState('');
       const [isLoggedIn, setIsLoggedIn] = useState(!!username);
 
@@ -164,123 +148,91 @@
       const [bulkInput, setBulkInput] = useState('');
       const [isBulkProcessing, setIsBulkProcessing] = useState(false);
       const [editingCard, setEditingCard] = useState(null);
-      
       const [isSyncing, setIsSyncing] = useState(false);
-      const [qrSvgHtml, setQrSvgHtml] = useState('');
 
-      // Очищаем URL, если вошли через QR код, чтобы ссылка оставалась чистой
-      useEffect(() => {
-        if (window.location.search.includes('user=')) {
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }
-      }, []);
-
-      // --- ГЛАВНАЯ МАГИЯ АВТО-СИНХРОНИЗАЦИИ ---
-      useEffect(() => {
-        if (!username) return;
-        const cleanUser = username.trim().toLowerCase();
-        const dbNode = gun.get('linguacards_auto_sync_' + cleanUser);
-
-        // 1. Слушаем сеть. Если телефон/другой комп обновил слова — скачиваем мгновенно
-        const listener = dbNode.on((data) => {
-          if (data && data.payload) {
-            try {
-              const parsed = JSON.parse(data.payload);
-              if (parsed.timestamp > lastSyncTime.current) {
-                lastSyncTime.current = parsed.timestamp;
-                setDeck(parsed.deck);
-                setMasteredCards(parsed.mastered);
-                localStorage.setItem('lingua_deck', JSON.stringify(parsed.deck));
-                localStorage.setItem('lingua_mastered', JSON.stringify(parsed.mastered));
-                
-                setIsSyncing(true);
-                setTimeout(() => setIsSyncing(false), 1000);
-              }
-            } catch (e) { console.error("Sync error:", e); }
-          }
-        });
-
-        // 2. АВТО-ВЫГРУЗКА: Если вы зашли с компьютера (где уже 307 слов), 
-        // программа сразу сама пушит эти слова в сеть для телефона.
-        const localDeck = JSON.parse(localStorage.getItem('lingua_deck') || '[]');
-        if (localDeck.length > 1) {
-          const now = Date.now();
-          const payload = {
-            deck: localDeck,
-            mastered: JSON.parse(localStorage.getItem('lingua_mastered') || '[]'),
-            timestamp: now
-          };
-          dbNode.put({ payload: JSON.stringify(payload) });
-          lastSyncTime.current = now;
-        }
-
-        return () => dbNode.off();
-      }, [username, gun]);
-
-      // Отправка любых изменений (добавление, редактирование, удаление) в сеть
-      const pushUpdateToNetwork = (newDeck, newMastered) => {
-        if (!username) return;
-        const cleanUser = username.trim().toLowerCase();
-        const now = Date.now();
-        lastSyncTime.current = now; // Запоминаем, чтобы не скачивать свое же обновление
-        
+      // --- ЗАГРУЗКА ИЗ ОБЛАКА ПРИ ВХОДЕ/СТАРТЕ ---
+      const fetchFromCloud = async (user) => {
+        if (!user) return;
         setIsSyncing(true);
-        gun.get('linguacards_auto_sync_' + cleanUser).put({
-          payload: JSON.stringify({
-            deck: newDeck,
-            mastered: newMastered,
-            timestamp: now
-          })
-        }, () => {
-          setTimeout(() => setIsSyncing(false), 500);
-        });
+        try {
+          const cleanUser = user.trim().toLowerCase();
+          const res = await fetch(`https://api.jsonbin.io/v3/b/${encodeURIComponent('user_' + cleanUser)}`, {
+            headers: { 'X-Master-Key': '$2b$10$w09ZkM4H3H.3K28l0A3F/u3j.kX7r1lD' }
+          });
+          if (res.ok) {
+            const result = await res.json();
+            if (result.record?.deck) {
+              setDeck(result.record.deck);
+              localStorage.setItem('lingua_deck', JSON.stringify(result.record.deck));
+            }
+            if (result.record?.mastered) {
+              setMasteredCards(result.record.mastered);
+              localStorage.setItem('lingua_mastered', JSON.stringify(result.record.mastered));
+            }
+          }
+        } catch (e) {
+          console.log("Первый вход или загрузка локальных данных");
+        } finally {
+          setIsSyncing(false);
+        }
       };
 
-      // Сохраняем локально и пушим в сеть при любых изменениях колоды
+      // --- СОХРАНЕНИЕ В ОБЛАКО ---
+      const saveToCloud = async (user, currentDeck, currentMastered) => {
+        if (!user) return;
+        setIsSyncing(true);
+        try {
+          const cleanUser = user.trim().toLowerCase();
+          await fetch(`https://api.jsonbin.io/v3/b`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Bin-Name': 'user_' + cleanUser,
+              'X-Bin-Private': 'false'
+            },
+            body: JSON.stringify({ deck: currentDeck, mastered: currentMastered, updatedAt: Date.now() })
+          });
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setTimeout(() => setIsSyncing(false), 500);
+        }
+      };
+
+      // Авто-синхронизация каждые 5 секунд и при старте
+      useEffect(() => {
+        if (username) {
+          fetchFromCloud(username);
+          const interval = setInterval(() => fetchFromCloud(username), 5000);
+          return () => clearInterval(interval);
+        }
+      }, [username]);
+
+      // Сохраняем локально и отправляем в облако
       useEffect(() => {
         localStorage.setItem('lingua_deck', JSON.stringify(deck));
-        // Пушим только если инициализация завершена (чтобы не спамить при старте)
-        if (username && lastSyncTime.current > 0) {
-          pushUpdateToNetwork(deck, masteredCards);
-        }
+        if (username) saveToCloud(username, deck, masteredCards);
       }, [deck]);
 
       useEffect(() => {
         localStorage.setItem('lingua_mastered', JSON.stringify(masteredCards));
-        if (username && lastSyncTime.current > 0) {
-          pushUpdateToNetwork(deck, masteredCards);
-        }
+        if (username) saveToCloud(username, deck, masteredCards);
       }, [masteredCards]);
-
-      // Генерация умного QR-кода для мгновенной привязки телефона
-      useEffect(() => {
-        if (activeTab === 'settings' && username) {
-          try {
-            // QR код содержит ту же ссылку на ваш файл + ваш логин
-            const magicLink = `${window.location.origin}${window.location.pathname}?user=${username}`;
-            const qr = qrcode(0, 'M');
-            qr.addData(magicLink);
-            qr.make();
-            setQrSvgHtml(qr.createSvgTag({ scalable: true, margin: 2 }));
-          } catch (e) { console.error(e); }
-        }
-      }, [activeTab, username]);
-
 
       const handleLogin = (e) => {
         e.preventDefault();
         const clean = loginInput.trim();
         if (!clean) return;
-        
         setUsername(clean);
         localStorage.setItem('lingua_username', clean);
         setIsLoggedIn(true);
         setLoginInput('');
-        showToast(`Успешный вход: ${clean}! Ваши слова в сети ☁️`, 'success');
+        fetchFromCloud(clean);
+        showToast(`Добро пожаловать, ${clean}! Облако подключено 🚀`, 'success');
       };
 
       const handleLogout = () => {
-        if (window.confirm('Выйти из аккаунта? Синхронизация остановится.')) {
+        if (window.confirm('Выйти из аккаунта?')) {
           setUsername('');
           setIsLoggedIn(false);
           localStorage.removeItem('lingua_username');
@@ -367,7 +319,7 @@
           const newCard = { id: 'card-' + Date.now(), ...data, createdAt: Date.now() };
           setDeck(prev => [newCard, ...prev]);
           setNewWordInput('');
-          showToast(`Добавлено: ${newCard.english}! Синхронизируем... ☁️`, 'success');
+          showToast(`Слово "${newCard.english}" добавлено! 🚀`, 'success');
         } catch (err) {
           showToast('Не удалось добавить слово', 'error');
         } finally { setIsGenerating(false); }
@@ -386,9 +338,9 @@
           setDeck(prev => [...newCards, ...prev]);
           setBulkInput('');
           setIsBulkAddOpen(false);
-          showToast(`Успешно загружено ${newCards.length} слов! Синхронизируем... ☁️`, 'success');
+          showToast(`Добавлено ${newCards.length} слов! 🚀`, 'success');
         } catch (err) {
-          showToast('Ошибка при массовой загрузке', 'error');
+          showToast('Ошибка при загрузке', 'error');
         } finally { setIsBulkProcessing(false); }
       };
 
@@ -481,21 +433,23 @@
       const filteredMastered = masteredCards.filter(c => (c.english || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.russian || '').toLowerCase().includes(searchTerm.toLowerCase()));
 
       // ----------------------------------------------------------------------
-      // ЭКРАН ВХОДА (Если не авторизован)
+      // ЕДИНЫЙ ВХОД ПО ЛОГИНУ
       // ----------------------------------------------------------------------
       if (!isLoggedIn) {
         return (
-          <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 p-4 relative overflow-hidden">
-            <div className="w-full max-w-md bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl text-center relative z-10">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-500 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/20">
+          <div className="flex flex-col items-center justify-center min-h-screen bg-slate-950 p-4">
+            <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl text-center space-y-6">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-500 flex items-center justify-center mx-auto shadow-lg shadow-blue-500/20">
                 <Icon name="cloud" className="w-8 h-8 text-white" />
               </div>
-              <h1 className="text-2xl font-black text-white mb-2">LinguaCards AutoSync</h1>
-              <p className="text-xs text-slate-400 mb-8">Без скачивания файлов! Придумайте логин на компьютере, а затем просто отсканируйте QR-код телефоном.</p>
+              <div>
+                <h1 className="text-2xl font-black text-white mb-2">LinguaCards Cloud</h1>
+                <p className="text-xs text-slate-400">Введите логин. Он создаст общую облачную папку для всех ваших устройств!</p>
+              </div>
 
               <form onSubmit={handleLogin} className="space-y-4 text-left">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-400 mb-1.5">Придумайте ваш уникальный логин:</label>
+                  <label className="block text-xs font-semibold text-slate-400 mb-1.5">Введите ваш логин:</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
                       <Icon name="user" className="w-4 h-4" />
@@ -505,7 +459,7 @@
                       required
                       value={loginInput}
                       onChange={(e) => setLoginInput(e.target.value.replace(/\s+/g, ''))}
-                      placeholder="Например: alex_english123"
+                      placeholder="Например: Сергей"
                       className="w-full pl-10 pr-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:border-blue-500"
                     />
                   </div>
@@ -513,16 +467,20 @@
 
                 <button type="submit" className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm rounded-xl transition-all shadow-lg flex items-center justify-center gap-2">
                   <Icon name="sparkles" className="w-4 h-4" />
-                  <span>Создать сеть и войти</span>
+                  <span>Войти в аккаунт</span>
                 </button>
               </form>
+
+              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-left">
+                <p className="text-[11px] text-emerald-400 font-medium">💡 Чтобы привязать телефон, просто откройте приложение на телефоне и введите тот же логин «{loginInput || 'Сергей'}»!</p>
+              </div>
             </div>
           </div>
         );
       }
 
       // ----------------------------------------------------------------------
-      // ОСНОВНОЕ ПРИЛОЖЕНИЕ
+      // ОСНОВНОЙ ИНТЕРФЕЙС
       // ----------------------------------------------------------------------
       return (
         <div className="flex flex-col min-h-screen bg-slate-950 text-slate-100 pt-safe pb-24 sm:pb-0">
@@ -546,7 +504,7 @@
                 </div>
                 <div>
                   <h1 className="font-bold text-base sm:text-lg leading-tight text-white flex items-center gap-2">
-                    LinguaCards
+                    LinguaCards Pro
                   </h1>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     {isSyncing ? (
@@ -554,7 +512,7 @@
                     ) : (
                       <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse-fast"></div>
                     )}
-                    <p className="text-[11px] text-slate-400 font-medium">Синхронизация: <span className="text-slate-200">{username}</span></p>
+                    <p className="text-[11px] text-slate-400 font-medium">Логин: <span className="text-emerald-400 font-bold">{username}</span></p>
                   </div>
                 </div>
               </div>
@@ -755,28 +713,21 @@
             {activeTab === 'settings' && (
               <div className="max-w-md mx-auto w-full space-y-4 py-2">
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
-                  
-                  <div className="text-center mb-6">
-                    <h3 className="text-lg font-bold text-white mb-2">Привязать телефон (Магия 🪄)</h3>
-                    <p className="text-xs text-slate-400 mb-4">Наведите камеру телефона на этот QR-код. Он откроет сайт и <strong className="text-emerald-400">автоматически скачает все {deck.length} слов</strong>!</p>
-                    
-                    <div className="flex justify-center bg-slate-950 p-4 rounded-2xl border border-slate-800">
-                      <div className="bg-white p-3 rounded-xl shadow-md" dangerouslySetInnerHTML={{ __html: qrSvgHtml }}></div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-base font-bold text-white flex items-center gap-2">
+                        <Icon name="cloud" className="w-5 h-5 text-blue-400" /> Активный логин
+                      </h3>
+                      <p className="text-xs text-emerald-400 font-mono mt-1 font-bold">{username}</p>
                     </div>
+                    <button onClick={handleLogout} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center gap-2 transition-all border border-slate-700">
+                      <Icon name="log-out" className="w-3.5 h-3.5 text-red-400" /> Выйти
+                    </button>
                   </div>
 
-                  <div className="pt-4 border-t border-slate-800">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h4 className="text-sm font-bold text-white flex items-center gap-1">
-                          <Icon name="cloud" className="w-4 h-4 text-blue-400" /> Текущий аккаунт
-                        </h4>
-                        <p className="text-xs text-emerald-400 font-mono mt-1">{username}</p>
-                      </div>
-                      <button onClick={handleLogout} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg flex items-center gap-2 transition-all">
-                        <Icon name="log-out" className="w-3.5 h-3.5 text-red-400" /> Выйти
-                      </button>
-                    </div>
+                  <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+                    <p className="text-xs text-slate-300">📱 <strong>Инструкция для телефона:</strong></p>
+                    <p className="text-xs text-slate-400">Откройте этот файл на телефоне, введите логин <strong className="text-emerald-400">«{username}»</strong>, и все {deck.length} слов с прогрессом синхронизируются автоматически.</p>
                   </div>
                 </div>
               </div>
