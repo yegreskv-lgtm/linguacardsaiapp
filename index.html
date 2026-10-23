@@ -90,6 +90,7 @@
         case 'plus-circle': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>;
         case 'wand-2': return <svg {...iconProps}><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.21 1.21 0 0 0 1.72 0L21.64 5.36a1.21 1.21 0 0 0 0-1.72z"/><path d="m14 7 3 3"/><path d="M5 6v1"/><path d="M19 17v1"/><path d="M10 2v1"/><path d="M7 8H6"/><path d="M21 12h-1"/></svg>;
         case 'key': return <svg {...iconProps}><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.778-7.778zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>;
+        case 'trash-2': return <svg {...iconProps}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>;
         case 'alert-circle': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>;
         case 'check-circle-2': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>;
         case 'info': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>;
@@ -273,12 +274,10 @@
         return `[${cleaned.toLowerCase()}]`;
       };
 
-      // Универсальная функция обработки строки ввода (поддерживает "word - перевод" или одиночное слово)
       const processInputLine = async (rawInput) => {
         const line = rawInput.trim();
         if (!line) return null;
 
-        // Проверяем разделитель (тире, дефис, двоеточие) для формата "car - машина" или "машина - car"
         const delimiterMatch = line.match(/\s*[-—=:|\t]\s*/);
         let part1 = line;
         let part2 = '';
@@ -293,7 +292,6 @@
         let russian = '';
 
         if (part2) {
-          // Если пара задана вручную ("car - машина" или "машина - car")
           const isPart1Ru = /[а-яё]/i.test(part1);
           if (isPart1Ru) {
             russian = part1;
@@ -303,7 +301,6 @@
             russian = part2;
           }
         } else {
-          // Если введено только одно слово/фразу — используем словарь или автоперевод
           const lowerKey = part1.toLowerCase();
           if (SMART_DICTIONARY[lowerKey]) {
             const item = SMART_DICTIONARY[lowerKey];
@@ -473,6 +470,17 @@
         setMasteredCards(prev => prev.map(c => c.id === updatedCard.id ? updatedCard : c));
         setEditingCard(null);
         showToast('Карточка успешно обновлена! ✏️', 'success');
+      };
+
+      // Функция удаления всех слов
+      const handleClearAllWords = () => {
+        if (window.confirm('Вы уверены, что хотите удалить ВСЕ слова? Это действие нельзя отменить.')) {
+          setDeck([]);
+          setMasteredCards([]);
+          setSessionQueue([]);
+          setIsSettingsOpen(false);
+          showToast('Все слова удалены', 'info');
+        }
       };
 
       const handleExportDeck = () => {
@@ -777,13 +785,23 @@
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 relative">
                 <button onClick={() => setIsSettingsOpen(false)} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"><Icon name="x" className="w-5 h-5" /></button>
-                <h3 className="text-lg font-bold text-white mb-4">Настройки и Бэкап</h3>
+                <h3 className="text-lg font-bold text-white mb-4">Настройки и Управление</h3>
+                
                 <div className="space-y-3">
-                  <button onClick={handleExportDeck} className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl text-slate-200">📥 Экспортировать колоду в JSON</button>
-                  <label className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl text-slate-200 flex items-center justify-center cursor-pointer">
-                    📤 Импортировать файл
+                  <button onClick={handleExportDeck} className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl text-slate-200 flex items-center justify-center gap-2">
+                    <Icon name="download" className="w-4 h-4" /> Экспортировать колоду в JSON
+                  </button>
+
+                  <label className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-xs rounded-xl text-slate-200 flex items-center justify-center gap-2 cursor-pointer">
+                    <Icon name="upload" className="w-4 h-4" /> Импортировать файл
                     <input type="file" accept=".json" onChange={handleImportDeck} className="hidden" />
                   </label>
+
+                  <div className="pt-3 border-t border-slate-800">
+                    <button onClick={handleClearAllWords} className="w-full py-2.5 bg-red-950/50 hover:bg-red-900/60 border border-red-800/60 text-red-300 text-xs rounded-xl flex items-center justify-center gap-2 font-medium transition-all">
+                      <Icon name="trash-2" className="w-4 h-4" /> Удалить все слова
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
