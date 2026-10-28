@@ -89,6 +89,7 @@
         case 'volume-2': return <svg {...iconProps}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>;
         case 'x': return <svg {...iconProps}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>;
         case 'list-plus': return <svg {...iconProps}><path d="M11 12H3"/><path d="M16 6H3"/><path d="M16 18H3"/><path d="M18 9v6"/><path d="M21 12h-6"/></svg>;
+        case 'file-text': return <svg {...iconProps}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>;
         default: return null;
       }
     };
@@ -104,55 +105,79 @@
       }
     ];
 
-    // Полная база неправильных глаголов
+    // Полный и точный словарь неправильных глаголов с формами и транскрипциями
     const IRREGULAR_VERBS = {
       "arise": { v1: "arise", v2: "arose", v3: "arisen", tr1: "[əˈraɪz]", tr2: "[əˈrəʊz]", tr3: "[əˈrɪzn]", ru: "подниматься" },
-      "awake": { v1: "awake", v2: "awoke", v3: "awoken", tr1: "[əˈweɪk]", tr2: "[əˈwəʊk]", tr3: "[əˈwəʊkən]", ru: "пробуждать, просыпаться" },
+      "awake": { v1: "awake", v2: "awoke", v3: "awoken", tr1: "[əˈweɪk]", tr2: "[əˈwəʊk]", tr3: "[əˈwəʊkən]", ru: "просыпаться, будить" },
       "be": { v1: "be", v2: "was/were", v3: "been", tr1: "[biː]", tr2: "[wɒz / wɜː]", tr3: "[biːn]", ru: "быть" },
       "begin": { v1: "begin", v2: "began", v3: "begun", tr1: "[bɪˈɡɪn]", tr2: "[bɪˈɡæn]", tr3: "[bɪˈɡʌn]", ru: "начинать" },
       "break": { v1: "break", v2: "broke", v3: "broken", tr1: "[breɪk]", tr2: "[brəʊk]", tr3: "[ˈbrəʊkən]", ru: "ломать" },
       "bring": { v1: "bring", v2: "brought", v3: "brought", tr1: "[brɪŋ]", tr2: "[brɔːt]", tr3: "[brɔːt]", ru: "приносить" },
+      "build": { v1: "build", v2: "built", v3: "built", tr1: "[bɪld]", tr2: "[bilt]", tr3: "[bilt]", ru: "строить" },
       "buy": { v1: "buy", v2: "bought", v3: "bought", tr1: "[baɪ]", tr2: "[bɔːt]", tr3: "[bɔːt]", ru: "покупать" },
+      "catch": { v1: "catch", v2: "caught", v3: "caught", tr1: "[kætʃ]", tr2: "[kɔːt]", tr3: "[kɔːt]", ru: "ловить, поймать" },
+      "choose": { v1: "choose", v2: "chose", v3: "chosen", tr1: "[tʃuːz]", tr2: "[tʃəʊz]", tr3: "[ˈtʃəʊzn]", ru: "выбирать" },
       "come": { v1: "come", v2: "came", v3: "come", tr1: "[kʌm]", tr2: "[keɪm]", tr3: "[kʌm]", ru: "приходить" },
+      "cost": { v1: "cost", v2: "cost", v3: "cost", tr1: "[kɒst]", tr2: "[kɒst]", tr3: "[kɒst]", ru: "стоить" },
+      "cut": { v1: "cut", v2: "cut", v3: "cut", tr1: "[kʌt]", tr2: "[kʌt]", tr3: "[kʌt]", ru: "резать" },
       "do": { v1: "do", v2: "did", v3: "done", tr1: "[duː]", tr2: "[dɪd]", tr3: "[dʌn]", ru: "делать" },
       "draw": { v1: "draw", v2: "drew", v3: "drawn", tr1: "[drɔː]", tr2: "[druː]", tr3: "[drɔːn]", ru: "рисовать" },
       "drink": { v1: "drink", v2: "drank", v3: "drunk", tr1: "[drɪŋk]", tr2: "[dræŋk]", tr3: "[drʌŋk]", ru: "пить" },
       "drive": { v1: "drive", v2: "drove", v3: "driven", tr1: "[draɪv]", tr2: "[drəʊv]", tr3: "[ˈdrɪvn]", ru: "водить автомобиль" },
       "eat": { v1: "eat", v2: "ate", v3: "eaten", tr1: "[iːt]", tr2: "[et]", tr3: "[ˈiːtn]", ru: "есть" },
       "fall": { v1: "fall", v2: "fell", v3: "fallen", tr1: "[fɔːl]", tr2: "[fel]", tr3: "[ˈfɔːlən]", ru: "падать" },
+      "feel": { v1: "feel", v2: "felt", v3: "felt", tr1: "[fiːl]", tr2: "[felt]", tr3: "[felt]", ru: "чувствовать" },
       "find": { v1: "find", v2: "found", v3: "found", tr1: "[faɪnd]", tr2: "[faʊnd]", tr3: "[faʊnd]", ru: "находить" },
       "fly": { v1: "fly", v2: "flew", v3: "flown", tr1: "[flaɪ]", tr2: "[fluː]", tr3: "[fləʊn]", ru: "летать" },
       "forget": { v1: "forget", v2: "forgot", v3: "forgotten", tr1: "[fərˈɡet]", tr2: "[fərˈɡɒt]", tr3: "[fərˈɡɒtn]", ru: "забывать" },
       "get": { v1: "get", v2: "got", v3: "got/gotten", tr1: "[ɡet]", tr2: "[ɡɒt]", tr3: "[ɡɒt / ˈɡɒtn]", ru: "получать" },
       "give": { v1: "give", v2: "gave", v3: "given", tr1: "[ɡɪv]", tr2: "[ɡeɪv]", tr3: "[ˈɡɪvn]", ru: "давать" },
       "go": { v1: "go", v2: "went", v3: "gone", tr1: "[ɡəʊ]", tr2: "[went]", tr3: "[ɡɒn]", ru: "идти, ехать" },
+      "grow": { v1: "grow", v2: "grew", v3: "grown", tr1: "[ɡrəʊ]", tr2: "[ɡruː]", tr3: "[ɡrəʊn]", ru: "расти" },
       "have": { v1: "have", v2: "had", v3: "had", tr1: "[hæv]", tr2: "[hæd]", tr3: "[hæd]", ru: "иметь" },
+      "hear": { v1: "hear", v2: "heard", v3: "heard", tr1: "[hɪə]", tr2: "[hɜːd]", tr3: "[hɜːd]", ru: "слышать" },
+      "hit": { v1: "hit", v2: "hit", v3: "hit", tr1: "[hɪt]", tr2: "[hɪt]", tr3: "[hɪt]", ru: "ударять" },
+      "hold": { v1: "hold", v2: "held", v3: "held", tr1: "[həʊld]", tr2: "[held]", tr3: "[held]", ru: "держать" },
+      "keep": { v1: "keep", v2: "kept", v3: "kept", tr1: "[kiːp]", tr2: "[kept]", tr3: "[kept]", ru: "хранить, держать" },
       "know": { v1: "know", v2: "knew", v3: "known", tr1: "[nəʊ]", tr2: "[njuː]", tr3: "[nəʊn]", ru: "знать" },
+      "lead": { v1: "lead", v2: "led", v3: "led", tr1: "[liːd]", tr2: "[led]", tr3: "[led]", ru: "вести" },
+      "learn": { v1: "learn", v2: "learnt/learned", v3: "learnt/learned", tr1: "[lɜːn]", tr2: "[lɜːnt]", tr3: "[lɜːnt]", ru: "учить, узнавать" },
+      "leave": { v1: "leave", v2: "left", v3: "left", tr1: "[liːv]", tr2: "[left]", tr3: "[left]", ru: "покидать, оставлять" },
+      "lend": { v1: "lend", v2: "lent", v3: "lent", tr1: "[lend]", tr2: "[lent]", tr3: "[lent]", ru: "занимать, давать в долг" },
+      "let": { v1: "let", v2: "let", v3: "let", tr1: "[let]", tr2: "[let]", tr3: "[let]", ru: "позволять" },
+      "lose": { v1: "lose", v2: "lost", v3: "lost", tr1: "[luːz]", tr2: "[lɒst]", tr3: "[lɒst]", ru: "терять" },
       "make": { v1: "make", v2: "made", v3: "made", tr1: "[meɪk]", tr2: "[meɪd]", tr3: "[meɪd]", ru: "делать, создавать" },
+      "mean": { v1: "mean", v2: "meant", v3: "meant", tr1: "[miːn]", tr2: "[ment]", tr3: "[ment]", ru: "значить, подразумевать" },
       "meet": { v1: "meet", v2: "met", v3: "met", tr1: "[miːt]", tr2: "[met]", tr3: "[met]", ru: "встречать" },
+      "pay": { v1: "pay", v2: "paid", v3: "paid", tr1: "[peɪ]", tr2: "[peɪd]", tr3: "[peɪd]", ru: "платить" },
+      "put": { v1: "put", v2: "put", v3: "put", tr1: "[pʊt]", tr2: "[pʊt]", tr3: "[pʊt]", ru: "класть" },
       "read": { v1: "read", v2: "read", v3: "read", tr1: "[riːd]", tr2: "[red]", tr3: "[red]", ru: "читать" },
+      "ride": { v1: "ride", v2: "rode", v3: "ridden", tr1: "[raɪd]", tr2: "[rəʊd]", tr3: "[ˈrɪdn]", ru: "ездить верхом" },
+      "ring": { v1: "ring", v2: "rang", v3: "rung", tr1: "[rɪŋ]", tr2: "[ræŋ]", tr3: "[rʌŋ]", ru: "звенеть" },
       "run": { v1: "run", v2: "ran", v3: "run", tr1: "[rʌn]", tr2: "[ræn]", tr3: "[rʌn]", ru: "бежать" },
       "say": { v1: "say", v2: "said", v3: "said", tr1: "[seɪ]", tr2: "[sed]", tr3: "[sed]", ru: "говорить, сказать" },
       "see": { v1: "see", v2: "saw", v3: "seen", tr1: "[siː]", tr2: "[sɔː]", tr3: "[siːn]", ru: "видеть" },
+      "sell": { v1: "sell", v2: "sold", v3: "sold", tr1: "[sel]", tr2: "[təʊld]", tr3: "[təʊld]", ru: "продавать" },
+      "send": { v1: "send", v2: "sent", v3: "sent", tr1: "[send]", tr2: "[sent]", tr3: "[sent]", ru: "отправлять" },
+      "set": { v1: "set", v2: "set", v3: "set", tr1: "[set]", tr2: "[set]", tr3: "[set]", ru: "устанавливать" },
+      "show": { v1: "show", v2: "showed", v3: "shown", tr1: "[ʃəʊ]", tr2: "[ʃəʊd]", tr3: "[ʃəʊn]", ru: "показывать" },
+      "shut": { v1: "shut", v2: "shut", v3: "shut", tr1: "[ʃʌt]", tr2: "[ʃʌt]", tr3: "[ʃʌt]", ru: "закрывать" },
       "sing": { v1: "sing", v2: "sang", v3: "sung", tr1: "[sɪŋ]", tr2: "[sæŋ]", tr3: "[sʌŋ]", ru: "петь" },
       "sit": { v1: "sit", v2: "sat", v3: "sat", tr1: "[sɪt]", tr2: "[sæt]", tr3: "[sæt]", ru: "сидеть" },
+      "sleep": { v1: "sleep", v2: "slept", v3: "slept", tr1: "[sliːp]", tr2: "[slept]", tr3: "[slept]", ru: "спать" },
+      "smell": { v1: "smell", v2: "smelt/smelled", v3: "smelt/smelled", tr1: "[smel]", tr2: "[smelt]", tr3: "[smelt]", ru: "пахнуть, нюхать" },
       "speak": { v1: "speak", v2: "spoke", v3: "spoken", tr1: "[spiːk]", tr2: "[spəʊk]", tr3: "[ˈspəʊkən]", ru: "говорить" },
-      "sting": { v1: "sting", v2: "stung", v3: "stung", tr1: "[stɪŋ]", tr2: "[stʌŋ]", tr3: "[stʌŋ]", ru: "жалить" },
-      "stink": { v1: "stink", v2: "stank", v3: "stunk", tr1: "[stɪŋk]", tr2: "[stæŋk]", tr3: "[stʌŋk]", ru: "вонять" },
-      "strike": { v1: "strike", v2: "struck", v3: "struck", tr1: "[straɪk]", tr2: "[strʌk]", tr3: "[strʌk]", ru: "бастовать, ударять" },
-      "swear": { v1: "swear", v2: "swore", v3: "sworn", tr1: "[sweə]", tr2: "[swɔː]", tr3: "[swɔːn]", ru: "клясться, ругаться" },
-      "sweep": { v1: "sweep", v2: "swept", v3: "swept", tr1: "[swiːp]", tr2: "[swept]", tr3: "[swept]", ru: "подметать" },
-      "swell": { v1: "swell", v2: "swelled", v3: "swollen", tr1: "[swel]", tr2: "[sweld]", tr3: "[ˈswəʊlən]", ru: "опухать" },
+      "spend": { v1: "spend", v2: "spent", v3: "spent", tr1: "[spend]", tr2: "[spent]", tr3: "[spent]", ru: "тратить, проводить время" },
+      "stand": { v1: "stand", v2: "stood", v3: "stood", tr1: "[stænd]", tr2: "[stʊd]", tr3: "[stʊd]", ru: "стоять" },
       "swim": { v1: "swim", v2: "swam", v3: "swum", tr1: "[swɪm]", tr2: "[swæm]", tr3: "[swʌm]", ru: "плавать" },
       "take": { v1: "take", v2: "took", v3: "taken", tr1: "[teɪk]", tr2: "[tʊk]", tr3: "[ˈteɪkən]", ru: "брать" },
-      "teach": { v1: "teach", v2: "taught", v3: "taught", tr1: "[tiːtʃ]", tr2: "[tɔːt]", tr3: "[tɔːt]", ru: "учить" },
+      "teach": { v1: "teach", v2: "taught", v3: "taught", tr1: "[tiːtʃ]", tr2: "[tɔːt]", tr3: "[tɔːt]", ru: "учить, обучать" },
       "tell": { v1: "tell", v2: "told", v3: "told", tr1: "[tel]", tr2: "[təʊld]", tr3: "[təʊld]", ru: "рассказывать" },
       "think": { v1: "think", v2: "thought", v3: "thought", tr1: "[θɪŋk]", tr2: "[θɔːt]", tr3: "[θɔːt]", ru: "думать" },
       "throw": { v1: "throw", v2: "threw", v3: "thrown", tr1: "[θrəʊ]", tr2: "[θruː]", tr3: "[θrəʊn]", ru: "бросать" },
       "understand": { v1: "understand", v2: "understood", v3: "understood", tr1: "[ˌʌndərˈstænd]", tr2: "[ˌʌndərˈstʊd]", tr3: "[ˌʌndərˈstʊd]", ru: "понимать" },
       "wake": { v1: "wake", v2: "woke", v3: "woken", tr1: "[weɪk]", tr2: "[wəʊk]", tr3: "[ˈwəʊkən]", ru: "просыпаться, будить" },
-      "wear": { v1: "wear", v2: "wore", v3: "worn", tr1: "[weə]", tr2: "[wɔː]", tr3: "[wɔːn]", ru: "носить одежду" },
-      "wind": { v1: "wind", v2: "wound", v3: "wound", tr1: "[waɪnd]", tr2: "[waʊnd]", tr3: "[waʊnd]", ru: "обматывать, изгибаться" },
+      "wear": { v1: "wear", v2: "wore", v3: "worn", tr1: "[weə]", tr2: "[wɔː]", tr3: "[wɔːn]", ru: "носить (одежду)" },
       "win": { v1: "win", v2: "won", v3: "won", tr1: "[wɪn]", tr2: "[wʌn]", tr3: "[wʌn]", ru: "побеждать" },
       "write": { v1: "write", v2: "wrote", v3: "written", tr1: "[raɪt]", tr2: "[rəʊt]", tr3: "[ˈrɪtn]", ru: "писать" }
     };
@@ -174,14 +199,12 @@
         try {
           const parsed = JSON.parse(saved);
           const seen = new Set();
-          // Очищаем кэш от поврежденных или старых дублей
           return parsed.filter(card => {
             const key = (card.formsDetails ? card.formsDetails.f1.word : card.english).toLowerCase().trim();
             if (seen.has(key)) return false;
             seen.add(key);
             return true;
           }).map(card => {
-            // Исправляем «битые» карточки на лету из базы глаголов
             const cleanEng = card.english.split('—')[0].trim().toLowerCase();
             const verbBase = REVERSE_IRREGULAR[cleanEng] || cleanEng;
             if (IRREGULAR_VERBS[verbBase]) {
@@ -282,7 +305,6 @@
           baseVerb = REVERSE_IRREGULAR[lowerKey];
         }
 
-        // Проверка по нашей базе неправильных глаголов
         if (IRREGULAR_VERBS[baseVerb]) {
           const info = IRREGULAR_VERBS[baseVerb];
           english = `${info.v1} — ${info.v2} — ${info.v3}`;
@@ -324,7 +346,6 @@
           };
         }
 
-        // Жёстко очищаем русский перевод от английских букв и форм
         russian = russian.replace(/[a-zA-Z]+/g, '').replace(/[\/\—\-]+/g, ' ').trim();
         russian = russian.charAt(0).toUpperCase() + russian.slice(1);
         if (!russian) russian = part1;
@@ -529,6 +550,7 @@
 
       const filteredDeck = deck.filter(c => (c.english || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.russian || '').toLowerCase().includes(searchTerm.toLowerCase()));
       const filteredMastered = masteredCards.filter(c => (c.english || '').toLowerCase().includes(searchTerm.toLowerCase()) || (c.russian || '').toLowerCase().includes(searchTerm.toLowerCase()));
+      const verbsOnlyDeck = deck.filter(c => c.formsDetails !== null);
 
       return (
         <div className="flex flex-col min-h-screen bg-slate-950 text-slate-100 pt-safe pb-28">
@@ -560,7 +582,7 @@
             </div>
           </header>
 
-          {activeTab !== 'settings' && activeTab !== 'manual' && (
+          {activeTab !== 'settings' && activeTab !== 'manual' && activeTab !== 'verbs' && (
             <div className="bg-slate-900/40 border-b border-slate-800/60 py-3 px-4 sm:px-6">
               <div className="max-w-3xl mx-auto flex flex-col gap-3">
                 <form onSubmit={handleAddWordAutomatic} className="flex flex-col sm:flex-row gap-2.5">
@@ -768,6 +790,54 @@
               </div>
             )}
 
+            {/* ВКЛАДКА: ГЛАГОЛЫ */}
+            {activeTab === 'verbs' && (
+              <div className="space-y-4">
+                <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
+                  <h2 className="text-lg font-bold text-indigo-400">Неправильные глаголы ({verbsOnlyDeck.length})</h2>
+                  <span className="text-xs text-slate-400">Все формы собраны в одном месте</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {verbsOnlyDeck.map((card) => (
+                    <div key={card.id} className="bg-slate-900/80 border border-indigo-950 rounded-xl p-4 flex flex-col justify-between shadow-lg">
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-bold text-emerald-400 bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-900/50">{card.russian}</span>
+                          <button onClick={() => handleSpeak(card.english)} className="text-indigo-400 hover:text-indigo-300">
+                            <Icon name="volume-2" className="w-4 h-4" />
+                          </button>
+                        </div>
+                        {card.formsDetails && (
+                          <div className="grid grid-cols-3 gap-2 mt-2 pt-2 border-t border-slate-800 text-left">
+                            <div className="bg-slate-950 p-2 rounded-lg border border-slate-800">
+                              <div className="text-[11px] font-bold text-blue-400">{card.formsDetails.f1.word}</div>
+                              <div className="text-[10px] font-mono text-slate-400 mt-0.5">{card.formsDetails.f1.tr}</div>
+                            </div>
+                            <div className="bg-slate-950 p-2 rounded-lg border border-slate-800">
+                              <div className="text-[11px] font-bold text-blue-400">{card.formsDetails.f2.word}</div>
+                              <div className="text-[10px] font-mono text-slate-400 mt-0.5">{card.formsDetails.f2.tr}</div>
+                            </div>
+                            <div className="bg-slate-950 p-2 rounded-lg border border-slate-800">
+                              <div className="text-[11px] font-bold text-blue-400">{card.formsDetails.f3.word}</div>
+                              <div className="text-[10px] font-mono text-slate-400 mt-0.5">{card.formsDetails.f3.tr}</div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-4 pt-2 border-t border-slate-800 flex justify-end">
+                        <button onClick={() => handleDeleteCard(card.id)} className="text-red-400 hover:text-red-300 text-xs">Удалить</button>
+                      </div>
+                    </div>
+                  ))}
+                  {verbsOnlyDeck.length === 0 && (
+                    <div className="col-span-full py-12 text-center text-slate-400 text-xs">
+                      Пока нет добавленных неправильных глаголов. Введите глагол в строку поиска сверху (например, *learn*, *spend*, *leave*).
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* ВКЛАДКА: ВЫУЧЕНО */}
             {activeTab === 'mastered' && (
               <div className="space-y-4">
@@ -791,20 +861,6 @@
                       <button onClick={() => handleRestoreCard(card)} className="text-blue-400 hover:text-blue-300 text-xs font-medium">Вернуть в учебу</button>
                     </div>
                   ))}
-                </div>
-              </div>
-            )}
-
-            {/* ВКЛАДКА: ИНСТРУКЦИЯ */}
-            {activeTab === 'manual' && (
-              <div className="max-w-2xl mx-auto w-full space-y-6 py-2">
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
-                  <h2 className="text-xl font-extrabold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
-                    <Icon name="help-circle" className="w-6 h-6 text-blue-400" /> Инструкция
-                  </h2>
-                  <div className="space-y-3 text-xs text-slate-300">
-                    <p>✨ Все неправильные глаголы очищены и автоматически приводятся к строгому формату.</p>
-                  </div>
                 </div>
               </div>
             )}
@@ -840,11 +896,11 @@
             <button onClick={() => setActiveTab('deck')} className={`flex flex-col items-center flex-1 py-1 transition-all ${activeTab === 'deck' ? 'text-blue-400 font-bold scale-105' : 'text-slate-500 hover:text-slate-300'}`}>
               <Icon name="book-open" className="w-5 h-5 mb-0.5" /><span className="text-[10px]">Слова ({deck.length})</span>
             </button>
+            <button onClick={() => setActiveTab('verbs')} className={`flex flex-col items-center flex-1 py-1 transition-all ${activeTab === 'verbs' ? 'text-blue-400 font-bold scale-105' : 'text-slate-500 hover:text-slate-300'}`}>
+              <Icon name="file-text" className="w-5 h-5 mb-0.5" /><span className="text-[10px]">Глаголы ({verbsOnlyDeck.length})</span>
+            </button>
             <button onClick={() => setActiveTab('mastered')} className={`flex flex-col items-center flex-1 py-1 transition-all ${activeTab === 'mastered' ? 'text-blue-400 font-bold scale-105' : 'text-slate-500 hover:text-slate-300'}`}>
               <Icon name="trophy" className="w-5 h-5 mb-0.5" /><span className="text-[10px]">Выучено ({masteredCards.length})</span>
-            </button>
-            <button onClick={() => setActiveTab('manual')} className={`flex flex-col items-center flex-1 py-1 transition-all ${activeTab === 'manual' ? 'text-blue-400 font-bold scale-105' : 'text-slate-500 hover:text-slate-300'}`}>
-              <Icon name="help-circle" className="w-5 h-5 mb-0.5" /><span className="text-[10px]">Помощь</span>
             </button>
             <button onClick={() => setActiveTab('settings')} className={`flex flex-col items-center flex-1 py-1 transition-all ${activeTab === 'settings' ? 'text-blue-400 font-bold scale-105' : 'text-slate-500 hover:text-slate-300'}`}>
               <Icon name="settings" className="w-5 h-5 mb-0.5" /><span className="text-[10px]">Настройки</span>
