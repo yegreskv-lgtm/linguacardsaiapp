@@ -83,7 +83,6 @@
         case 'help-circle': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>;
         case 'alert-circle': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>;
         case 'check-circle-2': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>;
-        case 'info': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>;
         case 'rotate-ccw': return <svg {...iconProps}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>;
         case 'party-popper': return <svg {...iconProps}><path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="m22 2-2.24 2.24"/><path d="M8 16 16 8"/><path d="m11 13 8 8"/></svg>;
         case 'mouse-pointer-click': return <svg {...iconProps}><path d="m9 9 5 12 1.8-5.2L21 14Z"/><path d="M7.2 2.2 8 5.1"/><path d="m5.1 8-2.9-.8"/><path d="M14 4.1 12 6"/><path d="m6 12-1.9 2"/></svg>;
@@ -105,6 +104,52 @@
         createdAt: Date.now() - 500000
       }
     ];
+
+    // База известных неправильных глаголов для умного объединения форм (V1: [V2, V3, перевод])
+    const IRREGULAR_VERBS = {
+      "be": { v2: "was/were", v3: "been", ru: "быть" },
+      "begin": { v2: "began", v3: "begun", ru: "начинать(ся)" },
+      "break": { v2: "broke", v3: "broken", ru: "ломать" },
+      "bring": { v2: "brought", v3: "brought", ru: "приносить" },
+      "buy": { v2: "bought", v3: "bought", ru: "покупать" },
+      "come": { v2: "came", v3: "come", ru: "приходить" },
+      "do": { v2: "did", v3: "done", ru: "делать" },
+      "draw": { v2: "drew", v3: "drawn", ru: "рисовать" },
+      "drink": { v2: "drank", v3: "drunk", ru: "пить" },
+      "drive": { v2: "drove", v3: "driven", ru: "водить автомобиль" },
+      "eat": { v2: "ate", v3: "eaten", ru: "есть" },
+      "fall": { v2: "fell", v3: "fallen", ru: "падать" },
+      "find": { v2: "found", v3: "found", ru: "находить" },
+      "fly": { v2: "flew", v3: "flown", ru: "летать" },
+      "forget": { v2: "forgot", v3: "forgotten", ru: "забывать" },
+      "get": { v2: "got", v3: "got/gotten", ru: "получать" },
+      "give": { v2: "gave", v3: "given", ru: "давать" },
+      "go": { v2: "went", v3: "gone", ru: "идти, ехать" },
+      "have": { v2: "had", v3: "had", ru: "иметь" },
+      "know": { v2: "knew", v3: "known", ru: "знать" },
+      "make": { v2: "made", v3: "made", ru: "делать, создавать" },
+      "meet": { v2: "met", v3: "met", ru: "встречать" },
+      "read": { v2: "read", v3: "read", ru: "читать" },
+      "run": { v2: "ran", v3: "run", ru: "бежать" },
+      "say": { v2: "said", v3: "said", ru: "говорить, сказать" },
+      "see": { v2: "saw", v3: "seen", ru: "видеть" },
+      "sing": { v2: "sang", v3: "sung", ru: "петь" },
+      "sit": { v2: "sat", v3: "sat", ru: "сидеть" },
+      "speak": { v2: "spoke", v3: "spoken", ru: "говорить" },
+      "swim": { v2: "swam", v3: "swum", ru: "плавать" },
+      "take": { v2: "took", v3: "taken", ru: "брать" },
+      "tell": { v2: "told", v3: "told", ru: "рассказывать" },
+      "think": { v2: "thought", v3: "thought", ru: "думать" },
+      "write": { v2: "wrote", v3: "written", ru: "писать" }
+    };
+
+    // Обратный поиск: если ввели вторую или третью форму (например, "came" или "gone")
+    const REVERSE_IRREGULAR = {};
+    Object.keys(IRREGULAR_VERBS).forEach(v1 => {
+      const data = IRREGULAR_VERBS[v1];
+      REVERSE_IRREGULAR[data.v2.toLowerCase()] = v1;
+      REVERSE_IRREGULAR[data.v3.toLowerCase()] = v1;
+    });
 
     const SMART_DICTIONARY = {
       "ass": { en: "Ass", ru: "Осел / Упрямец", tr: "[æs]" },
@@ -135,6 +180,9 @@
 
       const [selectedFriend, setSelectedFriend] = useState(null);
       const fileInputRef = useRef(null);
+
+      // Состояние для диалога подтверждения дубликата / нового перевода
+      const [duplicateModal, setDuplicateModal] = useState(null); // { existingCard, newRussian, rawInput }
 
       const [sessionQueue, setSessionQueue] = useState([]);
       const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -168,7 +216,6 @@
         setTimeout(() => setToast(null), 4000);
       };
 
-      // Скачать файл с колодой для друга
       const handleExportDeckFile = () => {
         const payload = {
           username: username || 'Сергей',
@@ -188,7 +235,6 @@
         showToast('Файл колоды скачан! Отправьте его другу в мессенджер 📁', 'success');
       };
 
-      // Загрузить файл друга
       const handleFileUpload = (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -225,6 +271,13 @@
         showToast(`Слово "${card.english}" добавлено к вам! 🚀`, 'success');
       };
 
+      // Кнопка: вернуть ВСЕ выученные слова обратно в учебу
+      const handleRestoreAllMastered = () => {
+        if (masteredCards.length === 0) return;
+        setMasteredCards([]);
+        showToast('Все выученные слова успешно возвращены в карточки для повторения! 🔄', 'success');
+      };
+
       const currentCard = useMemo(() => {
         if (sessionQueue.length === 0) return null;
         const cardId = sessionQueue[currentCardIndex] || sessionQueue[0];
@@ -237,7 +290,8 @@
         return `[${cleaned.toLowerCase()}]`;
       };
 
-      const processInputLine = async (rawInput) => {
+      // Процесс анализа строки ввода с поддержкой неправильных глаголов и проверки дубликатов
+      const processInputLine = async (rawInput, existingDeck = deck) => {
         const line = rawInput.trim();
         if (!line) return null;
 
@@ -260,32 +314,71 @@
           else { english = part1; russian = part2; }
         } else {
           const lowerKey = part1.toLowerCase();
-          if (SMART_DICTIONARY[lowerKey]) {
-            const item = SMART_DICTIONARY[lowerKey];
-            return {
-              english: item.en, russian: item.ru, transcription: item.tr,
-              exampleEn: `This is an example with ${item.en}.`, exampleRu: `Это пример со словом ${item.ru}.`
-            };
+          
+          // Проверка на неправильный глагол (первая, вторая или третья форма)
+          let baseVerb = lowerKey;
+          if (REVERSE_IRREGULAR[lowerKey]) {
+            baseVerb = REVERSE_IRREGULAR[lowerKey];
           }
-          const isRu = /[а-яё]/i.test(part1);
-          english = part1; russian = part1;
-          try {
-            const langPair = isRu ? 'ru|en' : 'en|ru';
-            const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(part1)}&langpair=${langPair}`);
-            const data = await res.json();
-            if (data?.responseData?.translatedText) {
-              const translated = data.responseData.translatedText;
-              if (isRu) { english = translated; russian = part1; } 
-              else { english = part1; russian = translated; }
-            }
-          } catch (e) {}
+
+          if (IRREGULAR_VERBS[baseVerb]) {
+            const info = IRREGULAR_VERBS[baseVerb];
+            english = baseVerb.charAt(0).toUpperCase() + baseVerb.slice(1);
+            russian = `${info.ru} (V2: ${info.v2}, V3: ${info.v3})`;
+          } else if (SMART_DICTIONARY[lowerKey]) {
+            const item = SMART_DICTIONARY[lowerKey];
+            english = item.en;
+            russian = item.ru;
+          } else {
+            const isRu = /[а-яё]/i.test(part1);
+            english = part1; russian = part1;
+            try {
+              const langPair = isRu ? 'ru|en' : 'en|ru';
+              const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(part1)}&langpair=${langPair}`);
+              const data = await res.json();
+              if (data?.responseData?.translatedText) {
+                const translated = data.responseData.translatedText;
+                if (isRu) { english = translated; russian = part1; } 
+                else { english = part1; russian = translated; }
+              }
+            } catch (e) {}
+          }
+        }
+
+        // Автоматическая проверка неправильного глагола, если пользователь ввел слово в чистом виде
+        const cleanEngLower = english.toLowerCase();
+        let finalEnglish = english.charAt(0).toUpperCase() + english.slice(1);
+        let finalRussian = russian.charAt(0).toUpperCase() + russian.slice(1);
+
+        if (IRREGULAR_VERBS[cleanEngLower]) {
+          const info = IRREGULAR_VERBS[cleanEngLower];
+          // Если пользователь не указал формы вручную, добавим их красиво
+          if (!finalRussian.includes('V2:')) {
+            finalRussian = `${finalRussian} (V2: ${info.v2}, V3: ${info.v3})`;
+          }
+        }
+
+        // Проверяем, есть ли уже такое слово в колоде
+        const existingCard = existingDeck.find(c => c.english.toLowerCase() === cleanEngLower);
+        if (existingCard) {
+          // Проверяем, отличается ли перевод
+          if (!existingCard.russian.toLowerCase().includes(finalRussian.toLowerCase())) {
+            return { isDuplicate: true, existingCard, newRussian: finalRussian, rawInput };
+          } else {
+            return { action: 'exists', card: existingCard };
+          }
         }
 
         return {
-          english: english.charAt(0).toUpperCase() + english.slice(1),
-          russian: russian.charAt(0).toUpperCase() + russian.slice(1),
-          transcription: formatTranscription(english),
-          exampleEn: `Example sentence using "${english}".`, exampleRu: `Пример перевода: "${russian}".`
+          card: {
+            id: 'card-' + Date.now() + Math.random(),
+            english: finalEnglish,
+            russian: finalRussian,
+            transcription: formatTranscription(finalEnglish),
+            exampleEn: `Example sentence using "${finalEnglish}".`,
+            exampleRu: `Пример перевода: "${finalRussian}".`,
+            createdAt: Date.now()
+          }
         };
       };
 
@@ -295,15 +388,44 @@
         if (!query) return;
         setIsGenerating(true);
         try {
-          const data = await processInputLine(query);
-          if (!data) return;
-          const newCard = { id: 'card-' + Date.now(), ...data, createdAt: Date.now() };
-          setDeck(prev => [newCard, ...prev]);
-          setNewWordInput('');
-          showToast(`Слово "${newCard.english}" добавлено! 🚀`, 'success');
+          const res = await processInputLine(query, deck);
+          if (res.isDuplicate) {
+            setDuplicateModal(res);
+            setIsGenerating(false);
+            return;
+          }
+          if (res.action === 'exists') {
+            showToast(`Слово "${res.card.english}" уже есть в вашей колоде!`, 'info');
+            setNewWordInput('');
+            setIsGenerating(false);
+            return;
+          }
+          if (res.card) {
+            setDeck(prev => [res.card, ...prev]);
+            setNewWordInput('');
+            showToast(`Слово "${res.card.english}" добавлено! 🚀`, 'success');
+          }
         } catch (err) {
           showToast('Не удалось добавить слово', 'error');
         } finally { setIsGenerating(false); }
+      };
+
+      // Подтверждение добавления нового варианта перевода к существующей карточке
+      const handleConfirmAddTranslation = () => {
+        if (!duplicateModal) return;
+        const { existingCard, newRussian } = duplicateModal;
+        
+        setDeck(prev => prev.map(c => {
+          if (c.id === existingCard.id) {
+            const updatedRu = `${c.russian} / ${newRussian}`;
+            return { ...c, russian: updatedRu };
+          }
+          return c;
+        }));
+
+        showToast(`Новый вариант перевода добавлен к слову "${existingCard.english}"! 🤝`, 'success');
+        setDuplicateModal(null);
+        setNewWordInput('');
       };
 
       const handleBulkAddAuto = async () => {
@@ -312,14 +434,28 @@
         setIsBulkProcessing(true);
         try {
           const newCards = [];
+          let updatedDeck = [...deck];
           for (let i = 0; i < rawLines.length; i++) {
-            const data = await processInputLine(rawLines[i]);
-            if (data) newCards.push({ id: 'card-' + (Date.now() + i), ...data, createdAt: Date.now() + i });
+            const res = await processInputLine(rawLines[i], updatedDeck);
+            if (res.card) {
+              newCards.push(res.card);
+              updatedDeck.unshift(res.card);
+            } else if (res.isDuplicate) {
+              // Автоматически объединяем варианты при массовой загрузке
+              updatedDeck = updatedDeck.map(c => {
+                if (c.id === res.existingCard.id) {
+                  return { ...c, russian: `${c.russian} / ${res.newRussian}` };
+                }
+                return c;
+              });
+            }
           }
-          setDeck(prev => [...newCards, ...prev]);
+          if (newCards.length > 0) {
+            setDeck(updatedDeck);
+          }
           setBulkInput('');
           setIsBulkAddOpen(false);
-          showToast(`Добавлено ${newCards.length} слов! 🚀`, 'success');
+          showToast(`Массовая обработка завершена! Добавлено / обновлено карточек. 🚀`, 'success');
         } catch (err) {
           showToast('Ошибка при загрузке', 'error');
         } finally { setIsBulkProcessing(false); }
@@ -466,7 +602,7 @@
                       type="text"
                       value={newWordInput}
                       onChange={(e) => setNewWordInput(e.target.value)}
-                      placeholder="Слово или пара (например: car - машина)..."
+                      placeholder="Слово, глагол (например: come) или пара..."
                       className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500"
                     />
                   </div>
@@ -530,7 +666,7 @@
                               </button>
                             </div>
                             <div className="my-auto text-center px-4">
-                              <h2 className="text-2xl sm:text-4xl font-extrabold text-white">{currentCard.russian}</h2>
+                              <h2 className="text-2xl sm:text-3xl font-extrabold text-white">{currentCard.russian}</h2>
                             </div>
                             <div className="text-center text-xs text-slate-400 flex items-center justify-center gap-1">
                               <Icon name="mouse-pointer-click" className="w-3.5 h-3.5" /> Нажмите для переворота
@@ -584,7 +720,7 @@
                     const isMastered = masteredCards.some(m => m.id === card.id);
                     return (
                       <div key={card.id} className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
-                        <div className="flex justify-between items-start">
+                        <div className="flex justify-between items-start gap-2">
                           <div>
                             <h3 className="text-base font-bold text-white flex items-center gap-2">
                               {card.english}
@@ -594,7 +730,7 @@
                             </h3>
                             <span className="text-xs font-mono text-slate-400">{card.transcription}</span>
                           </div>
-                          <span className="text-sm font-medium text-blue-400">{card.russian}</span>
+                          <span className="text-xs font-medium text-blue-400 text-right max-w-[50%]">{card.russian}</span>
                         </div>
                         <div className="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center text-xs">
                           <div className="flex items-center gap-3">
@@ -620,8 +756,13 @@
             {/* ВКЛАДКА: ВЫУЧЕНО */}
             {activeTab === 'mastered' && (
               <div className="space-y-4">
-                <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
+                <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
                   <h2 className="text-lg font-bold text-emerald-400">Выученные слова ({masteredCards.length})</h2>
+                  {masteredCards.length > 0 && (
+                    <button onClick={handleRestoreAllMastered} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center gap-2 shadow-lg transition-all">
+                      <Icon name="rotate-ccw" className="w-4 h-4" /> Вернуть все в карточки
+                    </button>
+                  )}
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {filteredMastered.map((card) => (
@@ -639,22 +780,20 @@
               </div>
             )}
 
-            {/* ВКЛАДКА: ДРУЗЬЯ И ОБМЕН ФАЙЛАМИ */}
+            {/* ВКЛАДКА: ДРУЗЬЯ */}
             {activeTab === 'friends' && (
               <div className="space-y-6 max-w-2xl mx-auto w-full">
-                {/* Блок экспорта (скачать файл) */}
                 <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
                   <h3 className="text-base font-bold text-white flex items-center gap-2">
                     <Icon name="download" className="w-5 h-5 text-blue-400" /> Выгрузить свои слова для друга
                   </h3>
-                  <p className="text-xs text-slate-400">Создает небольшой файл со всеми вашими словами и результатами, который можно переслать в любой мессенджер:</p>
+                  <p className="text-xs text-slate-400">Создает небольшой файл со всеми вашими словами и результатами:</p>
                   
                   <button onClick={handleExportDeckFile} className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-lg transition-all">
                     <Icon name="download" className="w-4 h-4" /> Скачать файл с колодой (.json)
                   </button>
                 </div>
 
-                {/* Блок импорта (загрузить файл друга) */}
                 <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
                   <h3 className="text-base font-bold text-white flex items-center gap-2">
                     <Icon name="upload" className="w-5 h-5 text-emerald-400" /> Загрузить файл друга
@@ -678,7 +817,7 @@
                 {friends.length === 0 ? (
                   <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-8 text-center">
                     <Icon name="users" className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                    <p className="text-xs text-slate-400">Список друзей пуст. Скачайте свой файл или загрузите файл друга!</p>
+                    <p className="text-xs text-slate-400">Список друзей пуст.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 gap-3">
@@ -704,37 +843,16 @@
               </div>
             )}
 
-            {/* ВКЛАДКА: ИНСТРУКЦИЯ / МАНУАЛ */}
+            {/* ВКЛАДКА: ИНСТРУКЦИЯ */}
             {activeTab === 'manual' && (
               <div className="max-w-2xl mx-auto w-full space-y-6 py-2">
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
                   <h2 className="text-xl font-extrabold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
-                    <Icon name="help-circle" className="w-6 h-6 text-blue-400" /> Инструкция по обмену через файлы
+                    <Icon name="help-circle" className="w-6 h-6 text-blue-400" /> Инструкция
                   </h2>
-
-                  <div className="space-y-4 text-xs leading-relaxed text-slate-300">
-                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                      <h3 className="font-bold text-sm text-blue-400 mb-1">1. Как поделиться своей колодой?</h3>
-                      <ol className="list-decimal list-inside space-y-1 text-slate-400">
-                        <li>Зайдите во вкладку <strong>«Друзья»</strong>.</li>
-                        <li>Нажмите <strong>«Скачать файл с колодой (.json)»</strong>.</li>
-                        <li>Перешлите скачанный файл другу в Telegram, WhatsApp или почту.</li>
-                      </ol>
-                    </div>
-
-                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                      <h3 className="font-bold text-sm text-emerald-400 mb-1">2. Как добавить друга?</h3>
-                      <ol className="list-decimal list-inside space-y-1 text-slate-400">
-                        <li>Сохраните файл, который прислал вам друг, на свое устройство.</li>
-                        <li>Нажмите кнопку <strong>«Выбрать файл друга на устройстве»</strong> во вкладке «Друзья».</li>
-                        <li>Вы увидите его статистику и сможете переносить любые слова к себе!</li>
-                      </ol>
-                    </div>
-
-                    <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                      <h3 className="font-bold text-sm text-indigo-400 mb-1">3. Добавление слов</h3>
-                      <p className="text-slate-400">Добавляйте слова по одному или используйте кнопку <strong>«Списком»</strong> для массового добавления.</p>
-                    </div>
+                  <div className="space-y-3 text-xs text-slate-300">
+                    <p>✨ <strong>Умные неправильные глаголы:</strong> при добавлении любой формы (например, <em>came</em> или <em>gone</em>) приложение автоматически определяет глагол, объединяет формы и добавляет их в одну карточку.</p>
+                    <p>🔍 <strong>Проверка дубликатов:</strong> если слово уже есть в колоде, но с другим переводом, приложение спросит вас, нужно ли добавить новый вариант к существующему.</p>
                   </div>
                 </div>
               </div>
@@ -757,34 +875,50 @@
                       className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-blue-500"
                     />
                   </div>
-
-                  <div className="pt-2 border-t border-slate-800">
-                    <button onClick={() => setActiveTab('manual')} className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl flex items-center justify-center gap-2">
-                      <Icon name="help-circle" className="w-4 h-4 text-blue-400" /> Открыть инструкцию
-                    </button>
-                  </div>
                 </div>
               </div>
             )}
 
           </main>
 
-          {/* МОДАЛЬНОЕ ОКНО: ПРОСМОТР СЛОВ ДРУГА */}
+          {/* МОДАЛЬНОЕ ОКНО: ВОПРОС ПРИ ДУБЛИКАТЕ С ДРУГИМ ПЕРЕВОДОМ */}
+          {duplicateModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 text-center shadow-2xl">
+                <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center mx-auto border border-amber-500/20">
+                  <Icon name="alert-circle" className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-bold text-white">Слово уже существует!</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Слово <strong className="text-blue-400">{duplicateModal.existingCard.english}</strong> уже есть в вашей колоде.<br/>
+                  Текущий перевод: <span className="text-slate-400">"{duplicateModal.existingCard.russian}"</span><br/>
+                  Новый перевод: <span className="text-emerald-400">"{duplicateModal.newRussian}"</span>
+                </p>
+                <p className="text-xs text-slate-400">Добавить новый вариант перевода к имеющейся карточке?</p>
+                <div className="flex gap-2 pt-2">
+                  <button onClick={() => setDuplicateModal(null)} className="flex-1 py-2.5 text-xs text-slate-400 hover:text-white bg-slate-800 rounded-xl">Отмена</button>
+                  <button onClick={handleConfirmAddTranslation} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl">
+                    Добавить вариант
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* МОДАЛЬНЫЕ ОКНА: ПРОСМОТР СЛОВ ДРУГА */}
           {selectedFriend && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 relative max-h-[80vh] flex flex-col">
                 <button onClick={() => setSelectedFriend(null)} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"><Icon name="x" className="w-5 h-5" /></button>
                 <h3 className="text-lg font-bold text-white mb-1">Слова пользователя {selectedFriend.username}</h3>
-                <p className="text-xs text-slate-400 mb-4">Нажмите «+ Добавить себе» на любом слове, чтобы перенести его в вашу колоду!</p>
-
-                <div className="overflow-y-auto space-y-2 flex-grow pr-1">
+                <div className="overflow-y-auto space-y-2 flex-grow pr-1 mt-2">
                   {selectedFriend.deck?.map((card, idx) => (
                     <div key={idx} className="bg-slate-950 border border-slate-800 p-3 rounded-xl flex items-center justify-between">
                       <div>
                         <h4 className="text-sm font-bold text-white">{card.english}</h4>
                         <span className="text-xs text-blue-400">{card.russian}</span>
                       </div>
-                      <button onClick={() => handleAddCardFromFriend(card)} className="px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white text-xs font-medium rounded-lg border border-indigo-500/30 transition-all">
+                      <button onClick={() => handleAddCardFromFriend(card)} className="px-3 py-1.5 bg-indigo-600/25 hover:bg-indigo-600 text-indigo-300 hover:text-white text-xs font-medium rounded-lg border border-indigo-500/30 transition-all">
                         + Добавить себе
                       </button>
                     </div>
@@ -794,7 +928,6 @@
             </div>
           )}
 
-          {/* МОДАЛЬНОЕ ОКНО: РЕДАКТИРОВАНИЕ */}
           {editingCard && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 relative">
@@ -812,7 +945,6 @@
             </div>
           )}
 
-          {/* МОДАЛЬНОЕ ОКНО: МАССОВАЯ ЗАГРУЗКА */}
           {isBulkAddOpen && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 relative flex flex-col">
