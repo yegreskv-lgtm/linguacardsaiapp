@@ -106,7 +106,6 @@
       }
     ];
 
-    // База неправильных глаголов с формами и переводами для каждой формы
     const IRREGULAR_VERBS = {
       "be": { v1: "be", v2: "was/were", v3: "been", tr1: "[biː]", tr2: "[wɒz / wɜː]", tr3: "[biːn]", ru: "быть" },
       "begin": { v1: "begin", v2: "began", v3: "begun", tr1: "[bɪˈɡɪn]", tr2: "[bɪˈɡæn]", tr3: "[bɪˈɡʌn]", ru: "начинать(ся)" },
@@ -284,7 +283,6 @@
         let finalEnglish = english;
         let finalRussian = russian.charAt(0).toUpperCase() + russian.slice(1);
 
-        // Повторная проверка неправильного глагола
         const verbKey = Object.keys(IRREGULAR_VERBS).find(k => cleanEngLower.includes(k));
         if (verbKey && !formsDetails) {
           const info = IRREGULAR_VERBS[verbKey];
@@ -875,7 +873,7 @@
       );
     }
 
-    const root = ReactDOM.createRoot(rootEl => ReactDOM.createRoot(document.getElementById('root')));
+    const root = ReactDOM.createRoot(document.getElementById('root'));
     root.render(<App />);
   </script>
 </body>
