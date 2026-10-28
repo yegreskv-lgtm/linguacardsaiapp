@@ -106,9 +106,12 @@
       }
     ];
 
+    // Расширенная база неправильных глаголов со всеми формами и транскрипциями
     const IRREGULAR_VERBS = {
+      "arise": { v1: "arise", v2: "arose", v3: "arisen", tr1: "[əˈraɪz]", tr2: "[əˈrəʊz]", tr3: "[əˈrɪzn]", ru: "подниматься" },
+      "awake": { v1: "awake", v2: "awoke", v3: "awoken", tr1: "[əˈweɪk]", tr2: "[əˈwəʊk]", tr3: "[əˈwəʊkən]", ru: "пробуждать, просыпаться" },
       "be": { v1: "be", v2: "was/were", v3: "been", tr1: "[biː]", tr2: "[wɒz / wɜː]", tr3: "[biːn]", ru: "быть" },
-      "begin": { v1: "begin", v2: "began", v3: "begun", tr1: "[bɪˈɡɪn]", tr2: "[bɪˈɡæn]", tr3: "[bɪˈɡʌn]", ru: "начинать(ся)" },
+      "begin": { v1: "begin", v2: "began", v3: "begun", tr1: "[bɪˈɡɪn]", tr2: "[bɪˈɡæn]", tr3: "[bɪˈɡʌn]", ru: "начинать" },
       "break": { v1: "break", v2: "broke", v3: "broken", tr1: "[breɪk]", tr2: "[brəʊk]", tr3: "[ˈbrəʊkən]", ru: "ломать" },
       "bring": { v1: "bring", v2: "brought", v3: "brought", tr1: "[brɪŋ]", tr2: "[brɔːt]", tr3: "[brɔːt]", ru: "приносить" },
       "buy": { v1: "buy", v2: "bought", v3: "bought", tr1: "[baɪ]", tr2: "[bɔːt]", tr3: "[bɔːt]", ru: "покупать" },
@@ -283,14 +286,15 @@
         let finalEnglish = english;
         let finalRussian = russian.charAt(0).toUpperCase() + russian.slice(1);
 
-        const verbKey = Object.keys(IRREGULAR_VERBS).find(k => cleanEngLower.includes(k));
+        const verbKey = Object.keys(IRREGULAR_VERBS).find(k => cleanEngLower.includes(k) || k === cleanEngLower);
         if (verbKey && !formsDetails) {
           const info = IRREGULAR_VERBS[verbKey];
           finalEnglish = `${info.v1} — ${info.v2} — ${info.v3}`;
+          finalRussian = info.ru;
           formsDetails = {
-            f1: { word: info.v1, tr: info.tr1, ru: finalRussian },
-            f2: { word: info.v2, tr: info.tr2, ru: `${finalRussian} (прошедшее)` },
-            f3: { word: info.v3, tr: info.tr3, ru: `${finalRussian} (причастие)` }
+            f1: { word: info.v1, tr: info.tr1, ru: info.ru },
+            f2: { word: info.v2, tr: info.tr2, ru: `${info.ru} (прошедшее)` },
+            f3: { word: info.v3, tr: info.tr3, ru: `${info.ru} (причастие)` }
           };
         }
 
@@ -525,7 +529,7 @@
                       type="text"
                       value={newWordInput}
                       onChange={(e) => setNewWordInput(e.target.value)}
-                      placeholder="Слово, глагол (например: write) или пара..."
+                      placeholder="Слово, глагол (например: begun или awake) или пара..."
                       className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500"
                     />
                   </div>
@@ -607,22 +611,19 @@
                             <div className="my-auto text-center py-2">
                               {currentCard.formsDetails ? (
                                 <div className="space-y-3">
-                                  <h2 className="text-xl sm:text-2xl font-black text-white">{currentCard.english}</h2>
+                                  <h2 className="text-lg sm:text-xl font-black text-white">{currentCard.english}</h2>
                                   <div className="grid grid-cols-3 gap-2 pt-2 border-t border-indigo-900/60 text-left">
                                     <div className="bg-indigo-950/60 p-2 rounded-xl border border-indigo-900/40">
                                       <div className="text-xs font-bold text-indigo-300">{currentCard.formsDetails.f1.word}</div>
                                       <div className="text-[10px] font-mono text-slate-400">{currentCard.formsDetails.f1.tr}</div>
-                                      <div className="text-[10px] text-slate-300 mt-1 truncate">{currentCard.formsDetails.f1.ru}</div>
                                     </div>
                                     <div className="bg-indigo-950/60 p-2 rounded-xl border border-indigo-900/40">
                                       <div className="text-xs font-bold text-indigo-300">{currentCard.formsDetails.f2.word}</div>
                                       <div className="text-[10px] font-mono text-slate-400">{currentCard.formsDetails.f2.tr}</div>
-                                      <div className="text-[10px] text-slate-300 mt-1 truncate">{currentCard.formsDetails.f2.ru}</div>
                                     </div>
                                     <div className="bg-indigo-950/60 p-2 rounded-xl border border-indigo-900/40">
                                       <div className="text-xs font-bold text-indigo-300">{currentCard.formsDetails.f3.word}</div>
                                       <div className="text-[10px] font-mono text-slate-400">{currentCard.formsDetails.f3.tr}</div>
-                                      <div className="text-[10px] text-slate-300 mt-1 truncate">{currentCard.formsDetails.f3.ru}</div>
                                     </div>
                                   </div>
                                 </div>
@@ -672,43 +673,41 @@
                       <div key={card.id} className="bg-slate-900/80 border border-slate-800 rounded-xl p-4 flex flex-col justify-between">
                         <div className="flex justify-between items-start gap-2">
                           <div className="w-full">
-                            <h3 className="text-base font-bold text-white flex items-center justify-between gap-2">
-                              <span>{card.english}</span>
-                              <button onClick={() => handleSpeak(card.english)} className="text-slate-400 hover:text-indigo-400 shrink-0">
-                                <Icon name="volume-2" className="w-4 h-4" />
-                              </button>
-                            </h3>
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-base font-bold text-white tracking-wide">
+                                {card.english}
+                              </h3>
+                              <div className="flex items-center gap-2">
+                                {/* Перевод строго справа (зеленая зона) */}
+                                <span className="text-xs font-semibold text-emerald-400 bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-900/50">{card.russian}</span>
+                                <button onClick={() => handleSpeak(card.english)} className="text-slate-400 hover:text-indigo-400 shrink-0">
+                                  <Icon name="volume-2" className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
 
                             {card.formsDetails ? (
-                              <div className="grid grid-cols-3 gap-2 mt-2 pt-2 border-t border-slate-800 text-left">
+                              <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-slate-800 text-left">
                                 <div className="bg-slate-950 p-2 rounded-lg border border-slate-800">
                                   <div className="text-[11px] font-bold text-blue-400">{card.formsDetails.f1.word}</div>
                                   <div className="text-[10px] font-mono text-slate-400">{card.formsDetails.f1.tr}</div>
-                                  <div className="text-[10px] text-slate-300 mt-0.5 truncate">{card.formsDetails.f1.ru}</div>
                                 </div>
                                 <div className="bg-slate-950 p-2 rounded-lg border border-slate-800">
                                   <div className="text-[11px] font-bold text-blue-400">{card.formsDetails.f2.word}</div>
                                   <div className="text-[10px] font-mono text-slate-400">{card.formsDetails.f2.tr}</div>
-                                  <div className="text-[10px] text-slate-300 mt-0.5 truncate">{card.formsDetails.f2.ru}</div>
                                 </div>
                                 <div className="bg-slate-950 p-2 rounded-lg border border-slate-800">
                                   <div className="text-[11px] font-bold text-blue-400">{card.formsDetails.f3.word}</div>
                                   <div className="text-[10px] font-mono text-slate-400">{card.formsDetails.f3.tr}</div>
-                                  <div className="text-[10px] text-slate-300 mt-0.5 truncate">{card.formsDetails.f3.ru}</div>
                                 </div>
                               </div>
                             ) : (
-                              <div className="flex items-center justify-between mt-1">
+                              <div className="mt-1">
                                 <span className="text-xs font-mono text-slate-400">{card.transcription}</span>
-                                <span className="text-xs font-medium text-blue-400 text-right">{card.russian}</span>
                               </div>
                             )}
                           </div>
                         </div>
-
-                        {card.formsDetails && (
-                          <div className="mt-2 text-xs font-medium text-blue-400">Перевод: {card.russian}</div>
-                        )}
 
                         <div className="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center text-xs">
                           <div className="flex items-center gap-3">
@@ -766,8 +765,7 @@
                     <Icon name="help-circle" className="w-6 h-6 text-blue-400" /> Инструкция
                   </h2>
                   <div className="space-y-3 text-xs text-slate-300">
-                    <p>✨ <strong>Неправильные глаголы:</strong> автоматически записываются в формате <code className="bg-slate-950 px-2 py-0.5 rounded text-blue-400 font-mono">write — wrote — written</code>. Под каждой формой отображается индивидуальная транскрипция и перевод.</p>
-                    <p>🔍 <strong>Проверка дубликатов:</strong> если слово уже есть в колоде, но с другим переводом, приложение предложит добавить новый вариант.</p>
+                    <p>✨ <strong>Неправильные глаголы:</strong> автоматически записываются в формате <code className="bg-slate-950 px-2 py-0.5 rounded text-blue-400 font-mono">begin — began — begun</code>. Под каждой формой отображается индивидуальная транскрипция, а перевод вынесен направо.</p>
                   </div>
                 </div>
               </div>
@@ -860,7 +858,7 @@
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 relative flex flex-col">
                 <button onClick={() => setIsBulkAddOpen(false)} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"><Icon name="x" className="w-5 h-5" /></button>
                 <h3 className="text-lg font-bold text-white mb-2">Массовая загрузка</h3>
-                <textarea rows={6} value={bulkInput} onChange={(e) => setBulkInput(e.target.value)} placeholder="write — писать" className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-100 mb-4 resize-none" />
+                <textarea rows={6} value={bulkInput} onChange={(e) => setBulkInput(e.target.value)} placeholder="begin — начинать" className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-100 mb-4 resize-none" />
                 <div className="flex justify-end gap-2">
                   <button onClick={() => setIsBulkAddOpen(false)} className="px-4 py-2 text-xs text-slate-400">Отмена</button>
                   <button onClick={handleBulkAddAuto} disabled={isBulkProcessing || !bulkInput.trim()} className="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl flex items-center gap-2">Загрузить</button>
