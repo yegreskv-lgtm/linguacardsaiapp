@@ -104,7 +104,7 @@
       }
     ];
 
-    // Расширенная и проверенная база неправильных глаголов
+    // Полная база неправильных глаголов
     const IRREGULAR_VERBS = {
       "arise": { v1: "arise", v2: "arose", v3: "arisen", tr1: "[əˈraɪz]", tr2: "[əˈrəʊz]", tr3: "[əˈrɪzn]", ru: "подниматься" },
       "awake": { v1: "awake", v2: "awoke", v3: "awoken", tr1: "[əˈweɪk]", tr2: "[əˈwəʊk]", tr3: "[əˈwəʊkən]", ru: "пробуждать, просыпаться" },
@@ -148,7 +148,10 @@
       "teach": { v1: "teach", v2: "taught", v3: "taught", tr1: "[tiːtʃ]", tr2: "[tɔːt]", tr3: "[tɔːt]", ru: "учить" },
       "tell": { v1: "tell", v2: "told", v3: "told", tr1: "[tel]", tr2: "[təʊld]", tr3: "[təʊld]", ru: "рассказывать" },
       "think": { v1: "think", v2: "thought", v3: "thought", tr1: "[θɪŋk]", tr2: "[θɔːt]", tr3: "[θɔːt]", ru: "думать" },
+      "throw": { v1: "throw", v2: "threw", v3: "thrown", tr1: "[θrəʊ]", tr2: "[θruː]", tr3: "[θrəʊn]", ru: "бросать" },
       "understand": { v1: "understand", v2: "understood", v3: "understood", tr1: "[ˌʌndərˈstænd]", tr2: "[ˌʌndərˈstʊd]", tr3: "[ˌʌndərˈstʊd]", ru: "понимать" },
+      "wake": { v1: "wake", v2: "woke", v3: "woken", tr1: "[weɪk]", tr2: "[wəʊk]", tr3: "[ˈwəʊkən]", ru: "просыпаться, будить" },
+      "wear": { v1: "wear", v2: "wore", v3: "worn", tr1: "[weə]", tr2: "[wɔː]", tr3: "[wɔːn]", ru: "носить одежду" },
       "wind": { v1: "wind", v2: "wound", v3: "wound", tr1: "[waɪnd]", tr2: "[waʊnd]", tr3: "[waʊnd]", ru: "обматывать, изгибаться" },
       "win": { v1: "win", v2: "won", v3: "won", tr1: "[wɪn]", tr2: "[wʌn]", tr3: "[wʌn]", ru: "побеждать" },
       "write": { v1: "write", v2: "wrote", v3: "written", tr1: "[raɪt]", tr2: "[rəʊt]", tr3: "[ˈrɪtn]", ru: "писать" }
@@ -171,11 +174,31 @@
         try {
           const parsed = JSON.parse(saved);
           const seen = new Set();
+          // Очищаем кэш от поврежденных или старых дублей
           return parsed.filter(card => {
             const key = (card.formsDetails ? card.formsDetails.f1.word : card.english).toLowerCase().trim();
             if (seen.has(key)) return false;
             seen.add(key);
             return true;
+          }).map(card => {
+            // Исправляем «битые» карточки на лету из базы глаголов
+            const cleanEng = card.english.split('—')[0].trim().toLowerCase();
+            const verbBase = REVERSE_IRREGULAR[cleanEng] || cleanEng;
+            if (IRREGULAR_VERBS[verbBase]) {
+              const info = IRREGULAR_VERBS[verbBase];
+              return {
+                ...card,
+                english: `${info.v1} — ${info.v2} — ${info.v3}`,
+                russian: info.ru,
+                transcription: null,
+                formsDetails: {
+                  f1: { word: info.v1, tr: info.tr1 },
+                  f2: { word: info.v2, tr: info.tr2 },
+                  f3: { word: info.v3, tr: info.tr3 }
+                }
+              };
+            }
+            return card;
           });
         } catch (e) {
           return INITIAL_CARDS;
@@ -259,7 +282,7 @@
           baseVerb = REVERSE_IRREGULAR[lowerKey];
         }
 
-        // Проверяем, является ли слово неправильным глаголом по нашей базе
+        // Проверка по нашей базе неправильных глаголов
         if (IRREGULAR_VERBS[baseVerb]) {
           const info = IRREGULAR_VERBS[baseVerb];
           english = `${info.v1} — ${info.v2} — ${info.v3}`;
@@ -289,8 +312,6 @@
         }
 
         const cleanEngLower = english.toLowerCase();
-        
-        // Повторная проверка через базу глаголов на случай перевода из API
         const verbKey = Object.keys(IRREGULAR_VERBS).find(k => cleanEngLower.includes(k) || k === cleanEngLower);
         if (verbKey && !formsDetails) {
           const info = IRREGULAR_VERBS[verbKey];
@@ -303,7 +324,7 @@
           };
         }
 
-        // Убираем случайный английский мусор из русского перевода
+        // Жёстко очищаем русский перевод от английских букв и форм
         russian = russian.replace(/[a-zA-Z]+/g, '').replace(/[\/\—\-]+/g, ' ').trim();
         russian = russian.charAt(0).toUpperCase() + russian.slice(1);
         if (!russian) russian = part1;
@@ -782,7 +803,7 @@
                     <Icon name="help-circle" className="w-6 h-6 text-blue-400" /> Инструкция
                   </h2>
                   <div className="space-y-3 text-xs text-slate-300">
-                    <p>✨ Все неправильные глаголы распознаются корректно и очищаются от лишних английских слов в переводах.</p>
+                    <p>✨ Все неправильные глаголы очищены и автоматически приводятся к строгому формату.</p>
                   </div>
                 </div>
               </div>
