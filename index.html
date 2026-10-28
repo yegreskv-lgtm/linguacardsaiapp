@@ -106,7 +106,7 @@
       }
     ];
 
-    // Расширенная база неправильных глаголов со всеми формами и транскрипциями
+    // Полная база неправильных глаголов
     const IRREGULAR_VERBS = {
       "arise": { v1: "arise", v2: "arose", v3: "arisen", tr1: "[əˈraɪz]", tr2: "[əˈrəʊz]", tr3: "[əˈrɪzn]", ru: "подниматься" },
       "awake": { v1: "awake", v2: "awoke", v3: "awoken", tr1: "[əˈweɪk]", tr2: "[əˈwəʊk]", tr3: "[əˈwəʊkən]", ru: "пробуждать, просыпаться" },
@@ -143,6 +143,8 @@
       "take": { v1: "take", v2: "took", v3: "taken", tr1: "[teɪk]", tr2: "[tʊk]", tr3: "[ˈteɪkən]", ru: "брать" },
       "tell": { v1: "tell", v2: "told", v3: "told", tr1: "[tel]", tr2: "[təʊld]", tr3: "[təʊld]", ru: "рассказывать" },
       "think": { v1: "think", v2: "thought", v3: "thought", tr1: "[θɪŋk]", tr2: "[θɔːt]", tr3: "[θɔːt]", ru: "думать" },
+      "wind": { v1: "wind", v2: "wound", v3: "wound", tr1: "[waɪnd]", tr2: "[waʊnd]", tr3: "[waʊnd]", ru: "обматывать, изгибаться" },
+      "win": { v1: "win", v2: "won", v3: "won", tr1: "[wɪn]", tr2: "[wʌn]", tr3: "[wʌn]", ru: "побеждать" },
       "write": { v1: "write", v2: "wrote", v3: "written", tr1: "[raɪt]", tr2: "[rəʊt]", tr3: "[ˈrɪtn]", ru: "писать" }
     };
 
@@ -153,15 +155,6 @@
       REVERSE_IRREGULAR[data.v2.toLowerCase()] = v1;
       REVERSE_IRREGULAR[data.v3.toLowerCase()] = v1;
     });
-
-    const SMART_DICTIONARY = {
-      "ass": { en: "Ass", ru: "Осел / Упрямец", tr: "[æs]" },
-      "talk": { en: "Talk", ru: "Разговаривать", tr: "[tɔːk]" },
-      "say": { en: "Say", ru: "Говорить, сказать", tr: "[seɪ]" },
-      "speak": { en: "Speak", ru: "Говорить", tr: "[spiːk]" },
-      "teacher": { en: "Teacher", ru: "Учитель", tr: "[ˈtiːtʃər]" },
-      "egg": { en: "Egg", ru: "Яйцо", tr: "[eɡ]" }
-    };
 
     function App() {
       const [username, setUsername] = useState(() => localStorage.getItem('lingua_username') || 'Сергей');
@@ -258,14 +251,10 @@
             english = `${info.v1} — ${info.v2} — ${info.v3}`;
             russian = info.ru;
             formsDetails = {
-              f1: { word: info.v1, tr: info.tr1, ru: info.ru },
-              f2: { word: info.v2, tr: info.tr2, ru: `${info.ru} (прошедшее)` },
-              f3: { word: info.v3, tr: info.tr3, ru: `${info.ru} (причастие)` }
+              f1: { word: info.v1, tr: info.tr1 },
+              f2: { word: info.v2, tr: info.tr2 },
+              f3: { word: info.v3, tr: info.tr3 }
             };
-          } else if (SMART_DICTIONARY[lowerKey]) {
-            const item = SMART_DICTIONARY[lowerKey];
-            english = item.en;
-            russian = item.ru;
           } else {
             const isRu = /[а-яё]/i.test(part1);
             english = part1; russian = part1;
@@ -292,13 +281,18 @@
           finalEnglish = `${info.v1} — ${info.v2} — ${info.v3}`;
           finalRussian = info.ru;
           formsDetails = {
-            f1: { word: info.v1, tr: info.tr1, ru: info.ru },
-            f2: { word: info.v2, tr: info.tr2, ru: `${info.ru} (прошедшее)` },
-            f3: { word: info.v3, tr: info.tr3, ru: `${info.ru} (причастие)` }
+            f1: { word: info.v1, tr: info.tr1 },
+            f2: { word: info.v2, tr: info.tr2 },
+            f3: { word: info.v3, tr: info.tr3 }
           };
         }
 
-        const existingCard = existingDeck.find(c => c.english.toLowerCase() === cleanEngLower || (formsDetails && c.english.toLowerCase().includes(formsDetails.f1.word)));
+        // Авто-слияние одинаковых или родственных слов
+        const existingCard = existingDeck.find(c => {
+          const cEng = c.english.toLowerCase();
+          return cEng === cleanEngLower || (formsDetails && cEng.includes(formsDetails.f1.word));
+        });
+
         if (existingCard) {
           if (!existingCard.russian.toLowerCase().includes(finalRussian.toLowerCase())) {
             return { isDuplicate: true, existingCard, newRussian: finalRussian, rawInput };
@@ -314,8 +308,6 @@
             russian: finalRussian,
             transcription: formsDetails ? null : formatTranscription(finalEnglish),
             formsDetails: formsDetails || null,
-            exampleEn: `Example sentence using "${finalEnglish}".`,
-            exampleRu: `Пример перевода: "${finalRussian}".`,
             createdAt: Date.now()
           }
         };
@@ -342,7 +334,7 @@
           if (res.card) {
             setDeck(prev => [res.card, ...prev]);
             setNewWordInput('');
-            showToast(`Слово "${res.card.english}" добавлено! 🚀`, 'success');
+            showToast(`Слово добавлено! 🚀`, 'success');
           }
         } catch (err) {
           showToast('Не удалось добавить слово', 'error');
@@ -361,7 +353,7 @@
           return c;
         }));
 
-        showToast(`Новый вариант перевода добавлен к слову "${existingCard.english}"! 🤝`, 'success');
+        showToast(`Новый вариант перевода добавлен! 🤝`, 'success');
         setDuplicateModal(null);
         setNewWordInput('');
       };
@@ -392,7 +384,7 @@
           }
           setBulkInput('');
           setIsBulkAddOpen(false);
-          showToast(`Массовая обработка завершена! 🚀`, 'success');
+          showToast(`Массовая загрузка завершена! 🚀`, 'success');
         } catch (err) {
           showToast('Ошибка при загрузке', 'error');
         } finally { setIsBulkProcessing(false); }
@@ -420,7 +412,7 @@
         if (!masteredCards.some(c => c.id === cardToMaster.id)) {
           setMasteredCards(prev => [cardToMaster, ...prev]);
         }
-        showToast(`Выучено: ${cardToMaster.english}!`, 'success');
+        showToast(`Слово выучено!`, 'success');
       };
 
       const handleRestoreCard = (card) => {
@@ -529,7 +521,7 @@
                       type="text"
                       value={newWordInput}
                       onChange={(e) => setNewWordInput(e.target.value)}
-                      placeholder="Слово, глагол (например: begun или awake) или пара..."
+                      placeholder="Слово, глагол или пара..."
                       className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500"
                     />
                   </div>
@@ -585,12 +577,10 @@
                       <div onClick={() => setIsFlipped(!isFlipped)} className="w-full h-80 sm:h-96 perspective-1000 cursor-pointer group select-none">
                         <div className={`relative w-full h-full duration-500 transform-style-3d transition-transform ${isFlipped ? 'rotate-y-180' : ''}`}>
                           
+                          {/* ЛИЦЕВАЯ СТОРОНА: ТОЛЬКО РУССКИЙ ЯЗЫК */}
                           <div className="absolute inset-0 w-full h-full rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-700/60 p-6 sm:p-8 flex flex-col justify-between backface-hidden shadow-2xl">
                             <div className="flex items-center justify-between">
-                              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 bg-slate-800/80 px-3 py-1 rounded-full">Русский</span>
-                              <button onClick={(e) => { e.stopPropagation(); handleSpeak(currentCard.english); }} className="p-2.5 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700 transition-all border border-slate-700">
-                                <Icon name="volume-2" className="w-5 h-5 text-blue-400" />
-                              </button>
+                              <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 bg-slate-800/80 px-3 py-1 rounded-full">Перевод</span>
                             </div>
                             <div className="my-auto text-center px-4">
                               <h2 className="text-2xl sm:text-3xl font-extrabold text-white">{currentCard.russian}</h2>
@@ -600,6 +590,7 @@
                             </div>
                           </div>
 
+                          {/* ОБРАТНАЯ СТОРОНА: АНГЛИЙСКИЙ И ФОРМЫ С ТРАНСКРИПЦИЯМИ */}
                           <div className="absolute inset-0 w-full h-full rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 border border-indigo-500/40 p-6 sm:p-8 flex flex-col justify-between rotate-y-180 backface-hidden shadow-2xl overflow-y-auto">
                             <div className="flex items-center justify-between shrink-0">
                               <span className="text-xs font-semibold uppercase tracking-wider text-indigo-300 bg-indigo-950/80 px-3 py-1 rounded-full">English</span>
@@ -611,27 +602,27 @@
                             <div className="my-auto text-center py-2">
                               {currentCard.formsDetails ? (
                                 <div className="space-y-3">
-                                  <h2 className="text-lg sm:text-xl font-black text-white">{currentCard.english}</h2>
+                                  <div className="text-xs font-medium text-emerald-400">{currentCard.russian}</div>
                                   <div className="grid grid-cols-3 gap-2 pt-2 border-t border-indigo-900/60 text-left">
                                     <div className="bg-indigo-950/60 p-2 rounded-xl border border-indigo-900/40">
                                       <div className="text-xs font-bold text-indigo-300">{currentCard.formsDetails.f1.word}</div>
-                                      <div className="text-[10px] font-mono text-slate-400">{currentCard.formsDetails.f1.tr}</div>
+                                      <div className="text-[10px] font-mono text-slate-400 mt-1">{currentCard.formsDetails.f1.tr}</div>
                                     </div>
                                     <div className="bg-indigo-950/60 p-2 rounded-xl border border-indigo-900/40">
                                       <div className="text-xs font-bold text-indigo-300">{currentCard.formsDetails.f2.word}</div>
-                                      <div className="text-[10px] font-mono text-slate-400">{currentCard.formsDetails.f2.tr}</div>
+                                      <div className="text-[10px] font-mono text-slate-400 mt-1">{currentCard.formsDetails.f2.tr}</div>
                                     </div>
                                     <div className="bg-indigo-950/60 p-2 rounded-xl border border-indigo-900/40">
                                       <div className="text-xs font-bold text-indigo-300">{currentCard.formsDetails.f3.word}</div>
-                                      <div className="text-[10px] font-mono text-slate-400">{currentCard.formsDetails.f3.tr}</div>
+                                      <div className="text-[10px] font-mono text-slate-400 mt-1">{currentCard.formsDetails.f3.tr}</div>
                                     </div>
                                   </div>
                                 </div>
                               ) : (
                                 <>
-                                  <h2 className="text-3xl sm:text-4xl font-black text-white mb-1">{currentCard.english}</h2>
+                                  <h2 className="text-2xl sm:text-3xl font-black text-white mb-1">{currentCard.english}</h2>
                                   <p className="text-xs font-mono text-indigo-300 bg-indigo-950/60 px-3 py-1 rounded-lg inline-block mb-3 border border-indigo-800/40">{currentCard.transcription}</p>
-                                  <p className="text-xs text-slate-300 italic">"{currentCard.exampleEn}"</p>
+                                  <div className="text-xs font-medium text-emerald-400">{currentCard.russian}</div>
                                 </>
                               )}
                             </div>
@@ -678,7 +669,6 @@
                                 {card.english}
                               </h3>
                               <div className="flex items-center gap-2">
-                                {/* Перевод строго справа (зеленая зона) */}
                                 <span className="text-xs font-semibold text-emerald-400 bg-emerald-950/60 px-2.5 py-1 rounded-lg border border-emerald-900/50">{card.russian}</span>
                                 <button onClick={() => handleSpeak(card.english)} className="text-slate-400 hover:text-indigo-400 shrink-0">
                                   <Icon name="volume-2" className="w-4 h-4" />
@@ -690,15 +680,15 @@
                               <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-slate-800 text-left">
                                 <div className="bg-slate-950 p-2 rounded-lg border border-slate-800">
                                   <div className="text-[11px] font-bold text-blue-400">{card.formsDetails.f1.word}</div>
-                                  <div className="text-[10px] font-mono text-slate-400">{card.formsDetails.f1.tr}</div>
+                                  <div className="text-[10px] font-mono text-slate-400 mt-0.5">{card.formsDetails.f1.tr}</div>
                                 </div>
                                 <div className="bg-slate-950 p-2 rounded-lg border border-slate-800">
                                   <div className="text-[11px] font-bold text-blue-400">{card.formsDetails.f2.word}</div>
-                                  <div className="text-[10px] font-mono text-slate-400">{card.formsDetails.f2.tr}</div>
+                                  <div className="text-[10px] font-mono text-slate-400 mt-0.5">{card.formsDetails.f2.tr}</div>
                                 </div>
                                 <div className="bg-slate-950 p-2 rounded-lg border border-slate-800">
                                   <div className="text-[11px] font-bold text-blue-400">{card.formsDetails.f3.word}</div>
-                                  <div className="text-[10px] font-mono text-slate-400">{card.formsDetails.f3.tr}</div>
+                                  <div className="text-[10px] font-mono text-slate-400 mt-0.5">{card.formsDetails.f3.tr}</div>
                                 </div>
                               </div>
                             ) : (
@@ -765,7 +755,7 @@
                     <Icon name="help-circle" className="w-6 h-6 text-blue-400" /> Инструкция
                   </h2>
                   <div className="space-y-3 text-xs text-slate-300">
-                    <p>✨ <strong>Неправильные глаголы:</strong> автоматически записываются в формате <code className="bg-slate-950 px-2 py-0.5 rounded text-blue-400 font-mono">begin — began — begun</code>. Под каждой формой отображается индивидуальная транскрипция, а перевод вынесен направо.</p>
+                    <p>✨ На лицевой стороне карточки отображается только перевод на русском языке. Все формы английских слов и транскрипции открываются на обратной стороне при перевороте.</p>
                   </div>
                 </div>
               </div>
@@ -858,7 +848,7 @@
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 relative flex flex-col">
                 <button onClick={() => setIsBulkAddOpen(false)} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"><Icon name="x" className="w-5 h-5" /></button>
                 <h3 className="text-lg font-bold text-white mb-2">Массовая загрузка</h3>
-                <textarea rows={6} value={bulkInput} onChange={(e) => setBulkInput(e.target.value)} placeholder="begin — начинать" className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-100 mb-4 resize-none" />
+                <textarea rows={6} value={bulkInput} onChange={(e) => setBulkInput(e.target.value)} placeholder="Слова через перевод..." className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-100 mb-4 resize-none" />
                 <div className="flex justify-end gap-2">
                   <button onClick={() => setIsBulkAddOpen(false)} className="px-4 py-2 text-xs text-slate-400">Отмена</button>
                   <button onClick={handleBulkAddAuto} disabled={isBulkProcessing || !bulkInput.trim()} className="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl flex items-center gap-2">Загрузить</button>
