@@ -100,13 +100,10 @@
         russian: "Счастливая случайность",
         transcription: "[ˌserənˈdɪpəti]",
         formsDetails: null,
-        exampleEn: "Finding this rare book was pure serendipity.",
-        exampleRu: "Находка этой редкой книги была чистой случайностью.",
         createdAt: Date.now() - 500000
       }
     ];
 
-    // Полная база неправильных глаголов
     const IRREGULAR_VERBS = {
       "arise": { v1: "arise", v2: "arose", v3: "arisen", tr1: "[əˈraɪz]", tr2: "[əˈrəʊz]", tr3: "[əˈrɪzn]", ru: "подниматься" },
       "awake": { v1: "awake", v2: "awoke", v3: "awoken", tr1: "[əˈweɪk]", tr2: "[əˈwəʊk]", tr3: "[əˈwəʊkən]", ru: "пробуждать, просыпаться" },
@@ -139,6 +136,12 @@
       "sing": { v1: "sing", v2: "sang", v3: "sung", tr1: "[sɪŋ]", tr2: "[sæŋ]", tr3: "[sʌŋ]", ru: "петь" },
       "sit": { v1: "sit", v2: "sat", v3: "sat", tr1: "[sɪt]", tr2: "[sæt]", tr3: "[sæt]", ru: "сидеть" },
       "speak": { v1: "speak", v2: "spoke", v3: "spoken", tr1: "[spiːk]", tr2: "[spəʊk]", tr3: "[ˈspəʊkən]", ru: "говорить" },
+      "sting": { v1: "sting", v2: "stung", v3: "stung", tr1: "[stɪŋ]", tr2: "[stʌŋ]", tr3: "[stʌŋ]", ru: "жалить" },
+      "stink": { v1: "stink", v2: "stank", v3: "stunk", tr1: "[stɪŋk]", tr2: "[stæŋk]", tr3: "[stʌŋk]", ru: "вонять" },
+      "strike": { v1: "strike", v2: "struck", v3: "struck", tr1: "[straɪk]", tr2: "[strʌk]", tr3: "[strʌk]", ru: "бастовать, ударять" },
+      "swear": { v1: "swear", v2: "swore", v3: "sworn", tr1: "[sweə]", tr2: "[swɔː]", tr3: "[swɔːn]", ru: "клясться, ругаться" },
+      "sweep": { v1: "sweep", v2: "swept", v3: "swept", tr1: "[swiːp]", tr2: "[swept]", tr3: "[swept]", ru: "подметать" },
+      "swell": { v1: "swell", v2: "swelled", v3: "swollen", tr1: "[swel]", tr2: "[sweld]", tr3: "[ˈswəʊlən]", ru: "опухать" },
       "swim": { v1: "swim", v2: "swam", v3: "swum", tr1: "[swɪm]", tr2: "[swæm]", tr3: "[swʌm]", ru: "плавать" },
       "take": { v1: "take", v2: "took", v3: "taken", tr1: "[teɪk]", tr2: "[tʊk]", tr3: "[ˈteɪkən]", ru: "брать" },
       "tell": { v1: "tell", v2: "told", v3: "told", tr1: "[tel]", tr2: "[təʊld]", tr3: "[təʊld]", ru: "рассказывать" },
@@ -161,7 +164,20 @@
       
       const [deck, setDeck] = useState(() => {
         const saved = localStorage.getItem('lingua_deck');
-        return saved ? JSON.parse(saved) : INITIAL_CARDS;
+        if (!saved) return INITIAL_CARDS;
+        try {
+          const parsed = JSON.parse(saved);
+          // Уникализируем колоду по базовому английскому слову или первой форме
+          const seen = new Set();
+          return parsed.filter(card => {
+            const key = (card.formsDetails ? card.formsDetails.f1.word : card.english).toLowerCase().trim();
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+        } catch (e) {
+          return INITIAL_CARDS;
+        }
       });
 
       const [masteredCards, setMasteredCards] = useState(() => {
@@ -287,10 +303,11 @@
           };
         }
 
-        // Авто-слияние одинаковых или родственных слов
+        const baseCheckKey = formsDetails ? formsDetails.f1.word.toLowerCase() : cleanEngLower;
+
         const existingCard = existingDeck.find(c => {
-          const cEng = c.english.toLowerCase();
-          return cEng === cleanEngLower || (formsDetails && cEng.includes(formsDetails.f1.word));
+          const cBase = c.formsDetails ? c.formsDetails.f1.word.toLowerCase() : c.english.toLowerCase();
+          return cBase === baseCheckKey;
         });
 
         if (existingCard) {
@@ -326,7 +343,7 @@
             return;
           }
           if (res.action === 'exists') {
-            showToast(`Слово "${res.card.english}" уже есть в вашей колоде!`, 'info');
+            showToast(`Слово уже есть в вашей колоде!`, 'info');
             setNewWordInput('');
             setIsGenerating(false);
             return;
@@ -390,6 +407,13 @@
         } finally { setIsBulkProcessing(false); }
       };
 
+      const handleDeleteCard = (cardId) => {
+        setDeck(prev => prev.filter(c => c.id !== cardId));
+        setMasteredCards(prev => prev.filter(c => c.id !== cardId));
+        setSessionQueue(prev => prev.filter(id => id !== cardId));
+        showToast('Слово удалено', 'info');
+      };
+
       const handleSkip = () => {
         if (sessionQueue.length <= 1) return;
         setIsFlipped(false);
@@ -412,6 +436,7 @@
         if (!masteredCards.some(c => c.id === cardToMaster.id)) {
           setMasteredCards(prev => [cardToMaster, ...prev]);
         }
+        setSessionQueue(prev => prev.filter(id => id !== cardToMaster.id));
         showToast(`Слово выучено!`, 'success');
       };
 
@@ -708,10 +733,7 @@
                               <Icon name="key" className="w-3.5 h-3.5" /> Изменить
                             </button>
                           </div>
-                          <button onClick={() => {
-                            setDeck(prev => prev.filter(c => c.id !== card.id));
-                            setMasteredCards(prev => prev.filter(c => c.id !== card.id));
-                          }} className="text-red-400 hover:text-red-300">Удалить</button>
+                          <button onClick={() => handleDeleteCard(card.id)} className="text-red-400 hover:text-red-300">Удалить</button>
                         </div>
                       </div>
                     );
@@ -755,7 +777,7 @@
                     <Icon name="help-circle" className="w-6 h-6 text-blue-400" /> Инструкция
                   </h2>
                   <div className="space-y-3 text-xs text-slate-300">
-                    <p>✨ На лицевой стороне карточки отображается только перевод на русском языке. Все формы английских слов и транскрипции открываются на обратной стороне при перевороте.</p>
+                    <p>✨ Все дубликаты автоматически объединены, а удаление слов работает мгновенно.</p>
                   </div>
                 </div>
               </div>
