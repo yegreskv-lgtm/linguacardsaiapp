@@ -77,9 +77,6 @@
         case 'key': return <svg {...iconProps}><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.778-7.778zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>;
         case 'trash-2': return <svg {...iconProps}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>;
         case 'shuffle': return <svg {...iconProps}><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4"/><path d="M2 6h1.4c1.3 0 2.5.6 3.3 1.7l.8 1.1"/><path d="M14.4 14.2l.8 1.1c.8 1.1 2 1.7 3.3 1.7H22"/><path d="m18 18 4 4-4 4"/></svg>;
-        case 'users': return <svg {...iconProps}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
-        case 'download': return <svg {...iconProps}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>;
-        case 'upload': return <svg {...iconProps}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>;
         case 'help-circle': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>;
         case 'alert-circle': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>;
         case 'check-circle-2': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>;
@@ -105,7 +102,6 @@
       }
     ];
 
-    // База известных неправильных глаголов для умного объединения форм (V1: [V2, V3, перевод])
     const IRREGULAR_VERBS = {
       "be": { v2: "was/were", v3: "been", ru: "быть" },
       "begin": { v2: "began", v3: "begun", ru: "начинать(ся)" },
@@ -143,7 +139,6 @@
       "write": { v2: "wrote", v3: "written", ru: "писать" }
     };
 
-    // Обратный поиск: если ввели вторую или третью форму (например, "came" или "gone")
     const REVERSE_IRREGULAR = {};
     Object.keys(IRREGULAR_VERBS).forEach(v1 => {
       const data = IRREGULAR_VERBS[v1];
@@ -173,16 +168,7 @@
         return saved ? JSON.parse(saved) : [];
       });
 
-      const [friends, setFriends] = useState(() => {
-        const saved = localStorage.getItem('lingua_friends');
-        return saved ? JSON.parse(saved) : [];
-      });
-
-      const [selectedFriend, setSelectedFriend] = useState(null);
-      const fileInputRef = useRef(null);
-
-      // Состояние для диалога подтверждения дубликата / нового перевода
-      const [duplicateModal, setDuplicateModal] = useState(null); // { existingCard, newRussian, rawInput }
+      const [duplicateModal, setDuplicateModal] = useState(null);
 
       const [sessionQueue, setSessionQueue] = useState([]);
       const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -207,71 +193,11 @@
         localStorage.setItem('lingua_mastered', JSON.stringify(masteredCards));
       }, [masteredCards]);
 
-      useEffect(() => {
-        localStorage.setItem('lingua_friends', JSON.stringify(friends));
-      }, [friends]);
-
       const showToast = (message, type = 'info') => {
         setToast({ message, type });
         setTimeout(() => setToast(null), 4000);
       };
 
-      const handleExportDeckFile = () => {
-        const payload = {
-          username: username || 'Сергей',
-          deckCount: deck.length,
-          masteredCount: masteredCards.length,
-          deck: deck,
-          mastered: masteredCards,
-          updatedAt: Date.now()
-        };
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload));
-        const downloadAnchor = document.createElement('a');
-        downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", `LinguaCards_${username}.json`);
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        downloadAnchor.remove();
-        showToast('Файл колоды скачан! Отправьте его другу в мессенджер 📁', 'success');
-      };
-
-      const handleFileUpload = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          try {
-            const decoded = JSON.parse(event.target.result);
-            if (!decoded || !decoded.username || !Array.isArray(decoded.deck)) {
-              throw new Error();
-            }
-            setFriends(prev => {
-              const exists = prev.some(f => f.username.toLowerCase() === decoded.username.toLowerCase());
-              if (exists) {
-                return prev.map(f => f.username.toLowerCase() === decoded.username.toLowerCase() ? decoded : f);
-              }
-              return [...prev, decoded];
-            });
-            showToast(`Друг "${decoded.username}" успешно добавлен! 🎉`, 'success');
-          } catch (err) {
-            showToast('Ошибка чтения файла. Убедитесь, что это файл LinguaCards.', 'error');
-          }
-        };
-        reader.readAsText(file);
-        e.target.value = '';
-      };
-
-      const handleAddCardFromFriend = (card) => {
-        if (deck.some(c => c.english.toLowerCase() === card.english.toLowerCase())) {
-          showToast(`Слово "${card.english}" уже есть в вашей колоде!`, 'info');
-          return;
-        }
-        const newCard = { ...card, id: 'card-' + Date.now() };
-        setDeck(prev => [newCard, ...prev]);
-        showToast(`Слово "${card.english}" добавлено к вам! 🚀`, 'success');
-      };
-
-      // Кнопка: вернуть ВСЕ выученные слова обратно в учебу
       const handleRestoreAllMastered = () => {
         if (masteredCards.length === 0) return;
         setMasteredCards([]);
@@ -290,7 +216,6 @@
         return `[${cleaned.toLowerCase()}]`;
       };
 
-      // Процесс анализа строки ввода с поддержкой неправильных глаголов и проверки дубликатов
       const processInputLine = async (rawInput, existingDeck = deck) => {
         const line = rawInput.trim();
         if (!line) return null;
@@ -314,8 +239,6 @@
           else { english = part1; russian = part2; }
         } else {
           const lowerKey = part1.toLowerCase();
-          
-          // Проверка на неправильный глагол (первая, вторая или третья форма)
           let baseVerb = lowerKey;
           if (REVERSE_IRREGULAR[lowerKey]) {
             baseVerb = REVERSE_IRREGULAR[lowerKey];
@@ -345,23 +268,19 @@
           }
         }
 
-        // Автоматическая проверка неправильного глагола, если пользователь ввел слово в чистом виде
         const cleanEngLower = english.toLowerCase();
         let finalEnglish = english.charAt(0).toUpperCase() + english.slice(1);
         let finalRussian = russian.charAt(0).toUpperCase() + russian.slice(1);
 
         if (IRREGULAR_VERBS[cleanEngLower]) {
           const info = IRREGULAR_VERBS[cleanEngLower];
-          // Если пользователь не указал формы вручную, добавим их красиво
           if (!finalRussian.includes('V2:')) {
             finalRussian = `${finalRussian} (V2: ${info.v2}, V3: ${info.v3})`;
           }
         }
 
-        // Проверяем, есть ли уже такое слово в колоде
         const existingCard = existingDeck.find(c => c.english.toLowerCase() === cleanEngLower);
         if (existingCard) {
-          // Проверяем, отличается ли перевод
           if (!existingCard.russian.toLowerCase().includes(finalRussian.toLowerCase())) {
             return { isDuplicate: true, existingCard, newRussian: finalRussian, rawInput };
           } else {
@@ -410,7 +329,6 @@
         } finally { setIsGenerating(false); }
       };
 
-      // Подтверждение добавления нового варианта перевода к существующей карточке
       const handleConfirmAddTranslation = () => {
         if (!duplicateModal) return;
         const { existingCard, newRussian } = duplicateModal;
@@ -441,7 +359,6 @@
               newCards.push(res.card);
               updatedDeck.unshift(res.card);
             } else if (res.isDuplicate) {
-              // Автоматически объединяем варианты при массовой загрузке
               updatedDeck = updatedDeck.map(c => {
                 if (c.id === res.existingCard.id) {
                   return { ...c, russian: `${c.russian} / ${res.newRussian}` };
@@ -455,7 +372,7 @@
           }
           setBulkInput('');
           setIsBulkAddOpen(false);
-          showToast(`Массовая обработка завершена! Добавлено / обновлено карточек. 🚀`, 'success');
+          showToast(`Массовая обработка завершена! 🚀`, 'success');
         } catch (err) {
           showToast('Ошибка при загрузке', 'error');
         } finally { setIsBulkProcessing(false); }
@@ -577,20 +494,18 @@
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <nav className="hidden sm:flex items-center gap-1 bg-slate-950/60 p-1 rounded-xl border border-slate-800">
-                  <button onClick={() => setActiveTab('study')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'study' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Учеба</button>
-                  <button onClick={() => setActiveTab('deck')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'deck' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Слова ({deck.length})</button>
-                  <button onClick={() => setActiveTab('mastered')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'mastered' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Выучено ({masteredCards.length})</button>
-                  <button onClick={() => setActiveTab('friends')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'friends' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Друзья ({friends.length})</button>
-                  <button onClick={() => setActiveTab('manual')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'manual' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Инструкция</button>
-                  <button onClick={() => setActiveTab('settings')} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activeTab === 'settings' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Настройки</button>
-                </nav>
+              {/* НАВИГАЦИЯ (Без вкладки друзья) */}
+              <div className="flex items-center gap-1 bg-slate-950/60 p-1 rounded-xl border border-slate-800 overflow-x-auto max-w-full">
+                <button onClick={() => setActiveTab('study')} className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0 ${activeTab === 'study' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Учеба</button>
+                <button onClick={() => setActiveTab('deck')} className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0 ${activeTab === 'deck' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Слова ({deck.length})</button>
+                <button onClick={() => setActiveTab('mastered')} className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0 ${activeTab === 'mastered' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Выучено ({masteredCards.length})</button>
+                <button onClick={() => setActiveTab('manual')} className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0 ${activeTab === 'manual' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Инструкция</button>
+                <button onClick={() => setActiveTab('settings')} className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0 ${activeTab === 'settings' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}>Настройки</button>
               </div>
             </div>
           </header>
 
-          {activeTab !== 'settings' && activeTab !== 'manual' && activeTab !== 'friends' && (
+          {activeTab !== 'settings' && activeTab !== 'manual' && (
             <div className="bg-slate-900/40 border-b border-slate-800/60 py-4 px-4 sm:px-6">
               <div className="max-w-3xl mx-auto flex flex-col gap-3">
                 <form onSubmit={handleAddWordAutomatic} className="flex flex-col sm:flex-row gap-2.5">
@@ -780,69 +695,6 @@
               </div>
             )}
 
-            {/* ВКЛАДКА: ДРУЗЬЯ */}
-            {activeTab === 'friends' && (
-              <div className="space-y-6 max-w-2xl mx-auto w-full">
-                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-                  <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    <Icon name="download" className="w-5 h-5 text-blue-400" /> Выгрузить свои слова для друга
-                  </h3>
-                  <p className="text-xs text-slate-400">Создает небольшой файл со всеми вашими словами и результатами:</p>
-                  
-                  <button onClick={handleExportDeckFile} className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-lg transition-all">
-                    <Icon name="download" className="w-4 h-4" /> Скачать файл с колодой (.json)
-                  </button>
-                </div>
-
-                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
-                  <h3 className="text-base font-bold text-white flex items-center gap-2">
-                    <Icon name="upload" className="w-5 h-5 text-emerald-400" /> Загрузить файл друга
-                  </h3>
-                  <p className="text-xs text-slate-400">Выберите файл, который прислал вам друг, чтобы добавить его в список друзей:</p>
-
-                  <input
-                    type="file"
-                    accept=".json"
-                    ref={fileInputRef}
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                  <button onClick={() => fileInputRef.current?.click()} className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
-                    <Icon name="upload" className="w-4 h-4" /> Выбрать файл друга на устройстве
-                  </button>
-                </div>
-
-                <h3 className="text-lg font-bold text-white pt-2">Ваши друзья ({friends.length})</h3>
-                
-                {friends.length === 0 ? (
-                  <div className="bg-slate-900/40 border border-slate-800 rounded-2xl p-8 text-center">
-                    <Icon name="users" className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                    <p className="text-xs text-slate-400">Список друзей пуст.</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 gap-3">
-                    {friends.map((friend, idx) => (
-                      <div key={idx} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-base font-bold text-white">{friend.username}</span>
-                            <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full">Друг</span>
-                          </div>
-                          <div className="flex gap-4 text-xs text-slate-400">
-                            <span>Всего слов: <strong className="text-blue-400">{friend.deckCount}</strong></span>
-                            <span>Выучил: <strong className="text-emerald-400">{friend.masteredCount}</strong></span>
-                          </div>
-                        </div>
-                        <button onClick={() => setSelectedFriend(friend)} className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 flex items-center justify-center gap-2">
-                          <Icon name="book-open" className="w-4 h-4 text-indigo-400" /> Посмотреть слова
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* ВКЛАДКА: ИНСТРУКЦИЯ */}
             {activeTab === 'manual' && (
               <div className="max-w-2xl mx-auto w-full space-y-6 py-2">
@@ -881,7 +733,6 @@
 
           </main>
 
-          {/* МОДАЛЬНОЕ ОКНО: ВОПРОС ПРИ ДУБЛИКАТЕ С ДРУГИМ ПЕРЕВОДОМ */}
           {duplicateModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 text-center shadow-2xl">
@@ -900,29 +751,6 @@
                   <button onClick={handleConfirmAddTranslation} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl">
                     Добавить вариант
                   </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* МОДАЛЬНЫЕ ОКНА: ПРОСМОТР СЛОВ ДРУГА */}
-          {selectedFriend && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 relative max-h-[80vh] flex flex-col">
-                <button onClick={() => setSelectedFriend(null)} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"><Icon name="x" className="w-5 h-5" /></button>
-                <h3 className="text-lg font-bold text-white mb-1">Слова пользователя {selectedFriend.username}</h3>
-                <div className="overflow-y-auto space-y-2 flex-grow pr-1 mt-2">
-                  {selectedFriend.deck?.map((card, idx) => (
-                    <div key={idx} className="bg-slate-950 border border-slate-800 p-3 rounded-xl flex items-center justify-between">
-                      <div>
-                        <h4 className="text-sm font-bold text-white">{card.english}</h4>
-                        <span className="text-xs text-blue-400">{card.russian}</span>
-                      </div>
-                      <button onClick={() => handleAddCardFromFriend(card)} className="px-3 py-1.5 bg-indigo-600/25 hover:bg-indigo-600 text-indigo-300 hover:text-white text-xs font-medium rounded-lg border border-indigo-500/30 transition-all">
-                        + Добавить себе
-                      </button>
-                    </div>
-                  ))}
                 </div>
               </div>
             </div>
@@ -958,21 +786,6 @@
               </div>
             </div>
           )}
-
-          <nav className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/90 backdrop-blur-xl border-t border-slate-800 flex items-center justify-around px-2 py-2 pb-safe">
-            <button onClick={() => setActiveTab('study')} className={`flex flex-col items-center flex-1 py-1 ${activeTab === 'study' ? 'text-blue-400' : 'text-slate-500'}`}>
-              <Icon name="layers" className="w-5 h-5 mb-1" /><span className="text-[10px]">Учеба</span>
-            </button>
-            <button onClick={() => setActiveTab('deck')} className={`flex flex-col items-center flex-1 py-1 ${activeTab === 'deck' ? 'text-blue-400' : 'text-slate-500'}`}>
-              <Icon name="book-open" className="w-5 h-5 mb-1" /><span className="text-[10px]">Слова</span>
-            </button>
-            <button onClick={() => setActiveTab('friends')} className={`flex flex-col items-center flex-1 py-1 ${activeTab === 'friends' ? 'text-blue-400' : 'text-slate-500'}`}>
-              <Icon name="users" className="w-5 h-5 mb-1" /><span className="text-[10px]">Друзья</span>
-            </button>
-            <button onClick={() => setActiveTab('manual')} className={`flex flex-col items-center flex-1 py-1 ${activeTab === 'manual' ? 'text-blue-400' : 'text-slate-500'}`}>
-              <Icon name="help-circle" className="w-5 h-5 mb-1" /><span className="text-[10px]">Помощь</span>
-            </button>
-          </nav>
 
         </div>
       );
