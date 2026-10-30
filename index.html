@@ -94,6 +94,7 @@
         case 'upload': return <svg {...iconProps}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>;
         case 'copy': return <svg {...iconProps}><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>;
         case 'folder': return <svg {...iconProps}><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>;
+        case 'check-check': return <svg {...iconProps}><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg>;
         default: return null;
       }
     };
@@ -205,6 +206,47 @@
       REVERSE_IRREGULAR[data.v3.toLowerCase()] = v1;
     });
 
+    // Функция умной валидации и исправления карточки
+    const validateAndFixCard = (card) => {
+      let cleaned = { ...card };
+      
+      // 1. Проверка на неправильный глагол
+      const cleanEng = cleaned.english.split('—')[0].trim().toLowerCase();
+      const verbBase = REVERSE_IRREGULAR[cleanEng] || cleanEng;
+
+      if (IRREGULAR_VERBS[verbBase]) {
+        const info = IRREGULAR_VERBS[verbBase];
+        cleaned.english = `${info.v1} — ${info.v2} — ${info.v3}`;
+        cleaned.russian = cleaned.russian || info.ru;
+        cleaned.transcription = null;
+        cleaned.formsDetails = {
+          f1: { word: info.v1, tr: cleaned.formsDetails?.f1?.tr || info.tr1 },
+          f2: { word: info.v2, tr: cleaned.formsDetails?.f2?.tr || info.tr2 },
+          f3: { word: info.v3, tr: cleaned.formsDetails?.f3?.tr || info.tr3 }
+        };
+        return cleaned;
+      }
+
+      // 2. Исправление транскрипции для обычных слов
+      if (!cleaned.formsDetails) {
+        if (CORRECT_TRANSCRIPTIONS[cleanEng]) {
+          cleaned.transcription = CORRECT_TRANSCRIPTIONS[cleanEng];
+        } else if (!cleaned.transcription || !cleaned.transcription.startsWith('[') || !cleaned.transcription.endsWith(']')) {
+          const formatted = cleanEng.replace(/[^a-zA-Z]/g, '');
+          cleaned.transcription = formatted ? `[${formatted}]` : '[—]';
+        }
+      }
+
+      // 3. Форматирование перевода (первая буква заглавная, очистка от лишнего)
+      if (cleaned.russian) {
+        let ru = cleaned.russian.trim();
+        ru = ru.charAt(0).toUpperCase() + ru.slice(1);
+        cleaned.russian = ru;
+      }
+
+      return cleaned;
+    };
+
     function App() {
       const [username, setUsername] = useState(() => localStorage.getItem('lingua_username') || 'Сергей');
       
@@ -214,35 +256,11 @@
         try {
           const parsed = JSON.parse(saved);
           const seen = new Set();
-          return parsed.filter(card => {
+          return parsed.map(card => validateAndFixCard(card)).filter(card => {
             const key = (card.formsDetails ? card.formsDetails.f1.word : card.english).toLowerCase().trim();
             if (seen.has(key)) return false;
             seen.add(key);
             return true;
-          }).map(card => {
-            const cleanEng = card.english.split('—')[0].trim().toLowerCase();
-            const verbBase = REVERSE_IRREGULAR[cleanEng] || cleanEng;
-
-            if (IRREGULAR_VERBS[verbBase] && !card.formsDetails) {
-              const info = IRREGULAR_VERBS[verbBase];
-              return {
-                ...card,
-                english: `${info.v1} — ${info.v2} — ${info.v3}`,
-                russian: info.ru,
-                transcription: null,
-                formsDetails: {
-                  f1: { word: info.v1, tr: info.tr1 },
-                  f2: { word: info.v2, tr: info.tr2 },
-                  f3: { word: info.v3, tr: info.tr3 }
-                }
-              };
-            }
-
-            if (CORRECT_TRANSCRIPTIONS[cleanEng] && !card.formsDetails && (!card.transcription || card.transcription === '[—]')) {
-              return { ...card, transcription: CORRECT_TRANSCRIPTIONS[cleanEng] };
-            }
-
-            return card;
           });
         } catch (e) {
           return INITIAL_CARDS;
@@ -251,7 +269,7 @@
 
       const [masteredCards, setMasteredCards] = useState(() => {
         const saved = localStorage.getItem('lingua_mastered');
-        return saved ? JSON.parse(saved) : [];
+        return saved ? JSON.parse(saved).map(c => validateAndFixCard(c)) : [];
       });
 
       const [duplicateModal, setDuplicateModal] = useState(null);
@@ -282,6 +300,12 @@
       const showToast = (message, type = 'info', duration = 4000) => {
         setToast({ message, type });
         setTimeout(() => setToast(null), duration);
+      };
+
+      const handleValidateAndFixAll = () => {
+        setDeck(prev => prev.map(c => validateAndFixCard(c)));
+        setMasteredCards(prev => prev.map(c => validateAndFixCard(c)));
+        showToast('✨ Вся колода проверена: все ошибки, регистр и транскрипции исправлены!', 'success', 5000);
       };
 
       const handleRestoreAllMastered = () => {
@@ -326,7 +350,6 @@
             URL.revokeObjectURL(url);
           }, 1000);
 
-          // Увеличенное время показа уведомления с четкой подсказкой для iOS
           showToast('📁 Файл сохранен! Откройте приложение "Файлы" -> "Загрузки"', 'success', 7000);
         } catch (err) {
           showToast('Не удалось скачать файл бэкапа', 'error');
@@ -340,9 +363,9 @@
           fileReader.onload = (event) => {
             try {
               const parsed = JSON.parse(event.target.result);
-              if (parsed.deck) setDeck(parsed.deck);
-              if (parsed.masteredCards) setMasteredCards(parsed.masteredCards);
-              showToast('Коллекция слов успешно восстановлена из файла! 🎉', 'success');
+              if (parsed.deck) setDeck(parsed.deck.map(c => validateAndFixCard(c)));
+              if (parsed.masteredCards) setMasteredCards(parsed.masteredCards.map(c => validateAndFixCard(c)));
+              showToast('Коллекция слов успешно восстановлена и проверена! 🎉', 'success');
             } catch (err) {
               showToast('Ошибка чтения файла бэкапа', 'error');
             }
@@ -361,14 +384,6 @@
         const cardId = sessionQueue[currentCardIndex] || sessionQueue[0];
         return deck.find(c => c.id === cardId) || null;
       }, [sessionQueue, currentCardIndex, deck]);
-
-      const formatTranscription = (w) => {
-        const cleanW = w.toLowerCase().trim();
-        if (CORRECT_TRANSCRIPTIONS[cleanW]) return CORRECT_TRANSCRIPTIONS[cleanW];
-        const cleaned = cleanW.replace(/[^a-zA-Z]/g, '');
-        if (!cleaned) return '[—]';
-        return `[${cleaned}]`;
-      };
 
       const processInputLine = async (rawInput, existingDeck = deck) => {
         let line = rawInput.trim();
@@ -461,16 +476,16 @@
           }
         }
 
-        return {
-          card: {
-            id: 'card-' + Date.now() + Math.random(),
-            english,
-            russian,
-            transcription: formsDetails ? null : (manualTranscription || formatTranscription(english)),
-            formsDetails: formsDetails || null,
-            createdAt: Date.now()
-          }
+        let newCard = {
+          id: 'card-' + Date.now() + Math.random(),
+          english,
+          russian,
+          transcription: formsDetails ? null : (manualTranscription || null),
+          formsDetails: formsDetails || null,
+          createdAt: Date.now()
         };
+
+        return { card: validateAndFixCard(newCard) };
       };
 
       const handleAddWordAutomatic = async (e) => {
@@ -494,7 +509,7 @@
           if (res.card) {
             setDeck(prev => [res.card, ...prev]);
             setNewWordInput('');
-            showToast(`Слово добавлено! 🚀`, 'success');
+            showToast(`Слово проверено и добавлено! 🚀`, 'success');
           }
         } catch (err) {
           showToast('Не удалось добавить слово', 'error');
@@ -544,7 +559,7 @@
           }
           setBulkInput('');
           setIsBulkAddOpen(false);
-          showToast(`Массовая загрузка завершена! 🚀`, 'success');
+          showToast(`Массовая загрузка и валидация завершена! 🚀`, 'success');
         } catch (err) {
           showToast('Ошибка при загрузке', 'error');
         } finally { setIsBulkProcessing(false); }
@@ -648,9 +663,9 @@
             russian: editingCard.russian.trim(),
             transcription: null,
             formsDetails: {
-              f1: { word: w1, tr: editingCard.f1Tr.trim() || formatTranscription(w1) },
-              f2: { word: w2, tr: editingCard.f2Tr.trim() || formatTranscription(w2) },
-              f3: { word: w3, tr: editingCard.f3Tr.trim() || formatTranscription(w3) }
+              f1: { word: w1, tr: editingCard.f1Tr.trim() },
+              f2: { word: w2, tr: editingCard.f2Tr.trim() },
+              f3: { word: w3, tr: editingCard.f3Tr.trim() }
             }
           };
           delete updatedCard.isIrregular;
@@ -664,7 +679,7 @@
             ...editingCard,
             english: eng,
             russian: editingCard.russian.trim(),
-            transcription: tr || formatTranscription(eng),
+            transcription: tr,
             formsDetails: null
           };
           delete updatedCard.isIrregular;
@@ -673,10 +688,11 @@
           delete updatedCard.f3Word; delete updatedCard.f3Tr;
         }
 
-        setDeck(prev => prev.map(c => c.id === updatedCard.id ? updatedCard : c));
-        setMasteredCards(prev => prev.map(c => c.id === updatedCard.id ? updatedCard : c));
+        const fixed = validateAndFixCard(updatedCard);
+        setDeck(prev => prev.map(c => c.id === fixed.id ? fixed : c));
+        setMasteredCards(prev => prev.map(c => c.id === fixed.id ? fixed : c));
         setEditingCard(null);
-        showToast('Карточка успешно обновлена! ✨', 'success');
+        showToast('Карточка успешно обновлена и проверена! ✨', 'success');
       };
 
       useEffect(() => {
@@ -716,7 +732,7 @@
                 </div>
                 <div>
                   <h1 className="font-bold text-sm sm:text-base leading-tight text-white">
-                    LinguaCards
+                    LinguaCards AI
                   </h1>
                   <p className="text-[10px] sm:text-[11px] text-slate-400 font-medium">Профиль: <span className="text-emerald-400 font-bold">{username}</span></p>
                 </div>
@@ -863,8 +879,11 @@
             {activeTab === 'deck' && (
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-lg font-bold text-white">Все слова ({deck.length})</h2>
+                    <button onClick={handleValidateAndFixAll} title="Проверить и исправить все слова" className="px-3 py-1.5 rounded-xl bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-800/60 transition-all flex items-center gap-1.5 text-xs font-semibold">
+                      <Icon name="check-check" className="w-3.5 h-3.5 text-emerald-400" /> Проверить колоду
+                    </button>
                     <button onClick={handleCopyTextList} title="Скопировать списком" className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all flex items-center gap-1 text-xs">
                       <Icon name="copy" className="w-3.5 h-3.5" /> Копировать
                     </button>
@@ -1041,7 +1060,6 @@
                       Скачайте файл с вашими карточками и перенесите его на другое устройство, чтобы восстановить всю колоду.
                     </p>
 
-                    {/* Полезная памятка для пользователя */}
                     <div className="p-3 bg-blue-950/40 border border-blue-900/50 rounded-xl flex items-start gap-2.5 text-xs text-blue-200">
                       <Icon name="folder" className="w-4 h-4 shrink-0 text-blue-400 mt-0.5" />
                       <div>
