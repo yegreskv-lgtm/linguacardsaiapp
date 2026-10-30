@@ -93,6 +93,7 @@
         case 'download': return <svg {...iconProps}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>;
         case 'upload': return <svg {...iconProps}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>;
         case 'copy': return <svg {...iconProps}><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>;
+        case 'folder': return <svg {...iconProps}><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>;
         default: return null;
       }
     };
@@ -278,9 +279,9 @@
         localStorage.setItem('lingua_mastered', JSON.stringify(masteredCards));
       }, [masteredCards]);
 
-      const showToast = (message, type = 'info') => {
+      const showToast = (message, type = 'info', duration = 4000) => {
         setToast({ message, type });
-        setTimeout(() => setToast(null), 4000);
+        setTimeout(() => setToast(null), duration);
       };
 
       const handleRestoreAllMastered = () => {
@@ -289,14 +290,12 @@
         showToast('Все выученные слова успешно возвращены в карточки для повторения! 🔄', 'success');
       };
 
-      // Надежная функция экспорта файла, оптимизированная для iOS Safari
       const handleExportFile = async () => {
         try {
           const dataObj = { deck, masteredCards };
           const dataStr = JSON.stringify(dataObj, null, 2);
           const fileName = `linguacards_backup_${Date.now()}.json`;
 
-          // Если поддерживается modern File System Access API (ПК браузеры)
           if (window.showSaveFilePicker) {
             try {
               const handle = await window.showSaveFilePicker({
@@ -306,25 +305,19 @@
               const writable = await handle.createWritable();
               await writable.write(dataStr);
               await writable.close();
-              showToast('Файл бэкапа успешно сохранен! 📁', 'success');
+              showToast('Файл бэкапа успешно сохранен! 📁', 'success', 6000);
               return;
             } catch (err) {
-              if (err.name !== 'AbortError') {
-                // Если пользователь не отменил, пробуем классический способ
-              } else {
-                return;
-              }
+              if (err.name === 'AbortError') return;
             }
           }
 
-          // Универсальный способ через Blob для iOS Safari и других мобильных браузеров
           const blob = new Blob([dataStr], { type: 'application/json;charset=utf-8' });
           const url = URL.createObjectURL(blob);
           const downloadAnchor = document.createElement('a');
           downloadAnchor.href = url;
           downloadAnchor.download = fileName;
           
-          // Для iOS Safari важно добавить элемент в DOM перед кликом
           document.body.appendChild(downloadAnchor);
           downloadAnchor.click();
           
@@ -333,7 +326,8 @@
             URL.revokeObjectURL(url);
           }, 1000);
 
-          showToast('Файл бэкапа отправлен на скачивание! 📁', 'success');
+          // Увеличенное время показа уведомления с четкой подсказкой для iOS
+          showToast('📁 Файл сохранен! Откройте приложение "Файлы" -> "Загрузки"', 'success', 7000);
         } catch (err) {
           showToast('Не удалось скачать файл бэкапа', 'error');
         }
@@ -376,17 +370,14 @@
         return `[${cleaned}]`;
       };
 
-      // Продвинутый парсер строки: учитывает ручную транскрипцию в квадратных скобках
       const processInputLine = async (rawInput, existingDeck = deck) => {
         let line = rawInput.trim();
         if (!line) return null;
 
-        // Извлекаем ручную транскрипцию, если она есть в скобках [...], например: "serendipity [ˌserənˈdɪpəti] — Счастливая случайность"
         let manualTranscription = null;
         const bracketMatch = line.match(/\[(.*?)\]/);
         if (bracketMatch) {
           manualTranscription = `[${bracketMatch[1].trim()}]`;
-          // Удаляем найденную транскрипцию из строки для дальнейшего анализа частей
           line = line.replace(bracketMatch[0], '').replace(/\s+/g, ' ').trim();
         }
 
@@ -1049,7 +1040,17 @@
                     <p className="text-xs text-slate-400 leading-relaxed">
                       Скачайте файл с вашими карточками и перенесите его на другое устройство, чтобы восстановить всю колоду.
                     </p>
-                    <div className="flex gap-2">
+
+                    {/* Полезная памятка для пользователя */}
+                    <div className="p-3 bg-blue-950/40 border border-blue-900/50 rounded-xl flex items-start gap-2.5 text-xs text-blue-200">
+                      <Icon name="folder" className="w-4 h-4 shrink-0 text-blue-400 mt-0.5" />
+                      <div>
+                        <strong className="block text-blue-300 font-semibold mb-0.5">Куда сохраняется файл?</strong>
+                        На iPhone файл попадает в стандартное приложение <strong>«Файлы»</strong> ➔ папка <strong>«Загрузки»</strong>.
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-1">
                       <button onClick={handleExportFile} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-lg transition-all">
                         <Icon name="download" className="w-4 h-4" /> Скачать файл
                       </button>
