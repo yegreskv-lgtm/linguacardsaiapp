@@ -237,7 +237,7 @@
               };
             }
 
-            if (CORRECT_TRANSCRIPTIONS[cleanEng] && !card.formsDetails) {
+            if (CORRECT_TRANSCRIPTIONS[cleanEng] && !card.formsDetails && (!card.transcription || card.transcription === '[—]')) {
               return { ...card, transcription: CORRECT_TRANSCRIPTIONS[cleanEng] };
             }
 
@@ -289,15 +289,54 @@
         showToast('Все выученные слова успешно возвращены в карточки для повторения! 🔄', 'success');
       };
 
-      const handleExportFile = () => {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ deck, masteredCards }, null, 2));
-        const downloadAnchor = document.createElement('a');
-        downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", `linguacards_backup_${Date.now()}.json`);
-        document.body.appendChild(downloadAnchor);
-        downloadAnchor.click();
-        downloadAnchor.remove();
-        showToast('Файл бэкапа успешно скачан! 📁', 'success');
+      // Надежная функция экспорта файла, оптимизированная для iOS Safari
+      const handleExportFile = async () => {
+        try {
+          const dataObj = { deck, masteredCards };
+          const dataStr = JSON.stringify(dataObj, null, 2);
+          const fileName = `linguacards_backup_${Date.now()}.json`;
+
+          // Если поддерживается modern File System Access API (ПК браузеры)
+          if (window.showSaveFilePicker) {
+            try {
+              const handle = await window.showSaveFilePicker({
+                suggestedName: fileName,
+                types: [{ description: 'JSON Files', accept: { 'application/json': ['.json'] } }]
+              });
+              const writable = await handle.createWritable();
+              await writable.write(dataStr);
+              await writable.close();
+              showToast('Файл бэкапа успешно сохранен! 📁', 'success');
+              return;
+            } catch (err) {
+              if (err.name !== 'AbortError') {
+                // Если пользователь не отменил, пробуем классический способ
+              } else {
+                return;
+              }
+            }
+          }
+
+          // Универсальный способ через Blob для iOS Safari и других мобильных браузеров
+          const blob = new Blob([dataStr], { type: 'application/json;charset=utf-8' });
+          const url = URL.createObjectURL(blob);
+          const downloadAnchor = document.createElement('a');
+          downloadAnchor.href = url;
+          downloadAnchor.download = fileName;
+          
+          // Для iOS Safari важно добавить элемент в DOM перед кликом
+          document.body.appendChild(downloadAnchor);
+          downloadAnchor.click();
+          
+          setTimeout(() => {
+            document.body.removeChild(downloadAnchor);
+            URL.revokeObjectURL(url);
+          }, 1000);
+
+          showToast('Файл бэкапа отправлен на скачивание! 📁', 'success');
+        } catch (err) {
+          showToast('Не удалось скачать файл бэкапа', 'error');
+        }
       };
 
       const handleImportFile = (e) => {
@@ -337,9 +376,19 @@
         return `[${cleaned}]`;
       };
 
+      // Продвинутый парсер строки: учитывает ручную транскрипцию в квадратных скобках
       const processInputLine = async (rawInput, existingDeck = deck) => {
-        const line = rawInput.trim();
+        let line = rawInput.trim();
         if (!line) return null;
+
+        // Извлекаем ручную транскрипцию, если она есть в скобках [...], например: "serendipity [ˌserənˈdɪpəti] — Счастливая случайность"
+        let manualTranscription = null;
+        const bracketMatch = line.match(/\[(.*?)\]/);
+        if (bracketMatch) {
+          manualTranscription = `[${bracketMatch[1].trim()}]`;
+          // Удаляем найденную транскрипцию из строки для дальнейшего анализа частей
+          line = line.replace(bracketMatch[0], '').replace(/\s+/g, ' ').trim();
+        }
 
         const delimiterMatch = line.match(/\s*[-—=:|\t]\s*/);
         let part1 = line;
@@ -366,7 +415,7 @@
           english = `${info.v1} — ${info.v2} — ${info.v3}`;
           russian = info.ru;
           formsDetails = {
-            f1: { word: info.v1, tr: info.tr1 },
+            f1: { word: info.v1, tr: manualTranscription || info.tr1 },
             f2: { word: info.v2, tr: info.tr2 },
             f3: { word: info.v3, tr: info.tr3 }
           };
@@ -396,7 +445,7 @@
           english = `${info.v1} — ${info.v2} — ${info.v3}`;
           russian = info.ru;
           formsDetails = {
-            f1: { word: info.v1, tr: info.tr1 },
+            f1: { word: info.v1, tr: manualTranscription || info.tr1 },
             f2: { word: info.v2, tr: info.tr2 },
             f3: { word: info.v3, tr: info.tr3 }
           };
@@ -426,7 +475,7 @@
             id: 'card-' + Date.now() + Math.random(),
             english,
             russian,
-            transcription: formsDetails ? null : formatTranscription(english),
+            transcription: formsDetails ? null : (manualTranscription || formatTranscription(english)),
             formsDetails: formsDetails || null,
             createdAt: Date.now()
           }
@@ -619,11 +668,12 @@
           delete updatedCard.f3Word; delete updatedCard.f3Tr;
         } else {
           const eng = editingCard.english.trim();
+          const tr = editingCard.f1Tr.trim();
           updatedCard = {
             ...editingCard,
             english: eng,
             russian: editingCard.russian.trim(),
-            transcription: formatTranscription(eng),
+            transcription: tr || formatTranscription(eng),
             formsDetails: null
           };
           delete updatedCard.isIrregular;
@@ -695,7 +745,7 @@
                       type="text"
                       value={newWordInput}
                       onChange={(e) => setNewWordInput(e.target.value)}
-                      placeholder="Слово, глагол или пара..."
+                      placeholder="Слово [транскрипция] — перевод..."
                       className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-blue-500"
                     />
                   </div>
@@ -1057,7 +1107,6 @@
             </div>
           )}
 
-          {/* МОДАЛЬНОЕ ОКНО РЕДАКТИРОВАНИЯ С ГАЛОЧКОЙ НЕПРАВИЛЬНОГО ГЛАГОЛА */}
           {editingCard && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm overflow-y-auto">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 relative my-8 shadow-2xl">
@@ -1119,9 +1168,15 @@
                       </div>
                     </div>
                   ) : (
-                    <div>
-                      <label className="block text-xs text-slate-400 mb-1">Английское слово:</label>
-                      <input type="text" required value={editingCard.english} onChange={(e) => setEditingCard({ ...editingCard, english: e.target.value })} className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-blue-500" />
+                    <div className="space-y-2">
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-1">Английское слово:</label>
+                        <input type="text" required value={editingCard.english} onChange={(e) => setEditingCard({ ...editingCard, english: e.target.value })} className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-blue-500" />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-1">Транскрипция:</label>
+                        <input type="text" value={editingCard.f1Tr} onChange={(e) => setEditingCard({ ...editingCard, f1Tr: e.target.value })} placeholder="[...]" className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 font-mono focus:outline-none focus:border-blue-500" />
+                      </div>
                     </div>
                   )}
 
@@ -1138,8 +1193,9 @@
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
               <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 relative flex flex-col">
                 <button onClick={() => setIsBulkAddOpen(false)} className="absolute top-4 right-4 text-slate-500 hover:text-slate-300"><Icon name="x" className="w-5 h-5" /></button>
-                <h3 className="text-lg font-bold text-white mb-2">Массовая загрузка</h3>
-                <textarea rows={6} value={bulkInput} onChange={(e) => setBulkInput(e.target.value)} placeholder="Слова через перевод..." className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-100 mb-4 resize-none" />
+                <h3 className="text-lg font-bold text-white mb-1">Массовая загрузка</h3>
+                <p className="text-[11px] text-slate-400 mb-3">Каждое слово с новой строки. Можно указать транскрипцию в квадратных скобках:</p>
+                <textarea rows={6} value={bulkInput} onChange={(e) => setBulkInput(e.target.value)} placeholder="serendipity [ˌserənˈdɪpəti] — Счастливая случайность&#10;courage [ˈkʌrɪdʒ] — Мужество" className="w-full p-3 bg-slate-950 border border-slate-800 rounded-xl text-xs font-mono text-slate-100 mb-4 resize-none" />
                 <div className="flex justify-end gap-2">
                   <button onClick={() => setIsBulkAddOpen(false)} className="px-4 py-2 text-xs text-slate-400">Отмена</button>
                   <button onClick={handleBulkAddAuto} disabled={isBulkProcessing || !bulkInput.trim()} className="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl flex items-center gap-2">Загрузить</button>
