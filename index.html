@@ -198,13 +198,18 @@
       let cleaned = { ...card };
       const rawEng = cleaned.english.split('—')[0].trim().toLowerCase();
       
-      // Точный поиск неправильного глагола (исправлен баг ложного срабатывания)
+      // Удаляем ошибочные записи API из перевода или английского, если они туда попали
+      if (cleaned.english.includes('MYMEMORY WARNING') || cleaned.russian.includes('MYMEMORY WARNING')) {
+        cleaned.english = 'word';
+        cleaned.russian = 'Перевод';
+      }
+
       const verbBase = REVERSE_IRREGULAR[rawEng];
 
       if (verbBase && IRREGULAR_VERBS[verbBase]) {
         const info = IRREGULAR_VERBS[verbBase];
         cleaned.english = `${info.v1} — ${info.v2} — ${info.v3}`;
-        cleaned.russian = cleaned.russian || info.ru;
+        cleaned.russian = cleaned.russian && !cleaned.russian.includes('MYMEMORY') ? cleaned.russian : info.ru;
         cleaned.transcription = null;
         cleaned.formsDetails = {
           f1: { word: info.v1, tr: cleaned.formsDetails?.f1?.tr || info.tr1 },
@@ -286,9 +291,9 @@
       };
 
       const handleValidateAndFixAll = () => {
-        setDeck(prev => prev.map(c => validateAndFixCard(c)));
-        setMasteredCards(prev => prev.map(c => validateAndFixCard(c)));
-        showToast('✨ Вся колода проверена: все ошибки, регистр и транскрипции исправлены!', 'success', 5000);
+        setDeck(prev => prev.map(c => validateAndFixCard(c)).filter(c => !c.english.includes('MYMEMORY')));
+        setMasteredCards(prev => prev.map(c => validateAndFixCard(c)).filter(c => !c.english.includes('MYMEMORY')));
+        showToast('✨ Вся колода очищена и проверена!', 'success', 5000);
       };
 
       const handleRestoreAllMastered = () => {
@@ -368,7 +373,7 @@
         return deck.find(c => c.id === cardId) || null;
       }, [sessionQueue, currentCardIndex, deck]);
 
-      const processInputLine = async (rawInput, existingDeck = deck) => {
+      const processInputLine = (rawInput, existingDeck = deck) => {
         let line = rawInput.trim();
         if (!line) return null;
 
@@ -399,7 +404,7 @@
         if (baseVerb && IRREGULAR_VERBS[baseVerb]) {
           const info = IRREGULAR_VERBS[baseVerb];
           english = `${info.v1} — ${info.v2} — ${info.v3}`;
-          russian = info.ru;
+          russian = part2 || info.ru;
           formsDetails = {
             f1: { word: info.v1, tr: manualTranscription || info.tr1 },
             f2: { word: info.v2, tr: info.tr2 },
@@ -410,18 +415,8 @@
           if (isPart1Ru) { russian = part1; english = part2; } 
           else { english = part1; russian = part2; }
         } else {
-          const isRu = /[а-яё]/i.test(part1);
-          english = part1; russian = part1;
-          try {
-            const langPair = isRu ? 'ru|en' : 'en|ru';
-            const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(part1)}&langpair=${langPair}`);
-            const data = await res.json();
-            if (data?.responseData?.translatedText) {
-              const translated = data.responseData.translatedText;
-              if (isRu) { english = translated; russian = part1; } 
-              else { english = part1; russian = translated; }
-            }
-          } catch (e) {}
+          english = part1;
+          russian = part1.charAt(0).toUpperCase() + part1.slice(1);
         }
 
         russian = russian.replace(/[a-zA-Z]+/g, '').replace(/[\/\—\-]+/g, ' ').trim();
@@ -455,13 +450,13 @@
         return { card: validateAndFixCard(newCard) };
       };
 
-      const handleAddWordAutomatic = async (e) => {
+      const handleAddWordAutomatic = (e) => {
         e?.preventDefault();
         const query = newWordInput.trim();
         if (!query) return;
         setIsGenerating(true);
         try {
-          const res = await processInputLine(query, deck);
+          const res = processInputLine(query, deck);
           if (res.isDuplicate) {
             setDuplicateModal(res);
             setIsGenerating(false);
@@ -500,7 +495,7 @@
         setNewWordInput('');
       };
 
-      const handleBulkAddAuto = async () => {
+      const handleBulkAddAuto = () => {
         const rawLines = bulkInput.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
         if (rawLines.length === 0) return;
         setIsBulkProcessing(true);
@@ -509,8 +504,8 @@
           let updatedDeck = [...deck];
           
           for (let i = 0; i < rawLines.length; i++) {
-            const res = await processInputLine(rawLines[i], updatedDeck);
-            if (res && res.card) {
+            const res = processInputLine(rawLines[i], updatedDeck);
+            if (res && res.card && !res.card.english.includes('MYMEMORY')) {
               addedCards.push(res.card);
               updatedDeck.unshift(res.card);
             } else if (res && res.isDuplicate) {
