@@ -110,78 +110,124 @@
     ];
 
     const IRREGULAR_VERBS = {
-      "arise": { v1: "arise", v2: "arose", v3: "arisen", tr1: "[əˈraɪz]", tr2: "[əˈrəʊz]", tr3: "[əˈrɪzn]", ru: "подниматься" },
-      "awake": { v1: "awake", v2: "awoke", v3: "awoken", tr1: "[əˈweɪk]", tr2: "[əˈwəʊk]", tr3: "[əˈwəʊkən]", ru: "просыпаться, будить" },
-      "be": { v1: "be", v2: "was/were", v3: "been", tr1: "[biː]", tr2: "[wɒz / wɜː]", tr3: "[biːn]", ru: "быть" },
+      "arise": { v1: "arise", v2: "arose", v3: "arisen", tr1: "[əˈraɪz]", tr2: "[əˈrəʊz]", tr3: "[əˈrɪzn]", ru: "подниматься, возникать" },
+      "awake": { v1: "awake", v2: "awoke", v3: "awoken", tr1: "[əˈweɪk]", tr2: "[əˈwəʊk]", tr3: "[əˈwəʊkən]", ru: "просыпаться, пробуждать" },
+      "be": { v1: "be", v2: "was/were", v3: "been", tr1: "[biː]", tr2: "[wɒz / wɜː]", tr3: "[biːn]", ru: "быть, являться, находиться" },
+      "bear": { v1: "bear", v2: "bore", v3: "born", tr1: "[beə]", tr2: "[bɔː]", tr3: "[bɔːn]", ru: "рожать, переносить" },
+      "beat": { v1: "beat", v2: "beat", v3: "beaten", tr1: "[biːt]", tr2: "[biːt]", tr3: "[ˈbiːtn]", ru: "бить" },
+      "become": { v1: "become", v2: "became", v3: "become", tr1: "[bɪˈkʌm]", tr2: "[bɪˈkeɪm]", tr3: "[bɪˈkʌm]", ru: "становиться" },
       "begin": { v1: "begin", v2: "began", v3: "begun", tr1: "[bɪˈɡɪn]", tr2: "[bɪˈɡæn]", tr3: "[bɪˈɡʌn]", ru: "начинать" },
-      "break": { v1: "break", v2: "broke", v3: "broken", tr1: "[breɪk]", tr2: "[brəʊk]", tr3: "[ˈbrəʊkən]", ru: "ломать" },
+      "bend": { v1: "bend", v2: "bent", v3: "bent", tr1: "[bend]", tr2: "[bent]", tr3: "[bent]", ru: "наклонять, гнуть" },
+      "bet": { v1: "bet", v2: "bet", v3: "bet", tr1: "[bet]", tr2: "[bet]", tr3: "[bet]", ru: "заключать пари" },
+      "bind": { v1: "bind", v2: "bound", v3: "bound", tr1: "[baɪnd]", tr2: "[baʊnd]", tr3: "[baʊnd]", ru: "связывать" },
+      "bite": { v1: "bite", v2: "bit", v3: "bitten", tr1: "[baɪt]", tr2: "[bɪt]", tr3: "[ˈbɪtn]", ru: "кусать" },
+      "bleed": { v1: "bleed", v2: "bled", v3: "bled", tr1: "[bliːd]", tr2: "[bled]", tr3: "[bled]", ru: "кровоточить" },
+      "blow": { v1: "blow", v2: "blew", v3: "blown", tr1: "[bləʊ]", tr2: "[bluː]", tr3: "[bləʊn]", ru: "дуть" },
+      "break": { v1: "break", v2: "broke", v3: "broken", tr1: "[breɪk]", tr2: "[brəʊk]", tr3: "[ˈbrəʊkən]", ru: "ломать, перерыв" },
+      "breed": { v1: "breed", v2: "bred", v3: "bred", tr1: "[briːd]", tr2: "[bred]", tr3: "[bred]", ru: "разводить животных" },
       "bring": { v1: "bring", v2: "brought", v3: "brought", tr1: "[brɪŋ]", tr2: "[brɔːt]", tr3: "[brɔːt]", ru: "приносить" },
-      "build": { v1: "build", v2: "built", v3: "built", tr1: "[bɪld]", tr2: "[bilt]", tr3: "[bilt]", ru: "строить" },
+      "build": { v1: "build", v2: "built", v3: "built", tr1: "[bɪld]", tr2: "[bɪlt]", tr3: "[bɪlt]", ru: "строить" },
       "buy": { v1: "buy", v2: "bought", v3: "bought", tr1: "[baɪ]", tr2: "[bɔːt]", tr3: "[bɔːt]", ru: "покупать" },
       "catch": { v1: "catch", v2: "caught", v3: "caught", tr1: "[kætʃ]", tr2: "[kɔːt]", tr3: "[kɔːt]", ru: "ловить, поймать" },
       "choose": { v1: "choose", v2: "chose", v3: "chosen", tr1: "[tʃuːz]", tr2: "[tʃəʊz]", tr3: "[ˈtʃəʊzn]", ru: "выбирать" },
+      "cling": { v1: "cling", v2: "clung", v3: "clung", tr1: "[klɪŋ]", tr2: "[klʌŋ]", tr3: "[klʌŋ]", ru: "цепляться" },
       "come": { v1: "come", v2: "came", v3: "come", tr1: "[kʌm]", tr2: "[keɪm]", tr3: "[kʌm]", ru: "приходить" },
-      "cost": { v1: "cost", v2: "cost", v3: "cost", tr1: "[kɒst]", tr2: "[kɒst]", tr3: "[kɒst]", ru: "стоить" },
+      "cost": { v1: "cost", v2: "cost", v3: "cost", tr1: "[kɒst]", tr2: "[kɒst]", tr3: "[kɒst]", ru: "стоить, цена" },
       "cut": { v1: "cut", v2: "cut", v3: "cut", tr1: "[kʌt]", tr2: "[kʌt]", tr3: "[kʌt]", ru: "резать" },
+      "deal": { v1: "deal", v2: "dealt", v3: "dealt", tr1: "[diːl]", tr2: "[delt]", tr3: "[delt]", ru: "вести дела, иметь дело" },
+      "dig": { v1: "dig", v2: "dug", v3: "dug", tr1: "[dɪɡ]", tr2: "[dʌɡ]", tr3: "[dʌɡ]", ru: "копать" },
       "do": { v1: "do", v2: "did", v3: "done", tr1: "[duː]", tr2: "[dɪd]", tr3: "[dʌn]", ru: "делать" },
-      "draw": { v1: "draw", v2: "drew", v3: "drawn", tr1: "[drɔː]", tr2: "[druː]", tr3: "[drɔːn]", ru: "рисовать" },
+      "draw": { v1: "draw", v2: "drew", v3: "drawn", tr1: "[drɔː]", tr2: "[druː]", tr3: "[drɔːn]", ru: "рисовать, тянуть" },
       "drink": { v1: "drink", v2: "drank", v3: "drunk", tr1: "[drɪŋk]", tr2: "[dræŋk]", tr3: "[drʌŋk]", ru: "пить" },
-      "drive": { v1: "drive", v2: "drove", v3: "driven", tr1: "[draɪv]", tr2: "[drəʊv]", tr3: "[ˈrɪvn]", ru: "водить автомобиль" },
-      "eat": { v1: "eat", v2: "ate", v3: "eaten", tr1: "[iːt]", tr2: "[et]", tr3: "[ˈiːtn]", ru: "есть" },
+      "drive": { v1: "drive", v2: "drove", v3: "driven", tr1: "[draɪv]", tr2: "[drəʊv]", tr3: "[ˈdrɪvn]", ru: "водить автомобиль" },
+      "eat": { v1: "eat", v2: "ate", v3: "eaten", tr1: "[iːt]", tr2: "[et]", tr3: "[ˈiːtn]", ru: "есть, кушать" },
       "fall": { v1: "fall", v2: "fell", v3: "fallen", tr1: "[fɔːl]", tr2: "[fel]", tr3: "[ˈfɔːlən]", ru: "падать" },
-      "feel": { v1: "feel", v2: "felt", v3: "felt", tr1: "[fiːl]", tr2: "[felt]", tr3: "[felt]", ru: "чувствовать" },
+      "feed": { v1: "feed", v2: "fed", v3: "fed", tr1: "[fiːd]", tr2: "[fed]", tr3: "[fed]", ru: "кормить" },
+      "feel": { v1: "feel", v2: "felt", v3: "felt", tr1: "[fiːl]", tr2: "[felt]", tr3: "[felt]", ru: "чувствовать, ощущать" },
+      "fight": { v1: "fight", v2: "fought", v3: "fought", tr1: "[faɪt]", tr2: "[fɔːt]", tr3: "[fɔːt]", ru: "бороться, сражаться" },
       "find": { v1: "find", v2: "found", v3: "found", tr1: "[faɪnd]", tr2: "[faʊnd]", tr3: "[faʊnd]", ru: "находить" },
+      "flee": { v1: "flee", v2: "fled", v3: "fled", tr1: "[fliː]", tr2: "[fled]", tr3: "[fled]", ru: "сбегать, спасаться бегством" },
       "fly": { v1: "fly", v2: "flew", v3: "flown", tr1: "[flaɪ]", tr2: "[fluː]", tr3: "[fləʊn]", ru: "летать" },
-      "forget": { v1: "forget", v2: "forgot", v3: "forgotten", tr1: "[fərˈɡet]", tr2: "[fərˈɡɒt]", tr3: "[fərˈɡɒtn]", ru: "забывать" },
-      "get": { v1: "get", v2: "got", v3: "got/gotten", tr1: "[ɡet]", tr2: "[ɡɒt]", tr3: "[ɡɒt / ˈɡɒtn]", ru: "получать" },
-      "give": { v1: "give", v2: "gave", v3: "given", tr1: "[ɡɪv]", tr2: "[ɡeɪv]", tr3: "[ˈɡɪvn]", ru: "давать" },
+      "forbid": { v1: "forbid", v2: "forbade", v3: "forbidden", tr1: "[fəˈbɪd]", tr2: "[fəˈbeɪd]", tr3: "[fəˈbɪdn]", ru: "запрещать" },
+      "forget": { v1: "forget", v2: "forgot", v3: "forgotten", tr1: "[fəˈɡet]", tr2: "[fəˈɡɒt]", tr3: "[fəˈɡɒtn]", ru: "забывать" },
+      "forgive": { v1: "forgive", v2: "forgave", v3: "forgiven", tr1: "[fəˈɡɪv]", tr2: "[fəˈɡeɪv]", tr3: "[fəˈɡɪvn]", ru: "прощать" },
+      "freeze": { v1: "freeze", v2: "froze", v3: "frozen", tr1: "[friːz]", tr2: "[frəʊz]", tr3: "[ˈfrəʊzn]", ru: "замораживать, замерзать" },
+      "get": { v1: "get", v2: "got", v3: "got/gotten", tr1: "[ɡet]", tr2: "[ɡɒt]", tr3: "[ɡɒt / ˈɡɒtn]", ru: "получать, становиться, добираться" },
+      "give": { v1: "give", v2: "gave", v3: "given", tr1: "[ɡɪv]", tr2: "[ɡeɪv]", tr3: "[ˈɡɪvn]", ru: "давать, отдавать" },
       "go": { v1: "go", v2: "went", v3: "gone", tr1: "[ɡəʊ]", tr2: "[went]", tr3: "[ɡɒn]", ru: "идти, ехать" },
-      "grow": { v1: "grow", v2: "grew", v3: "grown", tr1: "[ɡrəʊ]", tr2: "[ɡruː]", tr3: "[ɡrəʊn]", ru: "расти" },
-      "have": { v1: "have", v2: "had", v3: "had", tr1: "[hæv]", tr2: "[hæd]", tr3: "[hæd]", ru: "иметь" },
+      "grow": { v1: "grow", v2: "grew", v3: "grown", tr1: "[ɡrəʊ]", tr2: "[ɡruː]", tr3: "[ɡrəʊn]", ru: "расти, выращивать" },
+      "hang": { v1: "hang", v2: "hung", v3: "hung", tr1: "[hæŋ]", tr2: "[hʌŋ]", tr3: "[hʌŋ]", ru: "висеть, вешать" },
+      "have": { v1: "have", v2: "had", v3: "had", tr1: "[hæv]", tr2: "[hæd]", tr3: "[hæd]", ru: "иметь, владеть" },
       "hear": { v1: "hear", v2: "heard", v3: "heard", tr1: "[hɪə]", tr2: "[hɜːd]", tr3: "[hɜːd]", ru: "слышать" },
-      "hit": { v1: "hit", v2: "hit", v3: "hit", tr1: "[hɪt]", tr2: "[hɪt]", tr3: "[hɪt]", ru: "ударять" },
+      "hide": { v1: "hide", v2: "hid", v3: "hidden", tr1: "[haɪd]", tr2: "[hɪd]", tr3: "[ˈhɪdn]", ru: "прятать, прятаться" },
+      "hit": { v1: "hit", v2: "hit", v3: "hit", tr1: "[hɪt]", tr2: "[hɪt]", tr3: "[hɪt]", ru: "ударять, попадать" },
       "hold": { v1: "hold", v2: "held", v3: "held", tr1: "[həʊld]", tr2: "[held]", tr3: "[held]", ru: "держать" },
-      "keep": { v1: "keep", v2: "kept", v3: "kept", tr1: "[kiːp]", tr2: "[kept]", tr3: "[kept]", ru: "хранить, держать" },
+      "hurt": { v1: "hurt", v2: "hurt", v3: "hurt", tr1: "[hɜːt]", tr2: "[hɜːt]", tr3: "[hɜːt]", ru: "причинять боль, болеть" },
+      "keep": { v1: "keep", v2: "kept", v3: "kept", tr1: "[kiːp]", tr2: "[kept]", tr3: "[kept]", ru: "хранить, соблюдать" },
       "know": { v1: "know", v2: "knew", v3: "known", tr1: "[nəʊ]", tr2: "[njuː]", tr3: "[nəʊn]", ru: "знать" },
-      "lead": { v1: "lead", v2: "led", v3: "led", tr1: "[liːd]", tr2: "[led]", tr3: "[led]", ru: "вести" },
-      "learn": { v1: "learn", v2: "learnt/learned", v3: "learnt/learned", tr1: "[lɜːn]", tr2: "[lɜːnt]", tr3: "[lɜːnt]", ru: "учить, узнавать" },
-      "leave": { v1: "leave", v2: "left", v3: "left", tr1: "[liːv]", tr2: "[left]", tr3: "[left]", ru: "покидать, оставлять" },
-      "lend": { v1: "lend", v2: "lent", v3: "lent", tr1: "[lend]", tr2: "[lent]", tr3: "[lent]", ru: "занимать, давать в долг" },
-      "let": { v1: "let", v2: "let", v3: "let", tr1: "[let]", tr2: "[let]", tr3: "[let]", ru: "позволять" },
+      "lay": { v1: "lay", v2: "laid", v3: "laid", tr1: "[leɪ]", tr2: "[leɪd]", tr3: "[leɪd]", ru: "класть" },
+      "lead": { v1: "lead", v2: "led", v3: "led", tr1: "[liːd]", tr2: "[led]", tr3: "[led]", ru: "вести, лидировать" },
+      "learn": { v1: "learn", v2: "learnt/learned", v3: "learnt/learned", tr1: "[lɜːn]", tr2: "[lɜːnt / lɜːnd]", tr3: "[lɜːnt / lɜːnd]", ru: "учить, узнавать" },
+      "leave": { v1: "leave", v2: "left", v3: "left", tr1: "[liːv]", tr2: "[left]", tr3: "[left]", ru: "покидать, оставлять, уезжать" },
+      "lend": { v1: "lend", v2: "lent", v3: "lent", tr1: "[lend]", tr2: "[lent]", tr3: "[lent]", ru: "давать взаймы, одалживать" },
+      "let": { v1: "let", v2: "let", v3: "let", tr1: "[let]", tr2: "[let]", tr3: "[let]", ru: "позволять, разрешать" },
+      "lie": { v1: "lie", v2: "lay", v3: "lain", tr1: "[laɪ]", tr2: "[leɪ]", tr3: "[leɪn]", ru: "лежать" },
+      "light": { v1: "light", v2: "lit", v3: "lit", tr1: "[laɪt]", tr2: "[lɪt]", tr3: "[lɪt]", ru: "зажигать, освещать" },
       "lose": { v1: "lose", v2: "lost", v3: "lost", tr1: "[luːz]", tr2: "[lɒst]", tr3: "[lɒst]", ru: "терять" },
-      "make": { v1: "make", v2: "made", v3: "made", tr1: "[meɪk]", tr2: "[meɪd]", tr3: "[meɪd]", ru: "делать, создавать" },
-      "mean": { v1: "mean", v2: "meant", v3: "meant", tr1: "[miːn]", tr2: "[ment]", tr3: "[ment]", ru: "значить, подразумевать" },
-      "meet": { v1: "meet", v2: "met", v3: "met", tr1: "[miːt]", tr2: "[met]", tr3: "[met]", ru: "встречать" },
+      "make": { v1: "make", v2: "made", v3: "made", tr1: "[meɪk]", tr2: "[meɪd]", tr3: "[meɪd]", ru: "делать, создавать, мастерить" },
+      "mean": { v1: "mean", v2: "meant", v3: "meant", tr1: "[miːn]", tr2: "[ment]", tr3: "[ment]", ru: "значить, иметь в виду" },
+      "meet": { v1: "meet", v2: "met", v3: "met", tr1: "[miːt]", tr2: "[met]", tr3: "[met]", ru: "встречать, знакомиться" },
       "pay": { v1: "pay", v2: "paid", v3: "paid", tr1: "[peɪ]", tr2: "[peɪd]", tr3: "[peɪd]", ru: "платить" },
-      "put": { v1: "put", v2: "put", v3: "put", tr1: "[pʊt]", tr2: "[pʊt]", tr3: "[pʊt]", ru: "класть" },
+      "put": { v1: "put", v2: "put", v3: "put", tr1: "[pʊt]", tr2: "[pʊt]", tr3: "[pʊt]", ru: "класть, ставить" },
       "read": { v1: "read", v2: "read", v3: "read", tr1: "[riːd]", tr2: "[red]", tr3: "[red]", ru: "читать" },
-      "ride": { v1: "ride", v2: "rode", v3: "ridden", tr1: "[raɪd]", tr2: "[rəʊd]", tr3: "[ˈrɪdn]", ru: "ездить верхом" },
-      "ring": { v1: "ring", v2: "rang", v3: "rung", tr1: "[rɪŋ]", tr2: "[ræŋ]", tr3: "[rʌŋ]", ru: "звенеть" },
+      "ride": { v1: "ride", v2: "rode", v3: "ridden", tr1: "[raɪd]", tr2: "[rəʊd]", tr3: "[ˈrɪdn]", ru: "ездить верхом, кататься" },
+      "ring": { v1: "ring", v2: "rang", v3: "rung", tr1: "[rɪŋ]", tr2: "[ræŋ]", tr3: "[rʌŋ]", ru: "звонить" },
+      "rise": { v1: "rise", v2: "rose", v3: "risen", tr1: "[raɪz]", tr2: "[rəʊz]", tr3: "[ˈrɪzn]", ru: "возрастать, подниматься" },
       "run": { v1: "run", v2: "ran", v3: "run", tr1: "[rʌn]", tr2: "[ræn]", tr3: "[rʌn]", ru: "бежать" },
       "say": { v1: "say", v2: "said", v3: "said", tr1: "[seɪ]", tr2: "[sed]", tr3: "[sed]", ru: "говорить, сказать" },
       "see": { v1: "see", v2: "saw", v3: "seen", tr1: "[siː]", tr2: "[sɔː]", tr3: "[siːn]", ru: "видеть" },
+      "seek": { v1: "seek", v2: "sought", v3: "sought", tr1: "[siːk]", tr2: "[sɔːt]", tr3: "[sɔːt]", ru: "искать" },
       "sell": { v1: "sell", v2: "sold", v3: "sold", tr1: "[sel]", tr2: "[səʊld]", tr3: "[səʊld]", ru: "продавать" },
-      "send": { v1: "send", v2: "sent", v3: "sent", tr1: "[send]", tr2: "[sent]", tr3: "[sent]", ru: "отправлять" },
-      "set": { v1: "set", v2: "set", v3: "set", tr1: "[set]", tr2: "[set]", tr3: "[set]", ru: "устанавливать" },
+      "send": { v1: "send", v2: "sent", v3: "sent", tr1: "[send]", tr2: "[sent]", tr3: "[sent]", ru: "посылать, отправлять" },
+      "set": { v1: "set", v2: "set", v3: "set", tr1: "[set]", tr2: "[set]", tr3: "[set]", ru: "устанавливать, ставить" },
+      "shake": { v1: "shake", v2: "shook", v3: "shaken", tr1: "[ʃeɪk]", tr2: "[ʃʊk]", tr3: "[ˈʃeɪkən]", ru: "трясти" },
+      "shine": { v1: "shine", v2: "shone", v3: "shone", tr1: "[ʃaɪn]", tr2: "[ʃɒn]", tr3: "[ʃɒn]", ru: "светить, сиять" },
+      "shoot": { v1: "shoot", v2: "shot", v3: "shot", tr1: "[ʃuːt]", tr2: "[ʃɒt]", tr3: "[ʃɒt]", ru: "стрелять" },
       "show": { v1: "show", v2: "showed", v3: "shown", tr1: "[ʃəʊ]", tr2: "[ʃəʊd]", tr3: "[ʃəʊn]", ru: "показывать" },
-      "shut": { v1: "shut", v2: "shut", v3: "shut", tr1: "[ʃʌt]", tr2: "[ʃʌt]", tr3: "[ʃʌt]", ru: "закрывать" },
+      "shrink": { v1: "shrink", v2: "shrank", v3: "shrunk", tr1: "[ʃrɪŋk]", tr2: "[ʃræŋk]", tr3: "[ʃrʌŋk]", ru: "сжиматься, садиться (о ткани)" },
+      "shut": { v1: "shut", v2: "shut", v3: "shut", tr1: "[ʃʌt]", tr2: "[ʃʌt]", tr3: "[ʃʌt]", ru: "закрывать, затворять" },
       "sing": { v1: "sing", v2: "sang", v3: "sung", tr1: "[sɪŋ]", tr2: "[sæŋ]", tr3: "[sʌŋ]", ru: "петь" },
       "sit": { v1: "sit", v2: "sat", v3: "sat", tr1: "[sɪt]", tr2: "[sæt]", tr3: "[sæt]", ru: "сидеть" },
       "sleep": { v1: "sleep", v2: "slept", v3: "slept", tr1: "[sliːp]", tr2: "[slept]", tr3: "[slept]", ru: "спать" },
-      "smell": { v1: "smell", v2: "smelt/smelled", v3: "smelt/smelled", tr1: "[smel]", tr2: "[smelt]", tr3: "[smelt]", ru: "пахнуть, нюхать" },
-      "speak": { v1: "speak", v2: "spoke", v3: "spoken", tr1: "[spiːk]", tr2: "[spəʊk]", tr3: "[ˈspəʊkən]", ru: "говорить" },
+      "slide": { v1: "slide", v2: "slid", v3: "slid", tr1: "[slaɪd]", tr2: "[slɪd]", tr3: "[slɪd]", ru: "скользить" },
+      "smell": { v1: "smell", v2: "smelt/smelled", v3: "smelt/smelled", tr1: "[smel]", tr2: "[smelt / smeld]", tr3: "[smelt / smeld]", ru: "пахнуть, нюхать" },
+      "speak": { v1: "speak", v2: "spoke", v3: "spoken", tr1: "[spiːk]", tr2: "[spəʊk]", tr3: "[ˈspəʊkən]", ru: "говорить, разговаривать" },
+      "spell": { v1: "spell", v2: "spelt/spelled", v3: "spelt/spelled", tr1: "[spel]", tr2: "[spelt / speld]", tr3: "[spelt / speld]", ru: "произносить или писать по буквам" },
       "spend": { v1: "spend", v2: "spent", v3: "spent", tr1: "[spend]", tr2: "[spent]", tr3: "[spent]", ru: "тратить, проводить время" },
+      "spill": { v1: "spill", v2: "spilt/spilled", v3: "spilt/spilled", tr1: "[spɪl]", tr2: "[spɪlt / spɪld]", tr3: "[spɪlt / spɪld]", ru: "разлить, пролить" },
+      "spin": { v1: "spin", v2: "spun", v3: "spun", tr1: "[spɪn]", tr2: "[spʌn]", tr3: "[spʌn]", ru: "крутить, вращать" },
+      "split": { v1: "split", v2: "split", v3: "split", tr1: "[splɪt]", tr2: "[splɪt]", tr3: "[splɪt]", ru: "разделять, раскалывать" },
+      "spoil": { v1: "spoil", v2: "spoilt/spoiled", v3: "spoilt/spoiled", tr1: "[spɔɪl]", tr2: "[spɔɪlt / spɔɪld]", tr3: "[spɔɪlt / spɔɪld]", ru: "портить" },
+      "spread": { v1: "spread", v2: "spread", v3: "spread", tr1: "[spred]", tr2: "[spred]", tr3: "[spred]", ru: "разворачивать, распространять" },
       "stand": { v1: "stand", v2: "stood", v3: "stood", tr1: "[stænd]", tr2: "[stʊd]", tr3: "[stʊd]", ru: "стоять" },
+      "steal": { v1: "steal", v2: "stole", v3: "stolen", tr1: "[stiːl]", tr2: "[stəʊl]", tr3: "[ˈstəʊlən]", ru: "воровать, красть" },
+      "sting": { v1: "sting", v2: "stung", v3: "stung", tr1: "[stɪŋ]", tr2: "[stʌŋ]", tr3: "[stʌŋ]", ru: "жалить" },
+      "stink": { v1: "stink", v2: "stank", v3: "stunk", tr1: "[stɪŋk]", tr2: "[stæŋk]", tr3: "[stʌŋk]", ru: "вонять" },
+      "strike": { v1: "strike", v2: "struck", v3: "struck", tr1: "[straɪk]", tr2: "[strʌk]", tr3: "[strʌk]", ru: "ударять, бастовать" },
+      "swear": { v1: "swear", v2: "swore", v3: "sworn", tr1: "[sweə]", tr2: "[swɔː]", tr3: "[swɔːn]", ru: "клясться, ругаться" },
+      "sweep": { v1: "sweep", v2: "swept", v3: "swept", tr1: "[swiːp]", tr2: "[swept]", tr3: "[swept]", ru: "подметать" },
+      "swell": { v1: "swell", v2: "swelled", v3: "swollen/swelled", tr1: "[swel]", tr2: "[sweld]", tr3: "[ˈswəʊlən / sweld]", ru: "опухать, набухать" },
       "swim": { v1: "swim", v2: "swam", v3: "swum", tr1: "[swɪm]", tr2: "[swæm]", tr3: "[swʌm]", ru: "плавать" },
-      "take": { v1: "take", v2: "took", v3: "taken", tr1: "[teɪk]", tr2: "[tʊk]", tr3: "[ˈteɪkən]", ru: "брать" },
-      "teach": { v1: "teach", v2: "taught", v3: "taught", tr1: "[tiːtʃ]", tr2: "[tɔːt]", tr3: "[tɔːt]", ru: "учить, обучать" },
-      "tell": { v1: "tell", v2: "told", v3: "told", tr1: "[tel]", tr2: "[təʊld]", tr3: "[təʊld]", ru: "рассказывать" },
-      "think": { v1: "think", v2: "thought", v3: "thought", tr1: "[θɪŋk]", tr2: "[θɔːt]", tr3: "[θɔːt]", ru: "думать" },
+      "take": { v1: "take", v2: "took", v3: "taken", tr1: "[teɪk]", tr2: "[tʊk]", tr3: "[ˈteɪkən]", ru: "брать, принимать" },
+      "teach": { v1: "teach", v2: "taught", v3: "taught", tr1: "[tiːtʃ]", tr2: "[tɔːt]", tr3: "[tɔːt]", ru: "учить (кого-то), обучать" },
+      "tear": { v1: "tear", v2: "tore", v3: "torn", tr1: "[teə]", tr2: "[tɔː]", tr3: "[tɔːn]", ru: "рвать" },
+      "tell": { v1: "tell", v2: "told", v3: "told", tr1: "[tel]", tr2: "[təʊld]", tr3: "[təʊld]", ru: "рассказывать, сказать" },
+      "think": { v1: "think", v2: "thought", v3: "thought", tr1: "[θɪŋk]", tr2: "[θɔːt]", tr3: "[θɔːt]", ru: "думать, считать" },
       "throw": { v1: "throw", v2: "threw", v3: "thrown", tr1: "[θrəʊ]", tr2: "[θruː]", tr3: "[θrəʊn]", ru: "бросать" },
-      "understand": { v1: "understand", v2: "understood", v3: "understood", tr1: "[ˌʌndərˈstænd]", tr2: "[ˌʌndərˈstʊd]", tr3: "[ˌʌndərˈstʊd]", ru: "понимать" },
+      "understand": { v1: "understand", v2: "understood", v3: "understood", tr1: "[ˌʌndəˈstænd]", tr2: "[ˌʌndəˈstʊd]", tr3: "[ˌʌndəˈstʊd]", ru: "понимать" },
       "wake": { v1: "wake", v2: "woke", v3: "woken", tr1: "[weɪk]", tr2: "[wəʊk]", tr3: "[ˈwəʊkən]", ru: "просыпаться, будить" },
       "wear": { v1: "wear", v2: "wore", v3: "worn", tr1: "[weə]", tr2: "[wɔː]", tr3: "[wɔːn]", ru: "носить (одежду)" },
-      "win": { v1: "win", v2: "won", v3: "won", tr1: "[wɪn]", tr2: "[wʌn]", tr3: "[wʌn]", ru: "побеждать" },
+      "win": { v1: "win", v2: "won", v3: "won", tr1: "[wɪn]", tr2: "[wʌn]", tr3: "[wʌn]", ru: "побеждать, выигрывать" },
       "write": { v1: "write", v2: "wrote", v3: "written", tr1: "[raɪt]", tr2: "[rəʊt]", tr3: "[ˈrɪtn]", ru: "писать" }
     };
 
@@ -189,8 +235,12 @@
     Object.keys(IRREGULAR_VERBS).forEach(v1 => {
       const data = IRREGULAR_VERBS[v1];
       REVERSE_IRREGULAR[data.v1.toLowerCase()] = v1;
-      REVERSE_IRREGULAR[data.v2.toLowerCase()] = v1;
-      REVERSE_IRREGULAR[data.v3.toLowerCase()] = v1;
+      data.v2.split('/').forEach(part => {
+        REVERSE_IRREGULAR[part.trim().toLowerCase()] = v1;
+      });
+      data.v3.split('/').forEach(part => {
+        REVERSE_IRREGULAR[part.trim().toLowerCase()] = v1;
+      });
     });
 
     const validateAndFixCard = (card) => {
@@ -371,7 +421,6 @@
         return deck.find(c => c.id === cardId) || null;
       }, [sessionQueue, currentCardIndex, deck]);
 
-      // Исправленный парсер: сначала извлекаем [транскрипцию], затем делим по разделителю вне скобок
       const processInputLine = (rawInput, existingDeck = deck) => {
         let line = rawInput.replace(/\u00A0/g, ' ').trim();
         if (!line) return null;
@@ -383,7 +432,6 @@
           line = line.replace(bracketMatch[0], ' ').replace(/\s+/g, ' ').trim();
         }
 
-        // Разделитель между словом и переводом: пробелы вокруг дефиса/тире, =, :, |, или табуляция
         const delimiterMatch = line.match(/\s+(?:[-—–=:|]+)\s+|\t+/);
         let part1 = line;
         let part2 = '';
@@ -399,8 +447,8 @@
         let russian = '';
         let formsDetails = null;
 
-        const lowerKey = part1.toLowerCase();
-        const baseVerb = REVERSE_IRREGULAR[lowerKey];
+        const firstWordKey = part1.split(/\s+/)[0].toLowerCase();
+        const baseVerb = REVERSE_IRREGULAR[part1.toLowerCase()] || REVERSE_IRREGULAR[firstWordKey];
 
         if (baseVerb && IRREGULAR_VERBS[baseVerb]) {
           const info = IRREGULAR_VERBS[baseVerb];
@@ -515,7 +563,6 @@
         setNewWordInput('');
       };
 
-      // Исправленная массовая загрузка группы слов
       const handleBulkAddAuto = () => {
         const rawLines = bulkInput
           .split(/\r?\n/)
