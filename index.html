@@ -66,7 +66,7 @@
   <div id="root" class="flex-grow flex flex-col"></div>
 
   <script type="text/babel" data-type="module">
-    const { useState, useEffect, useMemo, useRef } = React;
+    const { useState, useEffect, useMemo } = React;
 
     const Icon = ({ name, className = "w-4 h-4" }) => {
       const iconProps = { xmlns: "http://www.w3.org/2000/svg", width: "24", height: "24", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", className };
@@ -80,7 +80,6 @@
         case 'wand-2': return <svg {...iconProps}><path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.21 1.21 0 0 0 1.72 0L21.64 5.36a1.21 1.21 0 0 0 0-1.72z"/><path d="m14 7 3 3"/><path d="M5 6v1"/><path d="M19 17v1"/><path d="M10 2v1"/><path d="M7 8H6"/><path d="M21 12h-1"/></svg>;
         case 'key': return <svg {...iconProps}><path d="m21 2-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.778-7.778zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>;
         case 'shuffle': return <svg {...iconProps}><path d="M2 18h1.4c1.3 0 2.5-.6 3.3-1.7l6.1-8.6c.7-1.1 2-1.7 3.3-1.7H22"/><path d="m18 2 4 4-4 4"/><path d="M2 6h1.4c1.3 0 2.5.6 3.3 1.7l.8 1.1"/><path d="M14.4 14.2l.8 1.1c.8 1.1 2 1.7 3.3 1.7H22"/><path d="m18 18 4 4-4 4"/></svg>;
-        case 'help-circle': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" x2="12.01" y1="17" y2="17"/></svg>;
         case 'alert-circle': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>;
         case 'check-circle-2': return <svg {...iconProps}><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>;
         case 'rotate-ccw': return <svg {...iconProps}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>;
@@ -196,10 +195,9 @@
 
     const validateAndFixCard = (card) => {
       let cleaned = { ...card };
-      const rawEng = cleaned.english.split('—')[0].trim().toLowerCase();
+      const rawEng = (cleaned.english || '').split('—')[0].trim().toLowerCase();
       
-      // Удаляем ошибочные записи API из перевода или английского, если они туда попали
-      if (cleaned.english.includes('MYMEMORY WARNING') || cleaned.russian.includes('MYMEMORY WARNING')) {
+      if ((cleaned.english || '').includes('MYMEMORY WARNING') || (cleaned.russian || '').includes('MYMEMORY WARNING')) {
         cleaned.english = 'word';
         cleaned.russian = 'Перевод';
       }
@@ -373,26 +371,29 @@
         return deck.find(c => c.id === cardId) || null;
       }, [sessionQueue, currentCardIndex, deck]);
 
+      // Исправленный парсер: сначала извлекаем [транскрипцию], затем делим по разделителю вне скобок
       const processInputLine = (rawInput, existingDeck = deck) => {
-        let line = rawInput.trim();
+        let line = rawInput.replace(/\u00A0/g, ' ').trim();
         if (!line) return null;
 
         let manualTranscription = null;
-        const bracketMatch = line.match(/\[(.*?)\]/);
+        const bracketMatch = line.match(/\[([^\[\]]+)\]/);
         if (bracketMatch) {
           manualTranscription = `[${bracketMatch[1].trim()}]`;
-          line = line.replace(bracketMatch[0], '').replace(/\s+/g, ' ').trim();
+          line = line.replace(bracketMatch[0], ' ').replace(/\s+/g, ' ').trim();
         }
 
-        const delimiterMatch = line.match(/\s*[-—=:|\t]\s*/);
+        // Разделитель между словом и переводом: пробелы вокруг дефиса/тире, =, :, |, или табуляция
+        const delimiterMatch = line.match(/\s+(?:[-—–=:|]+)\s+|\t+/);
         let part1 = line;
         let part2 = '';
 
-        if (delimiterMatch) {
-          const parts = line.split(delimiterMatch[0]);
-          part1 = parts[0]?.trim() || '';
-          part2 = parts.slice(1).join(' ').trim() || '';
+        if (delimiterMatch && delimiterMatch.index !== undefined) {
+          part1 = line.slice(0, delimiterMatch.index).trim();
+          part2 = line.slice(delimiterMatch.index + delimiterMatch[0].length).trim();
         }
+
+        if (!part1) return null;
 
         let english = '';
         let russian = '';
@@ -411,17 +412,29 @@
             f3: { word: info.v3, tr: info.tr3 }
           };
         } else if (part2) {
-          const isPart1Ru = /[а-яё]/i.test(part1);
-          if (isPart1Ru) { russian = part1; english = part2; } 
-          else { english = part1; russian = part2; }
+          const isPart1Ru = /[а-яё]/i.test(part1) && !/[a-z]/i.test(part1);
+          if (isPart1Ru) {
+            russian = part1;
+            english = part2;
+          } else {
+            english = part1;
+            russian = part2;
+          }
         } else {
           english = part1;
           russian = part1.charAt(0).toUpperCase() + part1.slice(1);
         }
 
-        russian = russian.replace(/[a-zA-Z]+/g, '').replace(/[\/\—\-]+/g, ' ').trim();
-        russian = russian.charAt(0).toUpperCase() + russian.slice(1);
-        if (!russian) russian = part1;
+        russian = russian
+          .replace(/[a-zA-Z]+/g, '')
+          .replace(/\s{2,}/g, ' ')
+          .replace(/^[\/\—–\-,\s]+|[\/\—–\-,\s]+$/g, '')
+          .trim();
+        if (russian) {
+          russian = russian.charAt(0).toUpperCase() + russian.slice(1);
+        } else {
+          russian = part1.charAt(0).toUpperCase() + part1.slice(1);
+        }
 
         const baseCheckKey = formsDetails ? formsDetails.f1.word.toLowerCase() : english.toLowerCase();
 
@@ -431,15 +444,16 @@
         });
 
         if (existingCard) {
-          if (!existingCard.russian.toLowerCase().includes(russian.toLowerCase())) {
+          const existingRuLower = (existingCard.russian || '').toLowerCase();
+          if (russian && !existingRuLower.includes(russian.toLowerCase())) {
             return { isDuplicate: true, existingCard, newRussian: russian, rawInput };
           } else {
             return { action: 'exists', card: existingCard };
           }
         }
 
-        let newCard = {
-          id: 'card-' + Date.now() + Math.random() + Math.random(),
+        const newCard = {
+          id: 'card-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
           english,
           russian,
           transcription: formsDetails ? null : (manualTranscription || null),
@@ -457,6 +471,10 @@
         setIsGenerating(true);
         try {
           const res = processInputLine(query, deck);
+          if (!res) {
+            showToast('Введите слово и перевод', 'error');
+            return;
+          }
           if (res.isDuplicate) {
             setDuplicateModal(res);
             setIsGenerating(false);
@@ -475,7 +493,9 @@
           }
         } catch (err) {
           showToast('Не удалось добавить слово', 'error');
-        } finally { setIsGenerating(false); }
+        } finally {
+          setIsGenerating(false);
+        }
       };
 
       const handleConfirmAddTranslation = () => {
@@ -495,39 +515,72 @@
         setNewWordInput('');
       };
 
+      // Исправленная массовая загрузка группы слов
       const handleBulkAddAuto = () => {
-        const rawLines = bulkInput.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+        const rawLines = bulkInput
+          .split(/\r?\n/)
+          .map(s => s.trim())
+          .filter(Boolean);
         if (rawLines.length === 0) return;
+
         setIsBulkProcessing(true);
         try {
-          const addedCards = [];
+          let addedCount = 0;
+          let updatedCount = 0;
+          let skippedCount = 0;
           let updatedDeck = [...deck];
-          
+          const newlyAddedIds = [];
+
           for (let i = 0; i < rawLines.length; i++) {
             const res = processInputLine(rawLines[i], updatedDeck);
-            if (res && res.card && !res.card.english.includes('MYMEMORY')) {
-              addedCards.push(res.card);
-              updatedDeck.unshift(res.card);
-            } else if (res && res.isDuplicate) {
+            if (!res) continue;
+
+            if (res.card && !res.card.english.includes('MYMEMORY')) {
+              updatedDeck = [res.card, ...updatedDeck];
+              newlyAddedIds.push(res.card.id);
+              addedCount++;
+            } else if (res.isDuplicate) {
               updatedDeck = updatedDeck.map(c => {
                 if (c.id === res.existingCard.id) {
                   return { ...c, russian: `${c.russian} / ${res.newRussian}` };
                 }
                 return c;
               });
+              updatedCount++;
+            } else if (res.action === 'exists') {
+              skippedCount++;
             }
           }
-          
-          if (addedCards.length > 0) {
+
+          if (addedCount > 0 || updatedCount > 0) {
             setDeck(updatedDeck);
           }
+
+          if (newlyAddedIds.length > 0) {
+            const masteredIds = new Set(masteredCards.map(m => m.id));
+            const validNewIds = newlyAddedIds.filter(id => !masteredIds.has(id));
+            setSessionQueue(prev => [...validNewIds, ...prev]);
+            setCurrentCardIndex(0);
+            setIsFlipped(false);
+          }
+
           setBulkInput('');
           setIsBulkAddOpen(false);
-          showToast(`Успешно загружено слов: ${addedCards.length}! 🚀`, 'success');
+
+          const parts = [];
+          if (addedCount > 0) parts.push(`добавлено: ${addedCount}`);
+          if (updatedCount > 0) parts.push(`дополнено переводов: ${updatedCount}`);
+          if (skippedCount > 0) parts.push(`уже были в колоде: ${skippedCount}`);
+
+          showToast(
+            parts.length > 0 ? `Готово! ${parts.join(', ')} 🚀` : 'Новых слов для добавления не найдено',
+            addedCount > 0 || updatedCount > 0 ? 'success' : 'info',
+            5000
+          );
         } catch (err) {
           showToast('Ошибка при массовой загрузке', 'error');
-        } finally { 
-          setIsBulkProcessing(false); 
+        } finally {
+          setIsBulkProcessing(false);
         }
       };
 
@@ -739,7 +792,6 @@
 
           <main className="flex-grow max-w-4xl w-full mx-auto p-4 sm:p-6 flex flex-col justify-center">
 
-            {/* ВКЛАДКА: УЧЕБА */}
             {activeTab === 'study' && (
               <div className="flex flex-col items-center justify-center max-w-lg mx-auto w-full py-2">
                 <div className="w-full flex items-center justify-between mb-4 px-2">
@@ -774,7 +826,6 @@
                       <div onClick={() => setIsFlipped(!isFlipped)} className="w-full h-80 sm:h-96 perspective-1000 cursor-pointer group select-none">
                         <div className={`relative w-full h-full duration-500 transform-style-3d transition-transform ${isFlipped ? 'rotate-y-180' : ''}`}>
                           
-                          {/* ЛИЦЕВАЯ СТОРОНА: ТОЛЬКО РУССКИЙ ЯЗЫК */}
                           <div className="absolute inset-0 w-full h-full rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-700/60 p-6 sm:p-8 flex flex-col justify-between backface-hidden shadow-2xl">
                             <div className="flex items-center justify-between">
                               <span className="text-xs font-semibold uppercase tracking-wider text-slate-400 bg-slate-800/80 px-3 py-1 rounded-full">Перевод</span>
@@ -787,7 +838,6 @@
                             </div>
                           </div>
 
-                          {/* ОБРАТНАЯ СТОРОНА: АНГЛИЙСКИЙ И ФОРМЫ С ТРАНСКРИПЦИЯМИ */}
                           <div className="absolute inset-0 w-full h-full rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 border border-indigo-500/40 p-6 sm:p-8 flex flex-col justify-between rotate-y-180 backface-hidden shadow-2xl overflow-y-auto">
                             <div className="flex items-center justify-between shrink-0">
                               <span className="text-xs font-semibold uppercase tracking-wider text-indigo-300 bg-indigo-950/80 px-3 py-1 rounded-full">English</span>
@@ -841,7 +891,6 @@
               </div>
             )}
 
-            {/* ВКЛАДКА: СЛОВА */}
             {activeTab === 'deck' && (
               <div className="space-y-4">
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
@@ -922,7 +971,6 @@
               </div>
             )}
 
-            {/* ВКЛАДКА: ГЛАГОЛЫ */}
             {activeTab === 'verbs' && (
               <div className="space-y-4">
                 <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 flex items-center justify-between">
@@ -975,7 +1023,6 @@
               </div>
             )}
 
-            {/* ВКЛАДКА: ВЫУЧЕНО */}
             {activeTab === 'mastered' && (
               <div className="space-y-4">
                 <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
@@ -1002,7 +1049,6 @@
               </div>
             )}
 
-            {/* ВКЛАДКА: НАСТРОЙКИ */}
             {activeTab === 'settings' && (
               <div className="max-w-md mx-auto w-full space-y-4 py-2">
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-5">
@@ -1050,7 +1096,6 @@
 
           </main>
 
-          {/* НАВИГАЦИЯ СНИЗУ */}
           <nav className="fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800 flex items-center justify-around px-2 py-2 pb-safe shadow-2xl">
             <button onClick={() => setActiveTab('study')} className={`flex flex-col items-center flex-1 py-1 transition-all ${activeTab === 'study' ? 'text-blue-400 font-bold scale-105' : 'text-slate-500 hover:text-slate-300'}`}>
               <Icon name="layers" className="w-5 h-5 mb-0.5" /><span className="text-[10px]">Учеба</span>
