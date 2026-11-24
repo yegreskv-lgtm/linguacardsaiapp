@@ -94,6 +94,7 @@
         case 'copy': return <svg {...iconProps}><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>;
         case 'folder': return <svg {...iconProps}><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>;
         case 'check-check': return <svg {...iconProps}><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg>;
+        case 'trash-2': return <svg {...iconProps}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>;
         default: return null;
       }
     };
@@ -309,6 +310,7 @@
       });
 
       const [duplicateModal, setDuplicateModal] = useState(null);
+      const [isClearAllModalOpen, setIsClearAllModalOpen] = useState(false);
 
       const [sessionQueue, setSessionQueue] = useState([]);
       const [currentCardIndex, setCurrentCardIndex] = useState(0);
@@ -348,6 +350,16 @@
         if (masteredCards.length === 0) return;
         setMasteredCards([]);
         showToast('Все выученные слова успешно возвращены в карточки для повторения! 🔄', 'success');
+      };
+
+      const handleClearAllWords = () => {
+        setDeck([]);
+        setMasteredCards([]);
+        setSessionQueue([]);
+        setCurrentCardIndex(0);
+        setIsFlipped(false);
+        setIsClearAllModalOpen(false);
+        showToast('🗑️ Все слова и выученные карточки полностью удалены!', 'info', 4000);
       };
 
       const handleExportFile = async () => {
@@ -474,7 +486,6 @@
         }
 
         russian = russian
-          .replace(/[a-zA-Z]+/g, '')
           .replace(/\s{2,}/g, ' ')
           .replace(/^[\/\—–\-,\s]+|[\/\—–\-,\s]+$/g, '')
           .trim();
@@ -864,8 +875,14 @@
                     <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
                       <Icon name="party-popper" className="w-8 h-8" />
                     </div>
-                    <h3 className="text-xl font-bold text-slate-100 mb-2">Все активные карточки пройдены!</h3>
-                    <button onClick={handleResetSession} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium mt-4">Повторить сессию</button>
+                    <h3 className="text-xl font-bold text-slate-100 mb-2">
+                      {deck.length === 0 ? 'Колода пока пуста' : 'Все активные карточки пройдены!'}
+                    </h3>
+                    {deck.length === 0 ? (
+                      <button onClick={() => setIsBulkAddOpen(true)} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium mt-4">Загрузить слова списком</button>
+                    ) : (
+                      <button onClick={handleResetSession} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-medium mt-4">Повторить сессию</button>
+                    )}
                   </div>
                 ) : (
                   currentCard && (
@@ -1137,6 +1154,20 @@
                       </label>
                     </div>
                   </div>
+
+                  <div className="pt-4 border-t border-slate-800 space-y-3">
+                    <h3 className="text-base font-bold text-red-400">Очистка словаря</h3>
+                    <p className="text-xs text-slate-400 leading-relaxed">
+                      Удалит все слова из общей колоды, вкладки глаголов и списка выученных карточек. Перед очисткой рекомендуем скачать бэкап.
+                    </p>
+                    <button
+                      onClick={() => setIsClearAllModalOpen(true)}
+                      disabled={deck.length === 0 && masteredCards.length === 0}
+                      className="w-full py-2.5 bg-red-950/60 hover:bg-red-600 text-red-300 hover:text-white border border-red-800/70 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition-all disabled:opacity-40 disabled:pointer-events-none"
+                    >
+                      <Icon name="trash-2" className="w-4 h-4" /> Удалить все слова разом ({deck.length})
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -1160,6 +1191,26 @@
               <Icon name="settings" className="w-5 h-5 mb-0.5" /><span className="text-[10px]">Настройки</span>
             </button>
           </nav>
+
+          {isClearAllModalOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
+              <div className="bg-slate-900 border border-red-900/60 rounded-2xl max-w-md w-full p-6 space-y-4 text-center shadow-2xl">
+                <div className="w-12 h-12 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center mx-auto border border-red-500/20">
+                  <Icon name="trash-2" className="w-6 h-6" />
+                </div>
+                <h3 className="text-base font-bold text-white">Удалить все слова?</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Вы уверены, что хотите безвозвратно удалить все <strong className="text-red-400">{deck.length}</strong> слов (включая <strong className="text-emerald-400">{masteredCards.length}</strong> выученных)? Это действие нельзя отменить без файла бэкапа.
+                </p>
+                <div className="flex gap-2 pt-2">
+                  <button onClick={() => setIsClearAllModalOpen(false)} className="flex-1 py-2.5 text-xs text-slate-300 hover:text-white bg-slate-800 rounded-xl font-medium">Отмена</button>
+                  <button onClick={handleClearAllWords} className="flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white font-semibold text-xs rounded-xl shadow-lg">
+                    Да, удалить всё
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {duplicateModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
